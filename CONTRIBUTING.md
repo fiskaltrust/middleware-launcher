@@ -11,5 +11,5 @@ Ideally, create an issue first to describe your problem and get early feedback. 
 Please create an issue first to describe the feature and get early feedback from the maintainers. After the suggestion was discussed, fork this repo and create a PR linked to the respective issue.
 
 ### You have a question about the functionality
-If you have any questions or help requests regarding Launcher or generally want to discuss an idea, please create a new topic in the [discussion section](discussions).
+If you have any questions or help requests regarding Launcher or generally want to discuss an idea, please create a new topic in the [discussion section](https://github.com/fiskaltrust/middleware-launcher/discussions).
 
