@@ -79,7 +79,7 @@ namespace fiskaltrust.Launcher.Services
             return app;
         }
 
-        private static async Task<WebApplication> CreateGrpcHost<T>(Uri uri, T instance) where T : class
+        internal static async Task<WebApplication> CreateGrpcHost<T>(Uri uri, T instance) where T : class
         {
             var builder = WebApplication.CreateBuilder();
 

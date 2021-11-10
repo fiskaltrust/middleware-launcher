@@ -1,0 +1,18 @@
+pool:
+  vmImage: windows-latest
+
+jobs:
+- job: Build
+  steps:
+  - task: yavt@1
+    inputs:
+      pathToVersionJson: version.json
+      semverVersion: v1 # still needed?
+
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: restore
+
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: build

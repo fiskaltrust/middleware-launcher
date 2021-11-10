@@ -1,0 +1,15 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+    - refs/tags/*
+
+
+stages:
+  - template: templates/build.yml
+
+  - template: templates/test.yml
+
+  - template: templates/deploy.yml
+
