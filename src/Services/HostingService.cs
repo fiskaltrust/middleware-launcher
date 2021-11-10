@@ -5,6 +5,7 @@ using fiskaltrust.Launcher.Extensions;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using ProtoBuf.Grpc.Server;
 using System.Net;
+using System.Reflection;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -12,35 +13,55 @@ namespace fiskaltrust.Launcher.Services
     {
         private readonly List<WebApplication> _hosts = new();
 
-        public async Task HostPackageAsync<T>(string[] uris, PackageType packageType, IServiceProvider serviceProvider) where T : class
+        public async Task<WebApplication> HostService(Type T, Uri uri, HostingType hostingType, object instance, Action<WebApplication>? addEndpoints = null)
         {
-            foreach (var uri in uris)
+            switch(hostingType)
             {
-                var url = new Uri(uri);
-                switch (url.Scheme)
-                {
-                    case "rest":
-                        _hosts.Add(await CreateHttpHost<T>(url, packageType, serviceProvider));
-                        break;
-                    case "grpc":
-                        switch(packageType) {
-                            case PackageType.Queue:
-                                _hosts.Add(await CreateGrpcHost(url, serviceProvider.GetRequiredService<IPOS>()));
-                                break;
-                            case PackageType.SCU:
-                                _hosts.Add(await CreateGrpcHost(url, serviceProvider.GetRequiredService<IDESSCD>()));
-                                break;
-                            default:
-                                throw new NotImplementedException();
-                        }
-                        break;
-                    default:
-                        break;
-                }
+                case HostingType.REST:
+                    if(addEndpoints == null)
+                    {
+                        throw new ArgumentNullException(nameof(addEndpoints));
+                    }
+                    return await CreateHttpHost(uri, addEndpoints);
+                case HostingType.GRPC:
+                    return await (Task<WebApplication>)typeof(HostingService).GetTypeInfo().GetDeclaredMethod("CreateGrpcHost")!.MakeGenericMethod(new[] { T }).Invoke(this, new[] { uri, instance })!;
+                default:
+                    throw new NotImplementedException();
             }
         }
 
-        private static async Task<WebApplication> CreateHttpHost<T>(Uri uri, PackageType packageType, IServiceProvider serviceProvider)
+        public Task<WebApplication> HostService<T>(Uri uri, HostingType hostingType, T instance, Action<WebApplication>? addEndpoints = null) where T : class
+            => HostService(typeof(T), uri, hostingType, instance, addEndpoints);
+
+        // public async Task HostPackageAsync<T>(string[] uris, PackageType packageType, IServiceProvider serviceProvider) where T : class
+        // {
+        //     foreach (var uri in uris)
+        //     {
+        //         var url = new Uri(uri);
+        //         switch (url.Scheme)
+        //         {
+        //             case "rest":
+        //                 _hosts.Add(await CreateHttpHost<T>(url, packageType, serviceProvider));
+        //                 break;
+        //             case "grpc":
+        //                 switch(packageType) {
+        //                     case PackageType.Queue:
+        //                         _hosts.Add(await CreateGrpcHost(url, serviceProvider.GetRequiredService<IPOS>()));
+        //                         break;
+        //                     case PackageType.SCU:
+        //                         _hosts.Add(await CreateGrpcHost(url, serviceProvider.GetRequiredService<IDESSCD>()));
+        //                         break;
+        //                     default:
+        //                         throw new NotImplementedException();
+        //                 }
+        //                 break;
+        //             default:
+        //                 break;
+        //         }
+        //     }
+        // }
+
+        private static async Task<WebApplication> CreateHttpHost(Uri uri, Action<WebApplication> addEndpoints)
         {
             var builder = WebApplication.CreateBuilder();
             builder.Logging.AddConsole();
@@ -50,17 +71,7 @@ namespace fiskaltrust.Launcher.Services
             app.UsePathBase(url.AbsolutePath);
             app.Urls.Add(url.GetLeftPart(UriPartial.Authority));
 
-            switch (packageType)
-            {
-                case PackageType.Queue:
-                    app.AddQueueEndpoints(serviceProvider.GetRequiredService<IPOS>());
-                    break;
-                case PackageType.SCU:
-                    app.AddScuEndpoints(serviceProvider.GetRequiredService<IDESSCD>());
-                    break;
-                default:
-                    break;
-            }
+            addEndpoints(app);
 
             await app.StartAsync();
             Console.WriteLine($"Started HTTP service on {url}");
@@ -72,16 +83,9 @@ namespace fiskaltrust.Launcher.Services
         {
             var builder = WebApplication.CreateBuilder();
 
-            //builder.Host.ConfigureWebHostDefaults(webBuilder =>
-            //{
-            //    webBuilder.UseUrls(url);
-            //    // TODO this will fail on macOS: https://docs.microsoft.com/en-us/aspnet/core/grpc/troubleshoot?view=aspnetcore-5.0#unable-to-start-aspnet-core-grpc-app-on-macos
-            //    //var isGrpcSslSupported = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) || (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.OSVersion.Version <= new Version(6, 1));
-            //});
-
             builder.WebHost.ConfigureKestrel(options =>
             {
-                if (uri.IsLoopback)
+                if (uri.IsLoopback && uri.Port != 0)
                 {
                     options.ListenLocalhost(uri.Port, listenOptions =>
                     {
@@ -107,6 +111,7 @@ namespace fiskaltrust.Launcher.Services
             builder.Services.AddSingleton(instance);
 
             var app = builder.Build();
+
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<T>());
             await app.StartAsync();

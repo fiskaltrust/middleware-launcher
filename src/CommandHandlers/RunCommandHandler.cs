@@ -2,10 +2,13 @@ using System.CommandLine.Invocation;
 using System.Text.Json;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
+using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.ProcessHost;
 using fiskaltrust.Launcher.Services;
 using fiskaltrust.storage.serialization.V0;
 using Grpc.Core;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Http.Features;
 using ProtoBuf.Grpc.Server;
 
 namespace fiskaltrust.Launcher.CommandHandlers
@@ -17,7 +20,7 @@ namespace fiskaltrust.Launcher.CommandHandlers
             return CommandHandler.Create(Handle);
         }
 
-        private static async Task Handle(LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile, string cashboxConfigurationFile, CancellationToken cancellationToken)
+        private static async Task Handle(HostingService hosting, LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile, string cashboxConfigurationFile, CancellationToken cancellationToken)
         {
             var cashboxLauncherConfiguration = JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(cashboxConfigurationFile, cancellationToken))?.LauncherConfiguration;
             var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(launcherConfigurationFile, cancellationToken)) ?? new LauncherConfiguration();
@@ -28,15 +31,16 @@ namespace fiskaltrust.Launcher.CommandHandlers
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(cashboxConfigurationFile, cancellationToken)) ?? throw new Exception("Empty Configuration File");
 
             var hosts = new Dictionary<Guid, ProcessHostMonarch>();
+            var server = await hosting.HostService<IProcessHostService>(new Uri($"http://[::1]:{launcherConfiguration.LauncherPort ?? 0}"), HostingType.GRPC, new ProcessHostService(hosts));
 
-            var server = new Server
-            {
-                Ports = { new ServerPort("localhost", launcherConfiguration.LauncherPort ?? 0, ServerCredentials.Insecure) }
-            };
-            server.Services.AddCodeFirst(new ProcessHostService(hosts));
-            server.Start();
+            var uri = new Uri(server.Urls.First());
+            // var server = new Server
+            // {
+            //     Ports = { new ServerPort("localhost", launcherConfiguration.LauncherPort ?? 0, ServerCredentials.Insecure) }
+            // };
+            // server.Services.AddCodeFirst(new ProcessHostService(hosts));
+            // server.Start();
 
-            var uri = new Uri($"http://{server.Ports.First().Host}:{server.Ports.First().BoundPort}");
 
             // foreach (var helper in cashboxConfiguration.helpers)
             // {

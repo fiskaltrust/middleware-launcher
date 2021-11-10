@@ -1,8 +1,9 @@
 using System.Reflection;
-using fiskaltrust.ifPOS.v0;
+using fiskaltrust.ifPOS.v1;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.Launcher.AssemblyLoading;
 using fiskaltrust.Launcher.Constants;
+using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.Services;
 using fiskaltrust.Middleware.Abstractions;
@@ -25,13 +26,16 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly IProcessHostService? _processHostService;
         private readonly IMiddlewareBootstrapper _bootstrapper;
         private readonly ServiceCollection _services;
+        private readonly HostingService _hosting;
         private readonly PackageType _packageType;
 
-        public ProcessHostPlebian(Uri? monarchUri, Guid id, PackageConfiguration configuration, PackageType packageType)
+        public ProcessHostPlebian(HostingService hosting, Uri? monarchUri, Guid id, PackageConfiguration configuration, PackageType packageType)
         {
             _id = id;
             _configuration = configuration;
+            _hosting = hosting;
             _packageType = packageType;
+
             if (monarchUri != null)
             {
                 var channel = GrpcChannel.ForAddress(monarchUri);
@@ -48,7 +52,6 @@ namespace fiskaltrust.Launcher.ProcessHost
                     .CreateLogger();
                 builder.AddSerilog(logger, dispose: true);
             });
-            _services.AddSingleton<HostingService>();
 
 
             _bootstrapper = LoadPlugin(configuration.Package);
@@ -92,14 +95,27 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private async Task StartHosting(string[] uris)
         {
-            var sp = _services.BuildServiceProvider();
-            switch(_packageType) {
-                case PackageType.Queue:
-                    await sp.GetRequiredService<HostingService>().HostPackageAsync<IPOS>(uris, _packageType, sp);
-                    break;
-                case PackageType.SCU:
-                    await sp.GetRequiredService<HostingService>().HostPackageAsync<IDESSCD>(uris, _packageType, sp);
-                    break;
+            foreach (var uri in uris)
+            {
+                var url = new Uri(uri);
+
+                (object instance, Type type) = _packageType switch {
+                    PackageType.Queue => ((object)_services.BuildServiceProvider().GetRequiredService<IPOS>(), typeof(IPOS)),
+                    PackageType.SCU => ((object)_services.BuildServiceProvider().GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
+                    _ => throw new NotImplementedException()
+                };
+
+                var hostingType = Enum.Parse<HostingType>(url.Scheme.ToUpper());
+                
+                Action<WebApplication>? addEndpoints = hostingType switch {
+                    HostingType.REST => _packageType switch {
+                        PackageType.Queue => (WebApplication app) => app.AddQueueEndpoints((IPOS)instance),
+                        PackageType.SCU => (WebApplication app) => app.AddScuEndpoints((IDESSCD)instance),
+                        _ => throw new NotImplementedException()
+                    },
+                    _ => null
+                };
+                await _hosting.HostService(type, url, hostingType, instance, addEndpoints);
             }
         }
 

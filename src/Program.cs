@@ -5,6 +5,7 @@ using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.CommandHandlers;
 using Serilog;
 using System.CommandLine.Hosting;
+using fiskaltrust.Launcher.Services;
 
 var command = new RootCommand { };
 
@@ -31,15 +32,20 @@ host.Handler = HostCommandHandlerFactory.Create();
 
 var parser = new CommandLineBuilder(command)
     .UseDefaults()
-    .UseHost(host => host.ConfigureLogging(builder =>
-        {
-            var logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.Console()
-                .WriteTo.File("log.txt", rollingInterval: RollingInterval.Day, shared: true)
-                .CreateLogger();
-            builder.AddSerilog(logger, dispose: true);
-        }))
+    .UseHost(host => host
+      .ConfigureLogging(builder =>
+      {
+          var logger = new LoggerConfiguration()
+              .MinimumLevel.Debug()
+              .WriteTo.Console()
+              .WriteTo.File("log.txt", rollingInterval: RollingInterval.Day, shared: true)
+              .CreateLogger();
+          builder.AddSerilog(logger, dispose: true);
+      })
+      .ConfigureServices(services =>
+      {
+          services.AddSingleton<HostingService>();
+      }))
     .Build();
 
 await parser.InvokeAsync(args);
