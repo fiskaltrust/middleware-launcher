@@ -5,9 +5,20 @@ trigger:
     - master
     - refs/tags/*
 
+variables:
+  branch: $(Build.SourceBranch)
 
 stages:
-  - template: templates/test.yml
+  - template: templates/stages/test.yml
+    parameters:
+      ${{ if startsWith(variables.branch, 'refs/tags/v')}}:
+        config: release
+      ${{ else }}:
+        config: debug
 
-  - template: templates/deploy.yml
+  - template: templates/stages/deploy.yml
+      ${{ if startsWith(variables.branch, 'refs/tags/v')}}:
+        config: release
+      ${{ else }}:
+        config: debug
 

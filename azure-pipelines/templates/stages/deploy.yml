@@ -1,7 +1,7 @@
 parameters:
-- name: branch
+- name: config
   type: string
-  default: $(Build.SourceBranch)
+  default: debug
 
 stages:
 - stage: Deploy
@@ -24,24 +24,12 @@ stages:
     pool:
       vmImage: $(vmImage)
     steps:
-    - task: yavt@1
-      inputs:
-        pathToVersionJson: version.json
-        semverVersion: v1 # still needed?
+    - template: ../restore.yml
 
-    - task: UseDotNet@2
-      inputs:
-        version: 6.0.x
+    # - pwsh: dotnet build -c ${{ parameters.config }}
+    #   displayName: Build
 
-    - task: NuGetAuthenticate@0
-
-    - pwsh: dotnet restore
-      displayName: Restore
-
-    - pwsh: dotnet build -c release
-      displayName: Build
-
-    - pwsh: dotnet publish -c release -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true
+    - pwsh: dotnet publish -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true
       displayName: Publish
 
     - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
