@@ -1,0 +1,30 @@
+stages:
+- stage: Test
+  pool:
+    vmImage: windows-latest
+  jobs:
+  - job: Test
+    steps:
+    - task: yavt@1
+      inputs:
+        pathToVersionJson: version.json
+        semverVersion: v1 # still needed?
+
+    - task: UseDotNet@2
+      inputs:
+        version: '6.0.x'
+
+    - task: DotNetCoreCLI@2
+      displayName: ${{ variables.Build.SourceBranch }}
+      inputs:
+        command: restore
+        ${{ if startsWith(variables.Build.SourceBranch, 'refs/tags/v') }}: 
+          vstsFeed: release
+        ${{ else }}:
+          vstsFeed: dev
+
+    - task: DotNetCoreCLI@2
+      displayName: Test
+      inputs:
+        command: build
+        arguments: --configuration release
