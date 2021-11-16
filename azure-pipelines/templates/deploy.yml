@@ -41,7 +41,7 @@ stages:
     - pwsh: dotnet build -c release
       displayName: Build
 
-    - pwsh: dotnet build -c release -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0
+    - pwsh: dotnet publish -c release -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0
       displayName: Publish
 
     - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
