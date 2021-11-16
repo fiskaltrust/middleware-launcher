@@ -1,3 +1,11 @@
+parameters:
+- name: reason
+  type: string
+  values:
+  - pr
+  - release
+  - main
+
 pool:
   vmImage: windows-latest
 
@@ -9,9 +17,17 @@ jobs:
       pathToVersionJson: version.json
       semverVersion: v1 # still needed?
 
+  - task: UseDotNet@2
+    inputs:
+      version: '6.0.x'
+
   - task: DotNetCoreCLI@2
     inputs:
       command: restore
+      ${{ if eq(parameters.reason, 'release') }}: 
+        vstsFeed: release
+      ${{ else }}:
+        vstsFeed: dev
 
   - task: DotNetCoreCLI@2
     inputs:
