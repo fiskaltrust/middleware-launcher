@@ -20,8 +20,6 @@ stages:
         version: 6.0.x
 
     - task: NuGetAuthenticate@0
-      inputs:
-        nuGetServiceConnections: release-feed
 
     - pwsh: dotnet restore
       displayName: Restore
