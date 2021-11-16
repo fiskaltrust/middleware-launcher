@@ -15,7 +15,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         public ProcessHostMonarch(Uri monarchUri, Guid id, PackageConfiguration configuration, PackageType packageType)
         {
-            var executable = System.Reflection.Assembly.GetEntryAssembly()?.Location ?? throw new Exception("Could not find launcher .exe");
+            var executable = Environment.ProcessPath ?? throw new Exception("Could not find launcher .exe");
             if(executable.EndsWith(".dll")) {
                 executable = $"{executable[0..(executable.Length - 4)]}.exe";
             }
