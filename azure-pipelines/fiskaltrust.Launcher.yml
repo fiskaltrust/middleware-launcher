@@ -17,6 +17,7 @@ stages:
         config: debug
 
   - template: templates/stages/deploy.yml
+    parameters:
       ${{ if startsWith(variables.branch, 'refs/tags/v')}}:
         config: release
       ${{ else }}:
