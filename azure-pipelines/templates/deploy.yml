@@ -52,4 +52,4 @@ stages:
         modifyOutputPath: true
     
     - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
-      artifact: drop
+      artifact: drop-$(target)
