@@ -15,6 +15,7 @@ stages:
         version: '6.0.x'
 
     - task: DotNetCoreCLI@2
+      displayName: ${{ variables.Build.SourceBranch }}
       inputs:
         command: restore
         ${{ if startsWith(variables.Build.SourceBranch, 'refs/tags/v') }}: 
@@ -23,5 +24,18 @@ stages:
           vstsFeed: dev
 
     - task: DotNetCoreCLI@2
+      displayName: Build
       inputs:
         command: build
+        arguments: --configuration release
+
+    - task: DotNetCoreCLI@2
+      displayName: Publish
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        arguments: '-o $(Build.ArtifactStagingDirectory)/drop'
+        modifyOutputPath: true
+    
+    - publish: $(Build.ArtifactStagingDirectory)/drop
+      artifact: drop
