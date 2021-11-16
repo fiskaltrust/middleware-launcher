@@ -41,14 +41,14 @@ stages:
       displayName: Build
       inputs:
         command: build
-        arguments: --configuration release
+        arguments: -c release
 
     - task: DotNetCoreCLI@2
       displayName: Publish
       inputs:
         command: publish
         publishWebProjects: false
-        arguments: -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target)
+        arguments: -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0
         modifyOutputPath: true
     
     - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)

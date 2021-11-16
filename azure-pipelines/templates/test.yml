@@ -27,4 +27,4 @@ stages:
       displayName: Test
       inputs:
         command: build
-        arguments: --configuration release
+        arguments: -c release
