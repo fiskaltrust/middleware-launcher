@@ -3,19 +3,19 @@ stages:
   jobs:
   - job: Deploy
     strategy:
-    matrix:
-      win-x64:
-        vmImage: 'windows-latest'
-        target: win-x64
-      win-x86:
-        vmImage: 'windows-latest'
-        target: win-x86
-      linux-x64:
-        vmImage: 'ubuntu-latest'
-        target: linux-x64
-      osx-x64:
-        vmImage: 'macos-latest'
-        target: osx-x64
+      matrix:
+        win-x64:
+          vmImage: windows-latest
+          target: win-x64
+        win-x86:
+          vmImage: windows-latest
+          target: win-x86
+        linux-x64:
+          vmImage: ubuntu-latest
+          target: linux-x64
+        osx-x64:
+          vmImage: macos-latest
+          target: osx-x64
     pool:
       vmImage: $(vmImage)
     steps:
@@ -26,7 +26,7 @@ stages:
 
     - task: UseDotNet@2
       inputs:
-        version: '6.0.x'
+        version: 6.0.x
 
     - task: DotNetCoreCLI@2
       displayName: ${{ variables.Build.SourceBranch }}
@@ -46,9 +46,9 @@ stages:
     - task: DotNetCoreCLI@2
       displayName: Publish
       inputs:
-        command: 'publish'
+        command: publish
         publishWebProjects: false
-        arguments: '-o $(Build.ArtifactStagingDirectory)/drop-$(target)'
+        arguments: -o $(Build.ArtifactStagingDirectory)/drop-$(target)
         modifyOutputPath: true
     
     - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
