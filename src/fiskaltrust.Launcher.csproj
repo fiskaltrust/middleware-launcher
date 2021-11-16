@@ -5,6 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishSingleFile>true</PublishSingleFile>
     <!-- <PublishTrimmed>true</PublishTrimmed> -->
     <Nullable>enable</Nullable>
   </PropertyGroup>
