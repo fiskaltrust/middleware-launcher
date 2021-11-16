@@ -1,3 +1,8 @@
+parameters:
+- name: config
+  type: string
+  default: debug
+
 steps:
 - task: yavt@1
   inputs:
@@ -10,5 +15,5 @@ steps:
 
 - task: NuGetAuthenticate@0
 
-- pwsh: dotnet restore
+- pwsh: dotnet restore -c -c ${{ parameters.config }}
   displayName: Restore
