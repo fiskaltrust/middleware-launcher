@@ -9,5 +9,5 @@ trigger:
 stages:
   - template: templates/test.yml
 
-  # - template: templates/deploy.yml
+  - template: templates/deploy.yml
 
