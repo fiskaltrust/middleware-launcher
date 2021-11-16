@@ -19,17 +19,12 @@ stages:
       inputs:
         version: 6.0.x
 
-    - task: DotNetCoreCLI@2
-      displayName: ${{ parameters.branch }}
+    - task: NuGetAuthenticate@0
       inputs:
-        command: restore
-        ${{ if startsWith(parameters.branch, 'refs/tags/v') }}: 
-          vstsFeed: release
-        ${{ else }}:
-          vstsFeed: dev
+        nuGetServiceConnections: release-feed
 
-    - task: DotNetCoreCLI@2
+    - pwsh: dotnet restore
+      displayName: Restore
+
+    - pwsh: dotnet build -c release
       displayName: Test
-      inputs:
-        command: build
-        arguments: -c release
