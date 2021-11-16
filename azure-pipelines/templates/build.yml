@@ -6,11 +6,10 @@ parameters:
   - release
   - main
 
-pool:
-  vmImage: windows-latest
-
 jobs:
 - job: Build
+  pool:
+    vmImage: windows-latest
   steps:
   - task: yavt@1
     inputs:
