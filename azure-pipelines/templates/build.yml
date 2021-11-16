@@ -6,28 +6,30 @@ parameters:
   - release
   - main
 
-jobs:
-- job: Build
+stages:
+- stage: Build
   pool:
     vmImage: windows-latest
-  steps:
-  - task: yavt@1
-    inputs:
-      pathToVersionJson: version.json
-      semverVersion: v1 # still needed?
+  jobs:
+  - job: Build
+    steps:
+    - task: yavt@1
+      inputs:
+        pathToVersionJson: version.json
+        semverVersion: v1 # still needed?
 
-  - task: UseDotNet@2
-    inputs:
-      version: '6.0.x'
+    - task: UseDotNet@2
+      inputs:
+        version: '6.0.x'
 
-  - task: DotNetCoreCLI@2
-    inputs:
-      command: restore
-      ${{ if eq(parameters.reason, 'release') }}: 
-        vstsFeed: release
-      ${{ else }}:
-        vstsFeed: dev
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: restore
+        ${{ if eq(parameters.reason, 'release') }}: 
+          vstsFeed: release
+        ${{ else }}:
+          vstsFeed: dev
 
-  - task: DotNetCoreCLI@2
-    inputs:
-      command: build
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: build
