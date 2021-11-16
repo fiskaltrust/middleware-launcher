@@ -1,11 +1,3 @@
-parameters:
-- name: reason
-  type: string
-  values:
-  - pr
-  - release
-  - main
-
 stages:
 - stage: Build
   pool:
@@ -25,7 +17,7 @@ stages:
     - task: DotNetCoreCLI@2
       inputs:
         command: restore
-        ${{ if eq(parameters.reason, 'release') }}: 
+        ${{ if startsWith(variables.Build.SourceBranch, 'refs/tags/v') }}: 
           vstsFeed: release
         ${{ else }}:
           vstsFeed: dev

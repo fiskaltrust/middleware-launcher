@@ -8,7 +8,6 @@ trigger:
 
 stages:
   - template: templates/build.yml
-
   - template: templates/test.yml
 
   - template: templates/deploy.yml
