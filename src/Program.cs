@@ -13,6 +13,7 @@ var run = new Command("run") {
   new Option<string?>("--cashbox-id", getDefaultValue: () => null),
   new Option<string?>("--access-token", getDefaultValue: () => null),
   new Option<int?>("--launcher-port", getDefaultValue: () => null),
+  new Option<string?>("--service-folder", getDefaultValue: () => Paths.ServiceFolder),
   new Option<string>("--launcher-configuration-file", getDefaultValue: () => "configuration.json"),
   new Option<string>("--cashbox-configuration-file", getDefaultValue: () => "configuration.json"),
 };
@@ -23,6 +24,7 @@ var host = new Command("host") {
   new Option<string>("--package-config"),
   new Option<Uri?>("--monarch-uri"),
   new Option<PackageType>("--package-type"),
+  new Option<string>("--launcher-config"),
 };
 command.Add(host);
 

@@ -51,7 +51,7 @@ namespace fiskaltrust.Launcher.CommandHandlers
             foreach (var scu in cashboxConfiguration.ftSignaturCreationDevices)
             {
 
-                var host = new ProcessHostMonarch(uri, scu.Id, scu, PackageType.SCU);
+                var host = new ProcessHostMonarch(uri, scu.Id, launcherConfiguration, scu, PackageType.SCU);
                 hosts.Add(scu.Id, host);
                 await host.Start(cancellationToken);
             }

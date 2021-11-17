@@ -12,6 +12,9 @@ namespace fiskaltrust.Launcher.Configuration
 
         [JsonPropertyName("launcherPort")]
         public int? LauncherPort { get; set; }
+
+        [JsonPropertyName("serviceFolder")]
+        public string? ServiceFolder { get; set; }
     }
 
     public record LauncherConfigurationInCashBoxConfiguration

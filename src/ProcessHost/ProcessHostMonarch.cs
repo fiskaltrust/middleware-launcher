@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.storage.serialization.V0;
 
@@ -13,17 +14,16 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly TaskCompletionSource _started;
         private readonly TaskCompletionSource _stopped;
 
-        public ProcessHostMonarch(Uri monarchUri, Guid id, PackageConfiguration configuration, PackageType packageType)
+        public ProcessHostMonarch(Uri monarchUri, Guid id, LauncherConfiguration launcherConfiguration, PackageConfiguration configuration, PackageType packageType)
         {
+
             var executable = Environment.ProcessPath ?? throw new Exception("Could not find launcher .exe");
-            if(executable.EndsWith(".dll")) {
-                executable = $"{executable[0..(executable.Length - 4)]}.exe";
-            }
+
             _process = new Process();
             _process.StartInfo.UseShellExecute = false;
             _process.StartInfo.FileName = executable;
             _process.StartInfo.CreateNoWindow = false;
-            _process.StartInfo.Arguments = $"host --id \"{id}\" --package-type {packageType} --package-config \"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(configuration)))}\" --monarch-uri \"{monarchUri}\"";
+            _process.StartInfo.Arguments = $"host --id \"{id}\" --package-type {packageType} --launcher-config \"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\" --package-config \"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(configuration)))}\" --monarch-uri \"{monarchUri}\"";
             _process.StartInfo.RedirectStandardError = true;
             _process.StartInfo.RedirectStandardOutput = true;
             _process.EnableRaisingEvents = true;

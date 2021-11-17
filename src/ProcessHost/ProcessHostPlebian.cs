@@ -2,6 +2,7 @@ using System.Reflection;
 using fiskaltrust.ifPOS.v1;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.Launcher.AssemblyLoading;
+using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Interfaces;
@@ -29,7 +30,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly HostingService _hosting;
         private readonly PackageType _packageType;
 
-        public ProcessHostPlebian(HostingService hosting, Uri? monarchUri, Guid id, PackageConfiguration configuration, PackageType packageType)
+        public ProcessHostPlebian(HostingService hosting, Uri? monarchUri, Guid id, LauncherConfiguration launcherConfiguration, PackageConfiguration configuration, PackageType packageType)
         {
             _id = id;
             _configuration = configuration;
@@ -54,7 +55,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             });
 
 
-            _bootstrapper = LoadPlugin(configuration.Package);
+            _bootstrapper = PluginLoader.LoadPlugin<IMiddlewareBootstrapper>(launcherConfiguration.ServiceFolder!, configuration.Package);
             _bootstrapper.Id = configuration.Id;
             _bootstrapper.Configuration = configuration.Configuration.ToDictionary(x => x.Key, x => (object?)x.Value.ToString());
             _bootstrapper.ConfigureServices(_services);
@@ -117,17 +118,6 @@ namespace fiskaltrust.Launcher.ProcessHost
                 };
                 await _hosting.HostService(type, url, hostingType, instance, addEndpoints);
             }
-        }
-
-        private static IMiddlewareBootstrapper LoadPlugin(string name)
-        {
-            string pluginLocation = Path.GetFullPath(Path.Combine("./tmp/Packages/", name, $"{name}.dll"));
-
-            var loadContext = new ComponentLoadContext(pluginLocation);
-            var assembly = loadContext.LoadFromAssemblyName(new AssemblyName(Path.GetFileNameWithoutExtension(pluginLocation)));
-
-            var type = assembly.GetTypes().FirstOrDefault(t => typeof(IMiddlewareBootstrapper).IsAssignableFrom(t)) ?? throw new Exception($"cloud not find {name} assembly");
-            return (IMiddlewareBootstrapper)(Activator.CreateInstance(type) ?? throw new Exception("could not create Bootstrapper instance"));
         }
     }
 }
