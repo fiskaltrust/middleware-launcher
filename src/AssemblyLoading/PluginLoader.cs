@@ -1,8 +1,4 @@
-using System;
 using System.Reflection;
-using System.Runtime.Loader;
-using fiskaltrust.Launcher.Configuration;
-using fiskaltrust.Launcher.Constants;
 
 namespace fiskaltrust.Launcher.AssemblyLoading
 {

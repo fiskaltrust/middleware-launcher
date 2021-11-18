@@ -1,7 +1,5 @@
 
-using System.Runtime.Serialization;
 using System.ServiceModel;
-using Microsoft.Extensions.Logging;
 
 namespace fiskaltrust.Launcher.Interfaces
 {

@@ -9,12 +9,8 @@ using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.Services;
 using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.storage.serialization.V0;
-using Grpc.Core;
 using Grpc.Net.Client;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using ProtoBuf.Grpc.Client;
-using ProtoBuf.Grpc.Server;
 using Serilog;
 
 namespace fiskaltrust.Launcher.ProcessHost
@@ -29,9 +25,11 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly ServiceCollection _services;
         private readonly HostingService _hosting;
         private readonly PackageType _packageType;
+        private readonly Microsoft.Extensions.Logging.ILogger _logger;
 
-        public ProcessHostPlebian(HostingService hosting, Uri? monarchUri, Guid id, LauncherConfiguration launcherConfiguration, PackageConfiguration configuration, PackageType packageType)
+        public ProcessHostPlebian(Microsoft.Extensions.Logging.ILogger logger, HostingService hosting, Uri? monarchUri, Guid id, LauncherConfiguration launcherConfiguration, PackageConfiguration configuration, PackageType packageType)
         {
+            _logger = logger;
             _id = id;
             _configuration = configuration;
             _hosting = hosting;
@@ -96,6 +94,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private async Task StartHosting(string[] uris)
         {
+            var hostingFailedCompletely = true;
             foreach (var uri in uris)
             {
                 var url = new Uri(uri);
@@ -116,7 +115,16 @@ namespace fiskaltrust.Launcher.ProcessHost
                     },
                     _ => null
                 };
-                await _hosting.HostService(type, url, hostingType, instance, addEndpoints);
+                try {
+                    await _hosting.HostService(type, url, hostingType, instance, addEndpoints);
+                    hostingFailedCompletely = false;
+                } catch(Exception e) {
+                    _logger.LogError("Could not start {} hosting. {}, {}", url, e.Message, e.HelpLink);
+                }
+            }
+
+            if(hostingFailedCompletely) {
+                throw new Exception("No host could be started.");
             }
         }
     }

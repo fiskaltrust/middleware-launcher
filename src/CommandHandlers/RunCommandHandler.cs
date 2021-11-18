@@ -6,10 +6,6 @@ using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.ProcessHost;
 using fiskaltrust.Launcher.Services;
 using fiskaltrust.storage.serialization.V0;
-using Grpc.Core;
-using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.AspNetCore.Http.Features;
-using ProtoBuf.Grpc.Server;
 
 namespace fiskaltrust.Launcher.CommandHandlers
 {
@@ -20,7 +16,7 @@ namespace fiskaltrust.Launcher.CommandHandlers
             return CommandHandler.Create(Handle);
         }
 
-        private static async Task Handle(HostingService hosting, LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile, string cashboxConfigurationFile, CancellationToken cancellationToken)
+        private static async Task Handle(ILogger logger, HostingService hosting, LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile, string cashboxConfigurationFile, CancellationToken cancellationToken)
         {
             var cashboxLauncherConfiguration = JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(cashboxConfigurationFile, cancellationToken))?.LauncherConfiguration;
             var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(launcherConfigurationFile, cancellationToken)) ?? new LauncherConfiguration();
@@ -44,20 +40,20 @@ namespace fiskaltrust.Launcher.CommandHandlers
 
             // foreach (var helper in cashboxConfiguration.helpers)
             // {
-            //     var host = new ProcessHostMonarch(uri, helper.Id, helper, PackageType.Helper);
+            //     var host = new ProcessHostMonarch(logger, uri, helper.Id, helper, PackageType.Helper);
             //     hosts.Add(helper.Id, host);
             //     await host.Start(cancellationToken);
             // }
             foreach (var scu in cashboxConfiguration.ftSignaturCreationDevices)
             {
 
-                var host = new ProcessHostMonarch(uri, scu.Id, launcherConfiguration, scu, PackageType.SCU);
+                var host = new ProcessHostMonarch(logger, uri, scu.Id, launcherConfiguration, scu, PackageType.SCU);
                 hosts.Add(scu.Id, host);
                 await host.Start(cancellationToken);
             }
             // foreach (var queue in cashboxConfiguration.ftQueues)
             // {
-            //     var host = new ProcessHostMonarch(uri, queue.Id, queue, PackageType.Queue);
+            //     var host = new ProcessHostMonarch(logger, uri, queue.Id, queue, PackageType.Queue);
             //     hosts.Add(queue.Id, host);
             //     await host.Start(cancellationToken);
             // }

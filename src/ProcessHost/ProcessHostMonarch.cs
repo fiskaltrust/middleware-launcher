@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.storage.serialization.V0;
@@ -13,10 +12,12 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly Process _process;
         private readonly TaskCompletionSource _started;
         private readonly TaskCompletionSource _stopped;
+        private readonly ILogger _logger;
 
-        public ProcessHostMonarch(Uri monarchUri, Guid id, LauncherConfiguration launcherConfiguration, PackageConfiguration configuration, PackageType packageType)
+        public ProcessHostMonarch(ILogger logger, Uri monarchUri, Guid id, LauncherConfiguration launcherConfiguration, PackageConfiguration configuration, PackageType packageType)
         {
-
+            _logger = logger;
+            
             var executable = Environment.ProcessPath ?? throw new Exception("Could not find launcher .exe");
 
             _process = new Process();

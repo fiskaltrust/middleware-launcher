@@ -1,7 +1,4 @@
-﻿using fiskaltrust.ifPOS.v1;
-using fiskaltrust.ifPOS.v1.de;
-using fiskaltrust.Launcher.Constants;
-using fiskaltrust.Launcher.Extensions;
+﻿using fiskaltrust.Launcher.Constants;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using ProtoBuf.Grpc.Server;
 using System.Net;
@@ -32,34 +29,6 @@ namespace fiskaltrust.Launcher.Services
 
         public Task<WebApplication> HostService<T>(Uri uri, HostingType hostingType, T instance, Action<WebApplication>? addEndpoints = null) where T : class
             => HostService(typeof(T), uri, hostingType, instance, addEndpoints);
-
-        // public async Task HostPackageAsync<T>(string[] uris, PackageType packageType, IServiceProvider serviceProvider) where T : class
-        // {
-        //     foreach (var uri in uris)
-        //     {
-        //         var url = new Uri(uri);
-        //         switch (url.Scheme)
-        //         {
-        //             case "rest":
-        //                 _hosts.Add(await CreateHttpHost<T>(url, packageType, serviceProvider));
-        //                 break;
-        //             case "grpc":
-        //                 switch(packageType) {
-        //                     case PackageType.Queue:
-        //                         _hosts.Add(await CreateGrpcHost(url, serviceProvider.GetRequiredService<IPOS>()));
-        //                         break;
-        //                     case PackageType.SCU:
-        //                         _hosts.Add(await CreateGrpcHost(url, serviceProvider.GetRequiredService<IDESSCD>()));
-        //                         break;
-        //                     default:
-        //                         throw new NotImplementedException();
-        //                 }
-        //                 break;
-        //             default:
-        //                 break;
-        //         }
-        //     }
-        // }
 
         private static async Task<WebApplication> CreateHttpHost(Uri uri, Action<WebApplication> addEndpoints)
         {

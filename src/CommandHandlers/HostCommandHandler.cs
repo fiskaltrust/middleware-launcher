@@ -1,7 +1,5 @@
 using System.CommandLine.Invocation;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
-using fiskaltrust.Launcher.AssemblyLoading;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.ProcessHost;
@@ -17,9 +15,10 @@ namespace fiskaltrust.Launcher.CommandHandlers
             return CommandHandler.Create(Handle);
         }
 
-        private static async Task Handle(HostingService hosting, Uri? monarchUri, Guid id, string packageConfig, string launcherConfig, PackageType packageType, CancellationToken cancellationToken)
+        private static async Task Handle(ILogger logger, HostingService hosting, Uri? monarchUri, Guid id, string packageConfig, string launcherConfig, PackageType packageType, CancellationToken cancellationToken)
         {
             var host = new ProcessHostPlebian(
+                logger,
                 hosting,
                 monarchUri,
                 id,
