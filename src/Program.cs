@@ -9,20 +9,8 @@ using Serilog;
 using fiskaltrust.Launcher.Extensions;
 
 var command = new RootCommand {
-  new RunCommand(),
-  new HostCommand(),
+  new RunCommand() { Handler = new RunCommandHandler() },
+  new HostCommand() { Handler = new HostCommandHandler() },
 };
 
-await new CommandLineBuilder(command)
-    .UseDefaults()
-    .UseHost(host => host
-      .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration())
-      .UseConsoleLifetime()
-      .ConfigureServices(services =>
-      {
-          services.AddSingleton<HostingService>();
-      })
-      .UseCommandHandler<HostCommand, HostCommandHandler>()
-      .UseCommandHandler<RunCommand, RunCommandHandler>())
-    .Build()
-    .InvokeAsync(args);
+await command.InvokeAsync(args);

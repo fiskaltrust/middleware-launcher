@@ -34,11 +34,9 @@ namespace fiskaltrust.Launcher.Commands
         private readonly HostingService _hosting;
         private readonly CancellationToken _cancellationToken;
 
-        public RunCommandHandler(ILoggerFactory loggerFactory, HostingService hosting, IHostApplicationLifetime appLifetime)
+        public RunCommandHandler()
         {
-            _loggerFactory = loggerFactory;
-            _hosting = hosting;
-            _cancellationToken = appLifetime.ApplicationStopping;
+            // TODO create service collection, host ETC
         }
 
         public async Task<int> InvokeAsync(InvocationContext context)
