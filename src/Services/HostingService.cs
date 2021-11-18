@@ -1,6 +1,10 @@
 ﻿using fiskaltrust.Launcher.Constants;
+using fiskaltrust.Launcher.Extensions;
+using fiskaltrust.Launcher.Middlewares;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.IO;
 using ProtoBuf.Grpc.Server;
+using Serilog;
 using System.Net;
 using System.Reflection;
 
@@ -12,28 +16,37 @@ namespace fiskaltrust.Launcher.Services
 
         public async Task<WebApplication> HostService(Type T, Uri uri, HostingType hostingType, object instance, Action<WebApplication>? addEndpoints = null)
         {
-            switch(hostingType)
+            var builder = WebApplication.CreateBuilder();
+            builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration());
+            
+            WebApplication app;
+            switch (hostingType)
             {
                 case HostingType.REST:
-                    if(addEndpoints == null)
+                    if (addEndpoints == null)
                     {
                         throw new ArgumentNullException(nameof(addEndpoints));
                     }
-                    return await CreateHttpHost(uri, addEndpoints);
+                    app = CreateHttpHost(builder, uri, addEndpoints);
+                    break;
                 case HostingType.GRPC:
-                    return await (Task<WebApplication>)typeof(HostingService).GetTypeInfo().GetDeclaredMethod("CreateGrpcHost")!.MakeGenericMethod(new[] { T }).Invoke(this, new[] { uri, instance })!;
+                    app = (WebApplication)typeof(HostingService).GetTypeInfo().GetDeclaredMethod("CreateGrpcHost")!.MakeGenericMethod(new[] { T }).Invoke(this, new[] { builder, uri, instance })!;
+                    break;
                 default:
                     throw new NotImplementedException();
             }
+
+            app.UseMiddleware<RequestResponseLoggingMiddleware>();
+            await app.StartAsync();
+
+            return app;
         }
 
         public Task<WebApplication> HostService<T>(Uri uri, HostingType hostingType, T instance, Action<WebApplication>? addEndpoints = null) where T : class
             => HostService(typeof(T), uri, hostingType, instance, addEndpoints);
 
-        private static async Task<WebApplication> CreateHttpHost(Uri uri, Action<WebApplication> addEndpoints)
+        private static WebApplication CreateHttpHost(WebApplicationBuilder builder, Uri uri, Action<WebApplication> addEndpoints)
         {
-            var builder = WebApplication.CreateBuilder();
-            builder.Logging.AddConsole();
             var app = builder.Build();
 
             var url = new Uri(uri.ToString().Replace("rest://", "http://"));
@@ -42,16 +55,11 @@ namespace fiskaltrust.Launcher.Services
 
             addEndpoints(app);
 
-            await app.StartAsync();
-            Console.WriteLine($"Started HTTP service on {url}");
-
             return app;
         }
 
-        internal static async Task<WebApplication> CreateGrpcHost<T>(Uri uri, T instance) where T : class
+        internal static WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
-            var builder = WebApplication.CreateBuilder();
-
             builder.WebHost.ConfigureKestrel(options =>
             {
                 if (uri.IsLoopback && uri.Port != 0)
@@ -61,7 +69,7 @@ namespace fiskaltrust.Launcher.Services
                         listenOptions.Protocols = HttpProtocols.Http2;
                     });
                 }
-                else if(IPAddress.TryParse(uri.Host, out var ip))
+                else if (IPAddress.TryParse(uri.Host, out var ip))
                 {
                     options.Listen(new IPEndPoint(ip, uri.Port), listenOptions =>
                     {
@@ -83,7 +91,6 @@ namespace fiskaltrust.Launcher.Services
 
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<T>());
-            await app.StartAsync();
 
             return app;
         }

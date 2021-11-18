@@ -1,0 +1,64 @@
+2021-11-18 14:34:28.720 +01:00 [DBG] Hosting starting
+2021-11-18 14:34:28.767 +01:00 [INF] Application started. Press Ctrl+C to shut down.
+2021-11-18 14:34:28.769 +01:00 [INF] Hosting environment: Production
+2021-11-18 14:34:28.771 +01:00 [INF] Content root path: C:\Users\paul.volavsek\source\middleware-launcher\src\bin\Debug\net6.0\
+2021-11-18 14:34:28.772 +01:00 [DBG] Hosting started
+2021-11-18 14:34:29.201 +01:00 [DBG] Could not find bind method for fiskaltrust.Launcher.Interfaces.IProcessHostService.
+2021-11-18 14:34:29.287 +01:00 [INF] RPC services being provided by fiskaltrust.Launcher.Interfaces.IProcessHostService: 2
+2021-11-18 14:34:29.300 +01:00 [DBG] Hosting starting
+2021-11-18 14:34:29.371 +01:00 [INF] Now listening on: http://[::1]:62578
+2021-11-18 14:34:29.372 +01:00 [DBG] Loaded hosting startup assembly fiskaltrust.Launcher
+2021-11-18 14:34:29.373 +01:00 [INF] Application started. Press Ctrl+C to shut down.
+2021-11-18 14:34:29.374 +01:00 [INF] Hosting environment: Production
+2021-11-18 14:34:29.376 +01:00 [INF] Content root path: C:\Users\paul.volavsek\source\middleware-launcher\
+2021-11-18 14:34:29.377 +01:00 [DBG] Hosting started
+2021-11-18 14:34:29.636 +01:00 [DBG] Hosting starting
+2021-11-18 14:34:29.671 +01:00 [INF] Application started. Press Ctrl+C to shut down.
+2021-11-18 14:34:29.671 +01:00 [INF] Hosting environment: Production
+2021-11-18 14:34:29.672 +01:00 [INF] Content root path: C:\Users\paul.volavsek\source\middleware-launcher\src\bin\Debug\net6.0\
+2021-11-18 14:34:29.672 +01:00 [DBG] Hosting started
+2021-11-18 14:34:30.065 +01:00 [DBG] Hosting starting
+2021-11-18 14:34:30.091 +01:00 [INF] Now listening on: http://localhost:18004
+2021-11-18 14:34:30.091 +01:00 [DBG] Loaded hosting startup assembly fiskaltrust.Launcher
+2021-11-18 14:34:30.091 +01:00 [INF] Application started. Press Ctrl+C to shut down.
+2021-11-18 14:34:30.091 +01:00 [INF] Hosting environment: Production
+2021-11-18 14:34:30.091 +01:00 [INF] Content root path: C:\Users\paul.volavsek\source\middleware-launcher\
+2021-11-18 14:34:30.091 +01:00 [DBG] Hosting started
+2021-11-18 14:34:30.161 +01:00 [DBG] Connection id "0HMDAJ0J2HAMU" accepted.
+2021-11-18 14:34:30.163 +01:00 [DBG] Connection id "0HMDAJ0J2HAMU" started.
+2021-11-18 14:34:30.222 +01:00 [INF] Request starting HTTP/2 POST http://[::1]:62578/fiskaltrust.Launcher.Interfaces.ProcessHostService/Started application/grpc -
+2021-11-18 14:34:30.228 +01:00 [DBG] Wildcard detected, all requests with hosts will be allowed.
+2021-11-18 14:34:30.245 +01:00 [DBG] 3 candidate(s) found for the request path '/fiskaltrust.Launcher.Interfaces.ProcessHostService/Started'
+2021-11-18 14:34:30.251 +01:00 [DBG] Endpoint 'gRPC - /fiskaltrust.Launcher.Interfaces.ProcessHostService/Started' with route pattern '/fiskaltrust.Launcher.Interfaces.ProcessHostService/Started' is valid for the request path '/fiskaltrust.Launcher.Interfaces.ProcessHostService/Started'
+2021-11-18 14:34:30.253 +01:00 [DBG] Endpoint 'gRPC - Unimplemented method for fiskaltrust.Launcher.Interfaces.ProcessHostService' with route pattern 'fiskaltrust.Launcher.Interfaces.ProcessHostService/{unimplementedMethod}' is valid for the request path '/fiskaltrust.Launcher.Interfaces.ProcessHostService/Started'
+2021-11-18 14:34:30.255 +01:00 [DBG] Endpoint 'gRPC - Unimplemented service' with route pattern '{unimplementedService}/{unimplementedMethod}' is valid for the request path '/fiskaltrust.Launcher.Interfaces.ProcessHostService/Started'
+2021-11-18 14:34:30.257 +01:00 [DBG] Request matched endpoint 'gRPC - /fiskaltrust.Launcher.Interfaces.ProcessHostService/Started'
+2021-11-18 14:34:30.264 +01:00 [INF] Executing endpoint 'gRPC - /fiskaltrust.Launcher.Interfaces.ProcessHostService/Started'
+2021-11-18 14:34:30.277 +01:00 [DBG] Reading message.
+2021-11-18 14:34:30.280 +01:00 [DBG] Connection id "0HMDAJ0J2HAMU", Request id "0HMDAJ0J2HAMU:00000001": started reading request body.
+2021-11-18 14:34:30.282 +01:00 [DBG] Connection id "0HMDAJ0J2HAMU", Request id "0HMDAJ0J2HAMU:00000001": done reading request body.
+2021-11-18 14:34:30.324 +01:00 [DBG] Sending message.
+2021-11-18 14:34:30.329 +01:00 [INF] Executed endpoint 'gRPC - /fiskaltrust.Launcher.Interfaces.ProcessHostService/Started'
+2021-11-18 14:34:30.341 +01:00 [INF] Request finished HTTP/2 POST http://[::1]:62578/fiskaltrust.Launcher.Interfaces.ProcessHostService/Started application/grpc - - 200 - application/grpc 120.5851ms
+2021-11-18 14:34:35.657 +01:00 [DBG] Connection id "0HMDAJ0KMVDQD" received FIN.
+2021-11-18 14:34:35.662 +01:00 [DBG] Connection id "0HMDAJ0KMVDQD" accepted.
+2021-11-18 14:34:35.662 +01:00 [DBG] Connection id "0HMDAJ0KMVDQD" started.
+2021-11-18 14:34:35.664 +01:00 [DBG] Connection id "0HMDAJ0KMVDQE" accepted.
+2021-11-18 14:34:35.664 +01:00 [DBG] Connection id "0HMDAJ0KMVDQE" started.
+2021-11-18 14:34:35.674 +01:00 [DBG] Connection id "0HMDAJ0KMVDQD" sending FIN because: "The client closed the connection."
+2021-11-18 14:34:35.680 +01:00 [DBG] Connection id "0HMDAJ0KMVDQD" disconnecting.
+2021-11-18 14:34:35.682 +01:00 [DBG] Connection id "0HMDAJ0KMVDQD" stopped.
+2021-11-18 14:34:35.734 +01:00 [INF] Request starting HTTP/1.1 POST http://localhost:18004/v1/Echo application/json 28
+2021-11-18 14:34:35.741 +01:00 [DBG] Wildcard detected, all requests with hosts will be allowed.
+2021-11-18 14:34:35.811 +01:00 [DBG] 1 candidate(s) found for the request path '/v1/Echo'
+2021-11-18 14:34:35.814 +01:00 [DBG] Request matched endpoint 'HTTP: POST v1/Echo'
+2021-11-18 14:34:35.824 +01:00 [DBG] Connection id "0HMDAJ0KMVDQE", Request id "0HMDAJ0KMVDQE:00000002": started reading request body.
+2021-11-18 14:34:35.824 +01:00 [DBG] Connection id "0HMDAJ0KMVDQE", Request id "0HMDAJ0KMVDQE:00000002": done reading request body.
+2021-11-18 14:34:35.834 +01:00 [DBG] Http Request Information: Schema: http Host: localhost:18004 Path: /v1/Echo QueryString:  Request Body: {
+    "Message": "Hello"
+}
+2021-11-18 14:34:35.836 +01:00 [INF] Executing endpoint 'HTTP: POST v1/Echo'
+2021-11-18 14:34:35.846 +01:00 [INF] Executed endpoint 'HTTP: POST v1/Echo'
+2021-11-18 14:34:35.846 +01:00 [DBG] Http Response Information: Schema: http Host: localhost:18004 Path: /v1/Echo QueryString:  Response Body: {"message":"Hello"}
+2021-11-18 14:34:35.848 +01:00 [DBG] Connection id "0HMDAJ0KMVDQE" completed keep alive response.
+2021-11-18 14:34:35.849 +01:00 [INF] Request finished HTTP/1.1 POST http://localhost:18004/v1/Echo application/json 28 - 200 - application/json;+charset=utf-8 126.1219ms
