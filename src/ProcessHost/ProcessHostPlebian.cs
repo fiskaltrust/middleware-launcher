@@ -16,28 +16,26 @@ using Serilog;
 namespace fiskaltrust.Launcher.ProcessHost
 {
 
-    public class ProcessHostPlebian
+    public class ProcessHostPlebian : BackgroundService
     {
-        private readonly Guid _id;
-        private readonly PackageConfiguration _configuration;
+        private readonly PackageConfiguration _packageConfiguration;
         private readonly IProcessHostService? _processHostService;
         private readonly IMiddlewareBootstrapper _bootstrapper;
         private readonly ServiceCollection _services;
         private readonly HostingService _hosting;
-        private readonly PackageType _packageType;
-        private readonly Microsoft.Extensions.Logging.ILogger _logger;
+        private readonly PlebianConfiguration _plebianConfiguration;
+        private readonly ILogger<ProcessHostPlebian> _logger;
 
-        public ProcessHostPlebian(Microsoft.Extensions.Logging.ILogger logger, HostingService hosting, Uri? monarchUri, Guid id, LauncherConfiguration launcherConfiguration, PackageConfiguration configuration, PackageType packageType)
+        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration)
         {
             _logger = logger;
-            _id = id;
-            _configuration = configuration;
+            _packageConfiguration = packageConfiguration;
             _hosting = hosting;
-            _packageType = packageType;
+            _plebianConfiguration = plebianConfiguration;
 
-            if (monarchUri != null)
+            if (launcherConfiguration.LauncherPort != null && launcherConfiguration.LauncherPort != 0)
             {
-                var channel = GrpcChannel.ForAddress(monarchUri);
+                var channel = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}");
                 _processHostService = channel.CreateGrpcService<IProcessHostService>();
             }
 
@@ -47,23 +45,23 @@ namespace fiskaltrust.Launcher.ProcessHost
                 var logger = new LoggerConfiguration()
                     .MinimumLevel.Debug()
                     .WriteTo.Console()
-                    .WriteTo.File($"log-{configuration.Id}.txt", rollingInterval: RollingInterval.Day, shared: true)
+                    .WriteTo.File($"log-{packageConfiguration.Id}.txt", rollingInterval: RollingInterval.Day, shared: true)
                     .CreateLogger();
                 builder.AddSerilog(logger, dispose: true);
             });
 
 
-            _bootstrapper = PluginLoader.LoadPlugin<IMiddlewareBootstrapper>(launcherConfiguration.ServiceFolder!, configuration.Package);
-            _bootstrapper.Id = configuration.Id;
-            _bootstrapper.Configuration = configuration.Configuration.ToDictionary(x => x.Key, x => (object?)x.Value.ToString());
+            _bootstrapper = PluginLoader.LoadPlugin<IMiddlewareBootstrapper>(launcherConfiguration.ServiceFolder!, packageConfiguration.Package);
+            _bootstrapper.Id = packageConfiguration.Id;
+            _bootstrapper.Configuration = packageConfiguration.Configuration.ToDictionary(x => x.Key, x => (object?)x.Value.ToString());
             _bootstrapper.ConfigureServices(_services);
         }
 
-        public async Task Run(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            await StartHosting(_configuration.Url);
+            await StartHosting(_packageConfiguration.Url);
 
-            await (_processHostService?.Started(_id.ToString()) ?? Task.CompletedTask);
+            await (_processHostService?.Started(_packageConfiguration.Id.ToString()) ?? Task.CompletedTask);
 
             var promise = new TaskCompletionSource();
             cancellationToken.Register(() =>
@@ -99,7 +97,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 var url = new Uri(uri);
 
-                (object instance, Type type) = _packageType switch {
+                (object instance, Type type) = _plebianConfiguration.PackageType switch {
                     PackageType.Queue => ((object)_services.BuildServiceProvider().GetRequiredService<IPOS>(), typeof(IPOS)),
                     PackageType.SCU => ((object)_services.BuildServiceProvider().GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
                     _ => throw new NotImplementedException()
@@ -108,7 +106,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 var hostingType = Enum.Parse<HostingType>(url.Scheme.ToUpper());
                 
                 Action<WebApplication>? addEndpoints = hostingType switch {
-                    HostingType.REST => _packageType switch {
+                    HostingType.REST => _plebianConfiguration.PackageType switch {
                         PackageType.Queue => (WebApplication app) => app.AddQueueEndpoints((IPOS)instance),
                         PackageType.SCU => (WebApplication app) => app.AddScuEndpoints((IDESSCD)instance),
                         _ => throw new NotImplementedException()

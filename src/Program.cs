@@ -1,16 +1,11 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
-using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Commands;
-using System.CommandLine.Hosting;
-using fiskaltrust.Launcher.Services;
-using Serilog;
-using fiskaltrust.Launcher.Extensions;
+using System.CommandLine.Invocation;
 
 var command = new RootCommand {
-  new RunCommand() { Handler = new RunCommandHandler() },
-  new HostCommand() { Handler = new HostCommandHandler() },
+  new RunCommand() { Handler = CommandHandler.Create(typeof(RunCommandHandler).GetMethod(nameof(ICommandHandler.InvokeAsync))!)},
+  new HostCommand() { Handler = CommandHandler.Create(typeof(HostCommandHandler).GetMethod(nameof(ICommandHandler.InvokeAsync))!)},
 };
 
 await command.InvokeAsync(args);

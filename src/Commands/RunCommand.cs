@@ -2,11 +2,16 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Text.Json;
 using fiskaltrust.Launcher.Configuration;
+using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.ProcessHost;
 using fiskaltrust.Launcher.Services;
 using fiskaltrust.storage.serialization.V0;
+using Microsoft.AspNetCore;
+using Serilog;
+using ProtoBuf.Grpc.Server;
+using System.CommandLine.Hosting;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -28,31 +33,33 @@ namespace fiskaltrust.Launcher.Commands
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
         public string CashboxConfigurationFile { get; set; } = null!;
-        
 
-        private readonly ILoggerFactory _loggerFactory;
-        private readonly HostingService _hosting;
-        private readonly CancellationToken _cancellationToken;
-
-        public RunCommandHandler()
-        {
-            // TODO create service collection, host ETC
-        }
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
-            var cashboxLauncherConfiguration = JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile, _cancellationToken))?.LauncherConfiguration;
-            var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile, _cancellationToken)) ?? new LauncherConfiguration();
+            var cashboxLauncherConfiguration = JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile))?.LauncherConfiguration;
+            var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration();
 
             MergeLauncherConfiguration(cashboxLauncherConfiguration, launcherConfiguration);
             MergeLauncherConfiguration(ArgsLauncherConfiguration, launcherConfiguration);
 
-            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile, _cancellationToken)) ?? throw new Exception("Empty Configuration File");
+            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile)) ?? throw new Exception("Empty Configuration File");
 
-            var hosts = new Dictionary<Guid, ProcessHostMonarch>();
-            var server = await _hosting.HostService<IProcessHostService>(new Uri($"http://[::1]:{launcherConfiguration.LauncherPort ?? 0}"), HostingType.GRPC, new ProcessHostService(hosts));
+            var builder = WebApplication.CreateBuilder();
+            builder.Host
+                .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration())
+                .UseConsoleLifetime()
+                .ConfigureServices((hostContext, services) =>
+                {
+                    services.AddSingleton(_ => launcherConfiguration);
+                    services.AddSingleton(_ => cashboxConfiguration);
+                    services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
+                });
 
-            var uri = new Uri(server.Urls.First());
+            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{launcherConfiguration.LauncherPort ?? 0}")));
+
+            
+            builder.Services.AddCodeFirstGrpc();
 
             // foreach (var helper in cashboxConfiguration.helpers)
             // {
@@ -62,10 +69,14 @@ namespace fiskaltrust.Launcher.Commands
             // }
             foreach (var scu in cashboxConfiguration.ftSignaturCreationDevices)
             {
-
-                var host = new ProcessHostMonarch(_loggerFactory.CreateLogger<ProcessHostMonarch>(), uri, scu.Id, launcherConfiguration, scu, PackageType.SCU);
-                hosts.Add(scu.Id, host);
-                await host.Start(_cancellationToken);
+                builder.Services.AddHostedService(serviceProvider => 
+                    new ProcessHostMonarch(
+                        serviceProvider.GetRequiredService<ILogger<ProcessHostMonarch>>(),
+                        serviceProvider.GetRequiredService<Dictionary<Guid, ProcessHostMonarch>>(),
+                        serviceProvider.GetRequiredService<LauncherConfiguration>(),
+                        scu,
+                        PackageType.SCU
+                    ));
             }
             // foreach (var queue in cashboxConfiguration.ftQueues)
             // {
@@ -74,8 +85,16 @@ namespace fiskaltrust.Launcher.Commands
             //     await host.Start(cancellationToken);
             // }
 
-            await Task.WhenAll(hosts.Select(h => h.Value.Stopped()));
+            var app = builder.Build();
 
+            app.UseRouting();
+            app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
+
+            await app.StartAsync();
+
+            launcherConfiguration.LauncherPort = new Uri(app.Urls.First()).Port;
+
+            await Task.WhenAll(app.Services.GetRequiredService<Dictionary<Guid, ProcessHostMonarch>>().Select(h => h.Value.Stopped()));
             return 0;
         }
 

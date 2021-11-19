@@ -18,7 +18,7 @@ namespace fiskaltrust.Launcher.Services
         {
             var builder = WebApplication.CreateBuilder();
             builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration());
-            
+
             WebApplication app;
             switch (hostingType)
             {
@@ -60,30 +60,7 @@ namespace fiskaltrust.Launcher.Services
 
         internal static WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
-            builder.WebHost.ConfigureKestrel(options =>
-            {
-                if (uri.IsLoopback && uri.Port != 0)
-                {
-                    options.ListenLocalhost(uri.Port, listenOptions =>
-                    {
-                        listenOptions.Protocols = HttpProtocols.Http2;
-                    });
-                }
-                else if (IPAddress.TryParse(uri.Host, out var ip))
-                {
-                    options.Listen(new IPEndPoint(ip, uri.Port), listenOptions =>
-                    {
-                        listenOptions.Protocols = HttpProtocols.Http2;
-                    });
-                }
-                else
-                {
-                    options.ListenAnyIP(uri.Port, listenOptions =>
-                    {
-                        listenOptions.Protocols = HttpProtocols.Http2;
-                    });
-                }
-            });
+            builder.WebHost.ConfigureKestrel(options => ConfigureKestrel(options, uri));
             builder.Services.AddCodeFirstGrpc();
             builder.Services.AddSingleton(instance);
 
@@ -93,6 +70,31 @@ namespace fiskaltrust.Launcher.Services
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<T>());
 
             return app;
+        }
+
+        public static void ConfigureKestrel(KestrelServerOptions options, Uri uri)
+        {
+            if (uri.IsLoopback && uri.Port != 0)
+            {
+                options.ListenLocalhost(uri.Port, listenOptions =>
+                {
+                    listenOptions.Protocols = HttpProtocols.Http2;
+                });
+            }
+            else if (IPAddress.TryParse(uri.Host, out var ip))
+            {
+                options.Listen(new IPEndPoint(ip, uri.Port), listenOptions =>
+                {
+                    listenOptions.Protocols = HttpProtocols.Http2;
+                });
+            }
+            else
+            {
+                options.ListenAnyIP(uri.Port, listenOptions =>
+                {
+                    listenOptions.Protocols = HttpProtocols.Http2;
+                });
+            }
         }
 
         public async ValueTask DisposeAsync()

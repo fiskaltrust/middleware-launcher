@@ -7,14 +7,14 @@ using fiskaltrust.storage.serialization.V0;
 namespace fiskaltrust.Launcher.ProcessHost
 {
 
-    public class ProcessHostMonarch
+    public class ProcessHostMonarch : BackgroundService
     {
         private readonly Process _process;
         private readonly TaskCompletionSource _started;
         private readonly TaskCompletionSource _stopped;
         private readonly ILogger _logger;
 
-        public ProcessHostMonarch(ILogger logger, Uri monarchUri, Guid id, LauncherConfiguration launcherConfiguration, PackageConfiguration configuration, PackageType packageType)
+        public ProcessHostMonarch(ILogger<ProcessHostMonarch> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, PackageConfiguration configuration, PackageType packageType)
         {
             _logger = logger;
             
@@ -24,17 +24,18 @@ namespace fiskaltrust.Launcher.ProcessHost
             _process.StartInfo.UseShellExecute = false;
             _process.StartInfo.FileName = executable;
             _process.StartInfo.CreateNoWindow = false;
-            _process.StartInfo.Arguments = $"host --id \"{id}\" --package-type {packageType} --launcher-config \"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\" --package-config \"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(configuration)))}\" --monarch-uri \"{monarchUri}\"";
+            _process.StartInfo.Arguments = $"host --package-type {packageType} --launcher-config \"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\" --package-config \"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(configuration)))}\"";
             _process.StartInfo.RedirectStandardError = true;
             _process.StartInfo.RedirectStandardOutput = true;
             _process.EnableRaisingEvents = true;
             _stopped = new TaskCompletionSource();
             _started = new TaskCompletionSource();
+
+            hosts.Add(configuration.Id, this);
         }
 
-        public Task Start(CancellationToken cancellationToken)
+        protected override Task ExecuteAsync(CancellationToken cancellationToken)
         {
-
             cancellationToken.Register(() => {
                 _process.Kill();
             });
@@ -69,7 +70,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             _process.BeginOutputReadLine();
             _process.BeginErrorReadLine();
 
-            return _started.Task;
+            return _started.Task.ContinueWith(_ => _stopped.Task);
         }
 
         public void Started() {
