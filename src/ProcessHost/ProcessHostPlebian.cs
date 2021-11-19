@@ -20,41 +20,24 @@ namespace fiskaltrust.Launcher.ProcessHost
     {
         private readonly PackageConfiguration _packageConfiguration;
         private readonly IProcessHostService? _processHostService;
-        private readonly IMiddlewareBootstrapper _bootstrapper;
-        private readonly ServiceCollection _services;
+        private readonly IServiceProvider _services;
         private readonly HostingService _hosting;
         private readonly PlebianConfiguration _plebianConfiguration;
         private readonly ILogger<ProcessHostPlebian> _logger;
 
-        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration)
+        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services)
         {
             _logger = logger;
             _packageConfiguration = packageConfiguration;
             _hosting = hosting;
             _plebianConfiguration = plebianConfiguration;
+            _services = services;
 
             if (launcherConfiguration.LauncherPort != null && launcherConfiguration.LauncherPort != 0)
             {
                 var channel = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}");
                 _processHostService = channel.CreateGrpcService<IProcessHostService>();
             }
-
-            _services = new ServiceCollection();
-            _services.AddLogging(builder =>
-            {
-                var logger = new LoggerConfiguration()
-                    .MinimumLevel.Debug()
-                    .WriteTo.Console()
-                    .WriteTo.File($"log-{packageConfiguration.Id}.txt", rollingInterval: RollingInterval.Day, shared: true)
-                    .CreateLogger();
-                builder.AddSerilog(logger, dispose: true);
-            });
-
-
-            _bootstrapper = PluginLoader.LoadPlugin<IMiddlewareBootstrapper>(launcherConfiguration.ServiceFolder!, packageConfiguration.Package);
-            _bootstrapper.Id = packageConfiguration.Id;
-            _bootstrapper.Configuration = packageConfiguration.Configuration.ToDictionary(x => x.Key, x => (object?)x.Value.ToString());
-            _bootstrapper.ConfigureServices(_services);
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -98,8 +81,8 @@ namespace fiskaltrust.Launcher.ProcessHost
                 var url = new Uri(uri);
 
                 (object instance, Type type) = _plebianConfiguration.PackageType switch {
-                    PackageType.Queue => ((object)_services.BuildServiceProvider().GetRequiredService<IPOS>(), typeof(IPOS)),
-                    PackageType.SCU => ((object)_services.BuildServiceProvider().GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
+                    PackageType.Queue => ((object)_services.GetRequiredService<IPOS>(), typeof(IPOS)),
+                    PackageType.SCU => ((object)_services.GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
                     _ => throw new NotImplementedException()
                 };
 
