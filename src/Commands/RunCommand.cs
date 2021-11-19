@@ -54,6 +54,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => cashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
+                    services.AddHostedService<ProcessHostMonarcStartup>();
                 });
 
             if(launcherConfiguration.LauncherPort == null) {
@@ -64,30 +65,6 @@ namespace fiskaltrust.Launcher.Commands
             
             builder.Services.AddCodeFirstGrpc();
 
-            // foreach (var helper in cashboxConfiguration.helpers)
-            // {
-            //     var host = new ProcessHostMonarch(loggerFactory.CreateLogger<ProcessHostMonarch>(), uri, helper.Id, helper, PackageType.Helper);
-            //     hosts.Add(helper.Id, host);
-            //     await host.Start(cancellationToken);
-            // }
-            foreach (var scu in cashboxConfiguration.ftSignaturCreationDevices)
-            {
-                builder.Services.AddHostedService(serviceProvider => 
-                    new ProcessHostMonarch(
-                        serviceProvider.GetRequiredService<ILogger<ProcessHostMonarch>>(),
-                        serviceProvider.GetRequiredService<Dictionary<Guid, ProcessHostMonarch>>(),
-                        serviceProvider.GetRequiredService<LauncherConfiguration>(),
-                        scu,
-                        PackageType.SCU
-                    ));
-            }
-            // foreach (var queue in cashboxConfiguration.ftQueues)
-            // {
-            //     var host = new ProcessHostMonarch(loggerFactory.CreateLogger<ProcessHostMonarch>(), uri, queue.Id, queue, PackageType.Queue);
-            //     hosts.Add(queue.Id, host);
-            //     await host.Start(cancellationToken);
-            // }
-
             var app = builder.Build();
 
             app.UseRouting();
@@ -95,7 +72,9 @@ namespace fiskaltrust.Launcher.Commands
 
             await app.StartAsync();
 
-            await Task.WhenAll(app.Services.GetRequiredService<Dictionary<Guid, ProcessHostMonarch>>().Select(h => h.Value.Stopped()));
+            
+            await app.WaitForShutdownAsync();
+
             return 0;
         }
 
