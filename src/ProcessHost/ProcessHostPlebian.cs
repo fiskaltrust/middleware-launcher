@@ -33,9 +33,9 @@ namespace fiskaltrust.Launcher.ProcessHost
             _plebianConfiguration = plebianConfiguration;
             _services = services;
 
-            if (launcherConfiguration.LauncherPort != null && launcherConfiguration.LauncherPort != 0)
+            if (launcherConfiguration.LauncherPort != null)
             {
-                var channel = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}");
+                var channel = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort!}");
                 _processHostService = channel.CreateGrpcService<IProcessHostService>();
             }
         }

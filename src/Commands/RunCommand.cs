@@ -56,7 +56,10 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
                 });
 
-            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{launcherConfiguration.LauncherPort ?? 0}")));
+            if(launcherConfiguration.LauncherPort == null) {
+                throw new Exception("Launcher port cannot be null.");
+            }
+            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{launcherConfiguration.LauncherPort!}")));
 
             
             builder.Services.AddCodeFirstGrpc();
@@ -91,8 +94,6 @@ namespace fiskaltrust.Launcher.Commands
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 
             await app.StartAsync();
-
-            launcherConfiguration.LauncherPort = new Uri(app.Urls.First()).Port;
 
             await Task.WhenAll(app.Services.GetRequiredService<Dictionary<Guid, ProcessHostMonarch>>().Select(h => h.Value.Stopped()));
             return 0;
