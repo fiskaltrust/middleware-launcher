@@ -15,7 +15,7 @@ namespace fiskaltrust.Launcher.Extensions
             {
                 suffix = "";
             }
-            return loggerConfiguration.MinimumLevel.Debug()
+            return loggerConfiguration.MinimumLevel.Information()
             .WriteTo.Console()
             .WriteTo.File($"log{suffix}-.txt", rollingInterval: RollingInterval.Day, shared: true);
         }

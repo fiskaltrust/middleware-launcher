@@ -12,6 +12,7 @@ using fiskaltrust.Launcher.AssemblyLoading;
 using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.ifPOS.v1;
 using fiskaltrust.ifPOS.v1.de;
+using fiskaltrust.Launcher.Clients;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -67,6 +68,9 @@ namespace fiskaltrust.Launcher.Commands
 
                     services.AddSingleton<HostingService>();
                     services.AddHostedService<ProcessHostPlebian>();
+
+                    services.AddSingleton<IClientFactory<IDESSCD>, DESSCDClientFactory>();
+                    services.AddSingleton<IClientFactory<IPOS>, POSClientFactory>();
                 });
 
             var app = builder.Build();

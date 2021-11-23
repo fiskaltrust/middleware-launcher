@@ -11,9 +11,13 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly Dictionary<Guid, ProcessHostMonarch> _hosts;
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ftCashBoxConfiguration _cashBoxConfiguration;
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly ILogger _logger;
 
-        public ProcessHostMonarcStartup(Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration)
+        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration)
         {
+            _loggerFactory = loggerFactory;
+            _logger = logger;
             _hosts = hosts;
             _launcherConfiguration = launcherConfiguration;
             _cashBoxConfiguration = cashBoxConfiguration;
@@ -26,13 +30,26 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 await StartProcessHostMonarch(scu, PackageType.SCU, cancellationToken);
             }
-            // foreach (var queue in _cashBoxConfiguration.ftQueues)
-            // {
-            //     await StartProcessHostMonarch(queue, PackageType.Queue, cancellationToken);
-            // }
-            // foreach (var helper in _cashBoxConfiguration.helpers)
 
-            await Task.WhenAll(_hosts.Select(h => h.Value.Stopped()));
+            foreach (var queue in _cashBoxConfiguration.ftQueues)
+            {
+                await StartProcessHostMonarch(queue, PackageType.Queue, cancellationToken);
+            }
+
+            // foreach (var helper in _cashBoxConfiguration.helpers)
+            // {
+            //     await StartProcessHostMonarch(helper, PackageType.Helper, cancellationToken);
+            // }
+
+            try
+            {
+                await Task.WhenAll(_hosts.Select(h => h.Value.Stopped()));
+            }
+            catch (Exception e)
+            {
+                // _hosts.Select(h => h.Value.Stopped().Exception);
+                _logger.LogError("{Message}", e.Message);
+            }
 
             return;
         }
@@ -100,7 +117,14 @@ namespace fiskaltrust.Launcher.ProcessHost
                 {
                     if (_process.ExitCode != 0)
                     {
-                        _process.Start(); // TODO add some kind of retry
+                        try
+                        {
+                            if (!_process.Start()) { throw new Exception(); }
+                        }
+                        catch
+                        {
+                            _stopped.SetCanceled(cancellationToken);
+                        }
                     }
                     else
                     {
@@ -124,12 +148,15 @@ namespace fiskaltrust.Launcher.ProcessHost
                 Console.WriteLine(e.Data);
             };
 
-
-            if (!_process.Start())
+            try
+            {
+                if (!_process.Start()) { throw new Exception(); }
+            }
+            catch
             {
                 _stopped.SetCanceled(cancellationToken);
                 return Task.CompletedTask;
-            };
+            }
 
             _process.BeginOutputReadLine();
             _process.BeginErrorReadLine();
