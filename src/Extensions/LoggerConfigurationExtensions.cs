@@ -7,9 +7,12 @@ namespace fiskaltrust.Launcher.Extensions
     {
         public static LoggerConfiguration AddLoggingConfiguration(this LoggerConfiguration loggerConfiguration, string? suffix = null)
         {
-            if(suffix != null) {
+            if (suffix != null)
+            {
                 suffix = $"-{suffix}";
-            } else {
+            }
+            else
+            {
                 suffix = "";
             }
             return loggerConfiguration.MinimumLevel.Debug()

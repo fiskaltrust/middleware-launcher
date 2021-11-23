@@ -4,7 +4,8 @@ using System.ServiceModel;
 namespace fiskaltrust.Launcher.Interfaces
 {
     [ServiceContract]
-    public interface IProcessHostService {
+    public interface IProcessHostService
+    {
         [OperationContract]
         Task Started(string id);
 

@@ -1,18 +1,29 @@
-using System.Reflection;
+﻿using fiskaltrust.ifPOS.v1;
+using fiskaltrust.ifPOS.v1.de;
+using fiskaltrust.Launcher.Configuration;
+using fiskaltrust.Middleware.Abstractions;
+using McMaster.NETCore.Plugins;
 
 namespace fiskaltrust.Launcher.AssemblyLoading
 {
-    public static class PluginLoader
+
+    public class PluginLoader
     {
-        public static T LoadPlugin<T>(string serviceFolder, string name)
+        private readonly LauncherConfiguration _launcherConfiguration;
+        public PluginLoader(LauncherConfiguration launcherConfiguration)
         {
-            string pluginLocation = Path.GetFullPath(Path.Combine(serviceFolder, name, $"{name}.dll"));
+            _launcherConfiguration = launcherConfiguration;
+        }
 
-            var loadContext = new ComponentLoadContext(pluginLocation);
-            var assembly = loadContext.LoadFromAssemblyName(new AssemblyName(Path.GetFileNameWithoutExtension(pluginLocation)));
-
-            var type = assembly.GetTypes().FirstOrDefault(t => typeof(T).IsAssignableFrom(t)) ?? throw new Exception($"cloud not find {name} assembly");
-            return (T)(Activator.CreateInstance(type) ?? throw new Exception("could not create Bootstrapper instance"));
+        public T LoadComponent<T>(string package, Type[] sharedTypes)
+        {
+            var loader = McMaster.NETCore.Plugins.PluginLoader.CreateFromAssemblyFile(
+                Path.GetFullPath(Path.Join(_launcherConfiguration.ServiceFolder, package, $"{package}.dll")),
+                sharedTypes: sharedTypes,
+                config => config.PreferSharedTypes = true);
+            
+            var type = loader.LoadDefaultAssembly().GetTypes().Where(t => typeof(T).IsAssignableFrom(t) && !t.IsAbstract).FirstOrDefault() ?? throw new Exception($"Could not load {nameof(T)} from {package}.dll");
+            return (T?)Activator.CreateInstance(type) ?? throw new Exception($"Could not create {nameof(T)} instance");
         }
     }
 }

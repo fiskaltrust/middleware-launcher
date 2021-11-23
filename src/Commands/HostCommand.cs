@@ -10,6 +10,8 @@ using fiskaltrust.storage.serialization.V0;
 using Serilog;
 using fiskaltrust.Launcher.AssemblyLoading;
 using fiskaltrust.Middleware.Abstractions;
+using fiskaltrust.ifPOS.v1;
+using fiskaltrust.ifPOS.v1.de;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -33,9 +35,6 @@ namespace fiskaltrust.Launcher.Commands
         {
             var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfig))) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfig)}");
             var packageConfiguration = JsonSerializer.Deserialize<PackageConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PackageConfig))) ?? throw new Exception($"Could not deserialize {nameof(PackageConfig)}");
-            var bootstrapper = PluginLoader.LoadPlugin<IMiddlewareBootstrapper>(launcherConfiguration.ServiceFolder!, packageConfiguration.Package);
-            bootstrapper.Id = packageConfiguration.Id;
-            bootstrapper.Configuration = packageConfiguration.Configuration.ToDictionary(x => x.Key, x => (object?)x.Value.ToString());
 
             var builder = Host.CreateDefaultBuilder()
                 .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration())
@@ -45,11 +44,29 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => packageConfiguration);
                     services.AddSingleton(_ => new PlebianConfiguration { PackageType = PackageType });
+                    
+                    services.AddSingleton<PluginLoader>();
+
+                    var bootstrapper = services.BuildServiceProvider().GetRequiredService<PluginLoader>().LoadComponent<IMiddlewareBootstrapper>(packageConfiguration.Package, new[] {
+                        typeof(IMiddlewareBootstrapper),
+                        typeof(IPOS),
+                        typeof(IDESSCD),
+                        typeof(IHelper),
+                        typeof(IServiceCollection),
+                        typeof(Microsoft.Extensions.Logging.ILogger),
+                        typeof(ILoggerFactory),
+                        typeof(ILogger<>)
+                    });
+
+                    bootstrapper.Id = packageConfiguration.Id;
+                    bootstrapper.Configuration = packageConfiguration.Configuration.ToDictionary(x => x.Key, x => (object?)x.Value.ToString());
+
+                    bootstrapper.ConfigureServices(services);
+
+                    services.AddSingleton(_ => bootstrapper);
 
                     services.AddSingleton<HostingService>();
                     services.AddHostedService<ProcessHostPlebian>();
-
-                    bootstrapper.ConfigureServices(services);
                 });
 
             var app = builder.Build();
@@ -59,3 +76,4 @@ namespace fiskaltrust.Launcher.Commands
         }
     }
 }
+

@@ -57,12 +57,13 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddHostedService<ProcessHostMonarcStartup>();
                 });
 
-            if(launcherConfiguration.LauncherPort == null) {
+            if (launcherConfiguration.LauncherPort == null)
+            {
                 throw new Exception("Launcher port cannot be null.");
             }
             builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{launcherConfiguration.LauncherPort!}")));
 
-            
+
             builder.Services.AddCodeFirstGrpc();
 
             var app = builder.Build();
@@ -72,7 +73,7 @@ namespace fiskaltrust.Launcher.Commands
 
             await app.StartAsync();
 
-            
+
             await app.WaitForShutdownAsync();
 
             return 0;

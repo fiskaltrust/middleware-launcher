@@ -20,10 +20,10 @@ namespace fiskaltrust.Launcher.ProcessHost
     {
         private readonly PackageConfiguration _packageConfiguration;
         private readonly IProcessHostService? _processHostService;
-        private readonly IServiceProvider _services;
         private readonly HostingService _hosting;
         private readonly PlebianConfiguration _plebianConfiguration;
         private readonly ILogger<ProcessHostPlebian> _logger;
+        private readonly IServiceProvider _services;
 
         public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services)
         {
@@ -52,7 +52,8 @@ namespace fiskaltrust.Launcher.ProcessHost
                 promise.SetResult();
             });
 
-            if(_processHostService != null) {
+            if (_processHostService != null)
+            {
                 _ = Task.Run(async () =>
                 {
                     while (true)
@@ -80,31 +81,38 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 var url = new Uri(uri);
 
-                (object instance, Type type) = _plebianConfiguration.PackageType switch {
+                (object instance, Type type) = _plebianConfiguration.PackageType switch
+                {
                     PackageType.Queue => ((object)_services.GetRequiredService<IPOS>(), typeof(IPOS)),
                     PackageType.SCU => ((object)_services.GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
                     _ => throw new NotImplementedException()
                 };
 
                 var hostingType = Enum.Parse<HostingType>(url.Scheme.ToUpper());
-                
-                Action<WebApplication>? addEndpoints = hostingType switch {
-                    HostingType.REST => _plebianConfiguration.PackageType switch {
+
+                Action<WebApplication>? addEndpoints = hostingType switch
+                {
+                    HostingType.REST => _plebianConfiguration.PackageType switch
+                    {
                         PackageType.Queue => (WebApplication app) => app.AddQueueEndpoints((IPOS)instance),
                         PackageType.SCU => (WebApplication app) => app.AddScuEndpoints((IDESSCD)instance),
                         _ => throw new NotImplementedException()
                     },
                     _ => null
                 };
-                try {
+                try
+                {
                     await _hosting.HostService(type, url, hostingType, instance, addEndpoints);
                     hostingFailedCompletely = false;
-                } catch(Exception e) {
+                }
+                catch (Exception e)
+                {
                     _logger.LogError("Could not start {} hosting. {}, {}", url, e.Message, e.HelpLink);
                 }
             }
 
-            if(hostingFailedCompletely) {
+            if (hostingFailedCompletely)
+            {
                 throw new Exception("No host could be started.");
             }
         }
