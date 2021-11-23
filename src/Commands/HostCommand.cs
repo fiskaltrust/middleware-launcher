@@ -37,14 +37,14 @@ namespace fiskaltrust.Launcher.Commands
             var packageConfiguration = JsonSerializer.Deserialize<PackageConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PackageConfig))) ?? throw new Exception($"Could not deserialize {nameof(PackageConfig)}");
 
             var builder = Host.CreateDefaultBuilder()
-                .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration())
+                .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(packageConfiguration.Id.ToString()))
                 .UseConsoleLifetime()
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => packageConfiguration);
                     services.AddSingleton(_ => new PlebianConfiguration { PackageType = PackageType });
-                    
+
                     services.AddSingleton<PluginLoader>();
 
                     var bootstrapper = services.BuildServiceProvider().GetRequiredService<PluginLoader>().LoadComponent<IMiddlewareBootstrapper>(packageConfiguration.Package, new[] {

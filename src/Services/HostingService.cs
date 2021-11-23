@@ -1,6 +1,7 @@
 ﻿using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Middlewares;
+using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IO;
 using ProtoBuf.Grpc.Server;
@@ -13,11 +14,16 @@ namespace fiskaltrust.Launcher.Services
     public class HostingService : IAsyncDisposable
     {
         private readonly List<WebApplication> _hosts = new();
+        private readonly PackageConfiguration _packageConfiguration;
+        public HostingService(PackageConfiguration packageConfiguration)
+        {
+            _packageConfiguration = packageConfiguration;
+        }
 
         public async Task<WebApplication> HostService(Type T, Uri uri, HostingType hostingType, object instance, Action<WebApplication>? addEndpoints = null)
         {
             var builder = WebApplication.CreateBuilder();
-            builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration());
+            builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(_packageConfiguration.Id.ToString()));
 
             WebApplication app;
             switch (hostingType)
