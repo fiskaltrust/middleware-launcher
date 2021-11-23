@@ -8,6 +8,7 @@ using ProtoBuf.Grpc.Server;
 using Serilog;
 using System.Net;
 using System.Reflection;
+using System.Linq;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -15,9 +16,11 @@ namespace fiskaltrust.Launcher.Services
     {
         private readonly List<WebApplication> _hosts = new();
         private readonly PackageConfiguration _packageConfiguration;
-        public HostingService(PackageConfiguration packageConfiguration)
+        private readonly ILogger<HostingService> _logger;
+        public HostingService(ILogger<HostingService> logger, PackageConfiguration packageConfiguration)
         {
             _packageConfiguration = packageConfiguration;
+            _logger = logger;
         }
 
         public async Task<WebApplication> HostService(Type T, Uri uri, HostingType hostingType, object instance, Action<WebApplication>? addEndpoints = null)
@@ -45,6 +48,10 @@ namespace fiskaltrust.Launcher.Services
             app.UseMiddleware<RequestResponseLoggingMiddleware>();
             await app.StartAsync();
 
+            foreach (var url in app.Urls)
+            {
+                _logger.LogInformation("{packageType} Started {hostingType} hosting on {url}", instance.GetType().FullName, hostingType.ToString(), url);
+            }
             return app;
         }
 

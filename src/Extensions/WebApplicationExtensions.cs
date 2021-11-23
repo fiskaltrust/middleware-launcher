@@ -8,9 +8,9 @@ namespace fiskaltrust.Launcher.Extensions
     {
         public static WebApplication AddQueueEndpoints(this WebApplication app, IPOS pos)
         {
-            app.MapPost("v1/echo", async (EchoRequest req) => await pos.EchoAsync(req));
-            app.MapPost("v1/sign", async (ReceiptRequest req) => await pos.SignAsync(req));
-            app.MapGet("v1/journal", ([FromQuery] long type, [FromQuery] long from, [FromQuery] long to) => pos.JournalAsync(new JournalRequest { ftJournalType = type, From = from, To = to }));
+            app.MapPost("v1/Echo", async (EchoRequest req) => await pos.EchoAsync(req));
+            app.MapPost("v1/Sign", async (ReceiptRequest req) => await pos.SignAsync(req));
+            app.MapGet("v1/Journal", ([FromQuery] long type, [FromQuery] long from, [FromQuery] long to) => pos.JournalAsync(new JournalRequest { ftJournalType = type, From = from, To = to }));
 
             return app;
         }

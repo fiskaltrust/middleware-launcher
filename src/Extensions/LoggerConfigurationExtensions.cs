@@ -1,5 +1,6 @@
 
 using Serilog;
+using Serilog.Events;
 
 namespace fiskaltrust.Launcher.Extensions
 {
@@ -15,8 +16,11 @@ namespace fiskaltrust.Launcher.Extensions
             {
                 suffix = "";
             }
-            return loggerConfiguration.MinimumLevel.Information()
+            return loggerConfiguration.MinimumLevel.Debug()
             .WriteTo.Console()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("System", LogEventLevel.Warning)
+            .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
             .WriteTo.File($"log{suffix}-.txt", rollingInterval: RollingInterval.Day, shared: true);
         }
 
