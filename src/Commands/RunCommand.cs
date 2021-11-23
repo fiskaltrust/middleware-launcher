@@ -22,6 +22,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--cashbox-id", getDefaultValue: () => null));
             AddOption(new Option<string?>("--access-token", getDefaultValue: () => null));
             AddOption(new Option<int?>("--launcher-port", getDefaultValue: () => null));
+            AddOption(new Option<bool?>("--sandbox", getDefaultValue: () => false));
             AddOption(new Option<string?>("--service-folder", getDefaultValue: () => Paths.ServiceFolder));
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "configuration.json"));
             AddOption(new Option<string>("--cashbox-configuration-file", getDefaultValue: () => "configuration.json"));

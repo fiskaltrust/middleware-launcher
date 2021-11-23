@@ -15,6 +15,10 @@ namespace fiskaltrust.Launcher.Configuration
 
         [JsonPropertyName("serviceFolder")]
         public string? ServiceFolder { get; set; }
+
+        
+        [JsonPropertyName("sandbox")]
+        public bool? Sandbox { get; set; } = false;
     }
 
     public record LauncherConfigurationInCashBoxConfiguration
