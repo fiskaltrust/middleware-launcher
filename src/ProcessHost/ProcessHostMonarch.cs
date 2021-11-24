@@ -26,9 +26,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("OS:        {OS}, {Bit}", Environment.OSVersion.VersionString, Environment.Is64BitOperatingSystem ? "64Bit" : "32Bit");
-            _logger.LogInformation("CWD:       {CWD}", Path.GetFullPath("./"));
-            _logger.LogInformation("CashBoxID: {CashBoxId}", _launcherConfiguration.CashboxId);
+            StartupLogging();
 
             foreach (var scu in _cashBoxConfiguration.ftSignaturCreationDevices)
             {
@@ -71,6 +69,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             );
 
             await monarch.Start(cancellationToken);
+            _logger.LogInformation("Started {Package} {Id}", configuration.Package, configuration.Id);
         }
 
         private PackageConfiguration AddDefaultPackageConfig(PackageConfiguration config)
@@ -83,6 +82,19 @@ namespace fiskaltrust.Launcher.ProcessHost
             config.Configuration.Add("servicefolder", _launcherConfiguration.ServiceFolder);
 
             return config;
+        }
+
+        private void StartupLogging()
+        {
+            _logger.LogInformation("OS:         {OS}, {Bit}", Environment.OSVersion.VersionString, Environment.Is64BitOperatingSystem ? "64Bit" : "32Bit");
+            if(OperatingSystem.IsWindows())
+            {
+                using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+                var principal = new System.Security.Principal.WindowsPrincipal(identity);
+                _logger.LogInformation("Admin User: {admin}", principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator));
+            }
+            _logger.LogInformation("CWD:        {CWD}", Path.GetFullPath("./"));
+            _logger.LogInformation("CashBoxID:  {CashBoxId}", _launcherConfiguration.CashboxId);
         }
     }
 
