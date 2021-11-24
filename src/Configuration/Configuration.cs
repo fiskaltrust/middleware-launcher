@@ -31,17 +31,17 @@ namespace fiskaltrust.Launcher.Configuration
         [JsonPropertyName("packagesUrl")]
         public Uri? PackagesUrl { get; set; }
 
-        [JsonPropertyName("connectionTimeout")]
-        public int? ConnectionTimeout { get; set; }
+        [JsonPropertyName("downloadTimeout")]
+        public int? DownloadTimeout { get; set; }
 
-        [JsonPropertyName("connectionRetry")]
-        public int? ConnectionRetry { get; set; }
+        [JsonPropertyName("downloadRetry")]
+        public int? DownloadRetry { get; set; }
 
         [JsonPropertyName("sslValidation")]
         public bool? SslValidation { get; set; }
 
-        [JsonPropertyName("proxy")]
-        public string? Proxy { get; set; }
+        [JsonPropertyName("downloadProxy")]
+        public string? DownloadProxy { get; set; }
     }
 
     public record LauncherConfigurationInCashBoxConfiguration

@@ -29,10 +29,10 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<LogLevel?>("--log-level"));
             AddOption(new Option<string?>("--service-folder"));
             AddOption(new Option<Uri?>("--packages-url"));
-            AddOption(new Option<int?>("--connection-timeout"));
-            AddOption(new Option<int?>("--connection-retry"));
+            AddOption(new Option<int?>("--download-timeout"));
+            AddOption(new Option<int?>("--download-retry"));
             AddOption(new Option<bool?>("--ssl-validation"));
-            AddOption(new Option<string?>("--proxy"));
+            AddOption(new Option<string?>("--download-proxy"));
 
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
             AddOption(new Option<string>("--cashbox-configuration-file", getDefaultValue: () => "cashbox.configuration.json"));
@@ -101,10 +101,10 @@ namespace fiskaltrust.Launcher.Commands
                 LogLevel =  LogLevel.Information,
                 ServiceFolder = Paths.ServiceFolder,
                 PackagesUrl = new Uri("https://packages.fiskaltrust.cloud"),
-                ConnectionTimeout = 15,
-                ConnectionRetry = 1,
+                DownloadTimeout = 15,
+                DownloadRetry = 1,
                 SslValidation = true,
-                Proxy = null,
+                DownloadProxy = null,
             };
         }
 
