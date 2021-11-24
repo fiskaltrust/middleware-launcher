@@ -55,7 +55,7 @@ namespace fiskaltrust.Launcher.Services
 
             foreach (var url in app.Urls)
             {
-                _logger.LogInformation("{packageType} Started {hostingType} hosting on {url}", instance.GetType().FullName, hostingType.ToString(), url);
+                _logger.LogInformation("Started {hostingType} hosting on {url}", hostingType.ToString(), url);
             }
             return app;
         }

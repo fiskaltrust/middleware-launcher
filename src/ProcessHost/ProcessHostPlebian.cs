@@ -42,6 +42,9 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Package: {Package} {Version}", _packageConfiguration.Package, _packageConfiguration.Version);
+            _logger.LogInformation("Id:      {ID}", _packageConfiguration.Id);
+
             await StartHosting(_packageConfiguration.Url);
 
             await (_processHostService?.Started(_packageConfiguration.Id.ToString()) ?? Task.CompletedTask);

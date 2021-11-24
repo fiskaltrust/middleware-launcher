@@ -26,6 +26,10 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            _logger.LogInformation("OS:        {OS}, {Bit}", Environment.OSVersion.VersionString, Environment.Is64BitOperatingSystem ? "64Bit" : "32Bit");
+            _logger.LogInformation("CWD:       {CWD}", Path.GetFullPath("./"));
+            _logger.LogInformation("CashBoxID: {CashBoxId}", _launcherConfiguration.CashboxId);
+
             foreach (var scu in _cashBoxConfiguration.ftSignaturCreationDevices)
             {
                 await StartProcessHostMonarch(scu, PackageType.SCU, cancellationToken);
