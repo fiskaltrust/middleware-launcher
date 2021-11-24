@@ -21,7 +21,8 @@ namespace fiskaltrust.Launcher.Extensions
             var launcherConfiguration = services.GetRequiredService<LauncherConfiguration>();
             var packageConfiguration = services.GetService<PackageConfiguration>();
 
-            var consoleOutputTemplate = packageConfiguration switch {
+            var consoleOutputTemplate = packageConfiguration switch
+            {
                 null => $"[{{Timestamp:HH:mm:ss}} {{Level:u3}}] {{Message:lj}}{{NewLine}}{{Exception}}",
                 _ => $"[{{Timestamp:HH:mm:ss}} {{Level:u3}} {packageConfiguration.Package}] {{Message:lj}}{{NewLine}}{{Exception}}",
             };

@@ -31,9 +31,9 @@ namespace fiskaltrust.Launcher.Services
             var builder = WebApplication.CreateBuilder();
             builder.Services.AddSingleton(_ => _launcherConfiguration);
             builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(services, _packageConfiguration.Id.ToString()));
-            
+
             WebApplication app;
-            
+
             switch (hostingType)
             {
                 case HostingType.REST:

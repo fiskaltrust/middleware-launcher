@@ -21,13 +21,13 @@ namespace fiskaltrust.Launcher.Configuration
 
         [JsonPropertyName("useOffline")]
         public bool? UseOffline { get; set; }
-        
+
         [JsonPropertyName("logFolder")]
         public string? LogFolder { get; set; }
-                
+
         [JsonPropertyName("logLevel")]
         public LogLevel? LogLevel { get; set; }
-                        
+
         [JsonPropertyName("packagesUrl")]
         public Uri? PackagesUrl { get; set; }
 

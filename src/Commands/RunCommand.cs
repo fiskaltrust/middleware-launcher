@@ -54,7 +54,7 @@ namespace fiskaltrust.Launcher.Commands
             MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration(), launcherConfiguration);
             MergeLauncherConfiguration(cashboxLauncherConfiguration, launcherConfiguration);
             MergeLauncherConfiguration(ArgsLauncherConfiguration, launcherConfiguration);
-            
+
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile)) ?? throw new Exception("Empty Configuration File");
 
             var builder = WebApplication.CreateBuilder();
@@ -93,12 +93,13 @@ namespace fiskaltrust.Launcher.Commands
 
         private static LauncherConfiguration GetDefaultLauncherConfiguration()
         {
-            return new LauncherConfiguration {
+            return new LauncherConfiguration
+            {
                 LauncherPort = 3000,
                 Sandbox = false,
                 UseOffline = false,
                 LogFolder = Path.Join(Paths.ServiceFolder, "logs"),
-                LogLevel =  LogLevel.Information,
+                LogLevel = LogLevel.Information,
                 ServiceFolder = Paths.ServiceFolder,
                 PackagesUrl = new Uri("https://packages.fiskaltrust.cloud"),
                 DownloadTimeout = 15,
