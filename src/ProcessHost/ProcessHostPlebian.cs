@@ -107,7 +107,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError("Could not start {} hosting. {}, {}", url, e.Message, e.HelpLink);
+                    _logger.LogError("Could not start {url} hosting. {Message}, {HelpLink}, {InnerException}", url, e.Message, e.HelpLink ?? "", e.InnerException);
                 }
             }
 

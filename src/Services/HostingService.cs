@@ -9,6 +9,7 @@ using Serilog;
 using System.Net;
 using System.Reflection;
 using System.Linq;
+using fiskaltrust.Launcher.Configuration;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -16,19 +17,23 @@ namespace fiskaltrust.Launcher.Services
     {
         private readonly List<WebApplication> _hosts = new();
         private readonly PackageConfiguration _packageConfiguration;
+        private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ILogger<HostingService> _logger;
-        public HostingService(ILogger<HostingService> logger, PackageConfiguration packageConfiguration)
+        public HostingService(ILogger<HostingService> logger, PackageConfiguration packageConfiguration, LauncherConfiguration launcherConfiguration)
         {
             _packageConfiguration = packageConfiguration;
+            _launcherConfiguration = launcherConfiguration;
             _logger = logger;
         }
 
         public async Task<WebApplication> HostService(Type T, Uri uri, HostingType hostingType, object instance, Action<WebApplication>? addEndpoints = null)
         {
             var builder = WebApplication.CreateBuilder();
-            builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(_packageConfiguration.Id.ToString()));
-
+            builder.Services.AddSingleton(_ => _launcherConfiguration);
+            builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(services, _packageConfiguration.Id.ToString()));
+            
             WebApplication app;
+            
             switch (hostingType)
             {
                 case HostingType.REST:

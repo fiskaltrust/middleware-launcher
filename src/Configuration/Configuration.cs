@@ -18,7 +18,16 @@ namespace fiskaltrust.Launcher.Configuration
 
 
         [JsonPropertyName("sandbox")]
-        public bool? Sandbox { get; set; } = false;
+        public bool? Sandbox { get; set; }
+
+        [JsonPropertyName("useOffline")]
+        public bool? UseOffline { get; set; }
+        
+        [JsonPropertyName("logFolder")]
+        public string? LogFolder { get; set; }
+                
+        [JsonPropertyName("loLEvelFolder")]
+        public LogLevel? LogLevel { get; set; }
     }
 
     public record LauncherConfigurationInCashBoxConfiguration

@@ -21,8 +21,11 @@ namespace fiskaltrust.Launcher.Commands
         {
             AddOption(new Option<string?>("--cashbox-id", getDefaultValue: () => null));
             AddOption(new Option<string?>("--access-token", getDefaultValue: () => null));
-            AddOption(new Option<int?>("--launcher-port", getDefaultValue: () => null));
+            AddOption(new Option<int?>("--launcher-port", getDefaultValue: () => 3000));
             AddOption(new Option<bool?>("--sandbox", getDefaultValue: () => false));
+            AddOption(new Option<bool?>("--use-offline", getDefaultValue: () => false));
+            AddOption(new Option<string?>("--log-folder", getDefaultValue: () => Path.Join(Paths.ServiceFolder, "logs")));
+            AddOption(new Option<LogLevel?>("--log-level", getDefaultValue: () => LogLevel.Information));
             AddOption(new Option<string?>("--service-folder", getDefaultValue: () => Paths.ServiceFolder));
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "configuration.json"));
             AddOption(new Option<string>("--cashbox-configuration-file", getDefaultValue: () => "configuration.json"));
@@ -48,7 +51,7 @@ namespace fiskaltrust.Launcher.Commands
 
             var builder = WebApplication.CreateBuilder();
             builder.Host
-                .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(launcherConfiguration.CashboxId.ToString()))
+                .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(services, launcherConfiguration.CashboxId.ToString()))
                 .UseConsoleLifetime()
                 .ConfigureServices((hostContext, services) =>
                 {

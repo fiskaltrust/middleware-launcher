@@ -38,7 +38,7 @@ namespace fiskaltrust.Launcher.Commands
             var packageConfiguration = JsonSerializer.Deserialize<PackageConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PackageConfig))) ?? throw new Exception($"Could not deserialize {nameof(PackageConfig)}");
 
             var builder = Host.CreateDefaultBuilder()
-                .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(packageConfiguration.Id.ToString()))
+                .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(services, packageConfiguration.Id.ToString()))
                 .UseConsoleLifetime()
                 .ConfigureServices(services =>
                 {
