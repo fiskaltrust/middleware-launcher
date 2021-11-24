@@ -29,6 +29,10 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<LogLevel?>("--log-level"));
             AddOption(new Option<string?>("--service-folder"));
             AddOption(new Option<Uri?>("--packages-url"));
+            AddOption(new Option<int?>("--connection-timeout"));
+            AddOption(new Option<int?>("--connection-retry"));
+            AddOption(new Option<bool?>("--ssl-validation"));
+            AddOption(new Option<string?>("--proxy"));
 
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
             AddOption(new Option<string>("--cashbox-configuration-file", getDefaultValue: () => "cashbox.configuration.json"));
@@ -47,9 +51,9 @@ namespace fiskaltrust.Launcher.Commands
             var cashboxLauncherConfiguration = JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile))?.LauncherConfiguration;
             var launcherConfiguration = GetDefaultLauncherConfiguration();
 
+            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration(), launcherConfiguration);
             MergeLauncherConfiguration(cashboxLauncherConfiguration, launcherConfiguration);
             MergeLauncherConfiguration(ArgsLauncherConfiguration, launcherConfiguration);
-            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration(), launcherConfiguration);
             
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile)) ?? throw new Exception("Empty Configuration File");
 
@@ -96,7 +100,11 @@ namespace fiskaltrust.Launcher.Commands
                 LogFolder = Path.Join(Paths.ServiceFolder, "logs"),
                 LogLevel =  LogLevel.Information,
                 ServiceFolder = Paths.ServiceFolder,
-                PackagesUrl = new Uri("https://packages.fiskaltrust.cloud")
+                PackagesUrl = new Uri("https://packages.fiskaltrust.cloud"),
+                ConnectionTimeout = 15,
+                ConnectionRetry = 1,
+                SslValidation = true,
+                Proxy = null,
             };
         }
 
