@@ -19,16 +19,19 @@ namespace fiskaltrust.Launcher.Commands
     {
         public RunCommand() : base("run")
         {
-            AddOption(new Option<string?>("--cashbox-id", getDefaultValue: () => null));
-            AddOption(new Option<string?>("--access-token", getDefaultValue: () => null));
-            AddOption(new Option<int?>("--launcher-port", getDefaultValue: () => 3000));
-            AddOption(new Option<bool?>("--sandbox", getDefaultValue: () => false));
-            AddOption(new Option<bool?>("--use-offline", getDefaultValue: () => false));
-            AddOption(new Option<string?>("--log-folder", getDefaultValue: () => Path.Join(Paths.ServiceFolder, "logs")));
-            AddOption(new Option<LogLevel?>("--log-level", getDefaultValue: () => LogLevel.Information));
-            AddOption(new Option<string?>("--service-folder", getDefaultValue: () => Paths.ServiceFolder));
-            AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "configuration.json"));
-            AddOption(new Option<string>("--cashbox-configuration-file", getDefaultValue: () => "configuration.json"));
+            // nullable items are part of the `LauncherConfiguration`
+            AddOption(new Option<string?>("--cashbox-id"));
+            AddOption(new Option<string?>("--access-token"));
+            AddOption(new Option<int?>("--launcher-port"));
+            AddOption(new Option<bool?>("--sandbox"));
+            AddOption(new Option<bool?>("--use-offline"));
+            AddOption(new Option<string?>("--log-folder"));
+            AddOption(new Option<LogLevel?>("--log-level"));
+            AddOption(new Option<string?>("--service-folder"));
+            AddOption(new Option<Uri?>("--packages-url"));
+
+            AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
+            AddOption(new Option<string>("--cashbox-configuration-file", getDefaultValue: () => "cashbox.configuration.json"));
         }
     }
 
@@ -42,11 +45,12 @@ namespace fiskaltrust.Launcher.Commands
         public async Task<int> InvokeAsync(InvocationContext context)
         {
             var cashboxLauncherConfiguration = JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile))?.LauncherConfiguration;
-            var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration();
+            var launcherConfiguration = GetDefaultLauncherConfiguration();
 
             MergeLauncherConfiguration(cashboxLauncherConfiguration, launcherConfiguration);
             MergeLauncherConfiguration(ArgsLauncherConfiguration, launcherConfiguration);
-
+            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration(), launcherConfiguration);
+            
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile)) ?? throw new Exception("Empty Configuration File");
 
             var builder = WebApplication.CreateBuilder();
@@ -81,6 +85,19 @@ namespace fiskaltrust.Launcher.Commands
             await app.WaitForShutdownAsync();
 
             return 0;
+        }
+
+        private static LauncherConfiguration GetDefaultLauncherConfiguration()
+        {
+            return new LauncherConfiguration {
+                LauncherPort = 3000,
+                Sandbox = false,
+                UseOffline = false,
+                LogFolder = Path.Join(Paths.ServiceFolder, "logs"),
+                LogLevel =  LogLevel.Information,
+                ServiceFolder = Paths.ServiceFolder,
+                PackagesUrl = new Uri("https://packages.fiskaltrust.cloud")
+            };
         }
 
         private static void MergeLauncherConfiguration(LauncherConfiguration? source, LauncherConfiguration? target)

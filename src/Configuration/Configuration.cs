@@ -16,7 +16,6 @@ namespace fiskaltrust.Launcher.Configuration
         [JsonPropertyName("serviceFolder")]
         public string? ServiceFolder { get; set; }
 
-
         [JsonPropertyName("sandbox")]
         public bool? Sandbox { get; set; }
 
@@ -26,8 +25,11 @@ namespace fiskaltrust.Launcher.Configuration
         [JsonPropertyName("logFolder")]
         public string? LogFolder { get; set; }
                 
-        [JsonPropertyName("loLEvelFolder")]
+        [JsonPropertyName("logLevel")]
         public LogLevel? LogLevel { get; set; }
+                        
+        [JsonPropertyName("packagesUrl")]
+        public Uri? PackagesUrl { get; set; }
     }
 
     public record LauncherConfigurationInCashBoxConfiguration
