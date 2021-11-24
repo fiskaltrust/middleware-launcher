@@ -50,7 +50,11 @@ namespace fiskaltrust.Launcher.Services
                     throw new NotImplementedException();
             }
 
-            app.UseMiddleware<RequestResponseLoggingMiddleware>();
+            if (_launcherConfiguration.LogLevel == LogLevel.Debug)
+            {
+                app.UseMiddleware<RequestResponseLoggingMiddleware>();
+            }
+
             await app.StartAsync();
 
             foreach (var url in app.Urls)

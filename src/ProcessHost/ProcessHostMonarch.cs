@@ -11,12 +11,10 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly Dictionary<Guid, ProcessHostMonarch> _hosts;
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ftCashBoxConfiguration _cashBoxConfiguration;
-        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _logger;
 
-        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration)
+        public ProcessHostMonarcStartup(ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration)
         {
-            _loggerFactory = loggerFactory;
             _logger = logger;
             _hosts = hosts;
             _launcherConfiguration = launcherConfiguration;
@@ -80,6 +78,12 @@ namespace fiskaltrust.Launcher.ProcessHost
             config.Configuration.Add("sandbox", _launcherConfiguration.Sandbox);
             config.Configuration.Add("configuration", JsonSerializer.Serialize(_cashBoxConfiguration));
             config.Configuration.Add("servicefolder", _launcherConfiguration.ServiceFolder);
+            config.Configuration.Add("proxy", _launcherConfiguration.Proxy);
+
+            foreach (var keyToRemove in config.Configuration.Where(c => c.Value == null).Select(c => c.Key).ToList())
+            {
+                config.Configuration.Remove(keyToRemove);
+            }
 
             return config;
         }
@@ -112,7 +116,13 @@ namespace fiskaltrust.Launcher.ProcessHost
             _process.StartInfo.UseShellExecute = false;
             _process.StartInfo.FileName = executable;
             _process.StartInfo.CreateNoWindow = false;
-            _process.StartInfo.Arguments = $"host --package-type {packageType} --launcher-config \"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\" --package-config \"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(configuration)))}\"";
+
+            _process.StartInfo.Arguments = string.Join(" ", new string[] {
+                "host",
+                "--package-type", packageType.ToString(),
+                "--launcher-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\"",
+                "--package-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(configuration)))}\""
+            });
             _process.StartInfo.RedirectStandardError = true;
             _process.StartInfo.RedirectStandardOutput = true;
             _process.EnableRaisingEvents = true;

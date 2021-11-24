@@ -32,7 +32,7 @@ namespace fiskaltrust.Launcher.Configuration
         public Uri? PackagesUrl { get; set; }
 
         [JsonPropertyName("downloadTimeout")]
-        public int? DownloadTimeout { get; set; }
+        public int? DownloadTimeoutSec { get; set; }
 
         [JsonPropertyName("downloadRetry")]
         public int? DownloadRetry { get; set; }
@@ -40,8 +40,8 @@ namespace fiskaltrust.Launcher.Configuration
         [JsonPropertyName("sslValidation")]
         public bool? SslValidation { get; set; }
 
-        [JsonPropertyName("downloadProxy")]
-        public string? DownloadProxy { get; set; }
+        [JsonPropertyName("Proxy")]
+        public string? Proxy { get; set; }
     }
 
     public record LauncherConfigurationInCashBoxConfiguration

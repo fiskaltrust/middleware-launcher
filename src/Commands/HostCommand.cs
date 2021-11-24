@@ -48,19 +48,24 @@ namespace fiskaltrust.Launcher.Commands
 
                     services.AddSingleton<PluginLoader>();
 
-                    var bootstrapper = services.BuildServiceProvider().GetRequiredService<PluginLoader>().LoadComponent<IMiddlewareBootstrapper>(packageConfiguration.Package, new[] {
-                        typeof(IMiddlewareBootstrapper),
-                        typeof(IPOS),
-                        typeof(IDESSCD),
-                        typeof(IHelper),
-                        typeof(IServiceCollection),
-                        typeof(Microsoft.Extensions.Logging.ILogger),
-                        typeof(ILoggerFactory),
-                        typeof(ILogger<>)
-                    });
+                    var bootstrapper = services
+                        .BuildServiceProvider()
+                        .GetRequiredService<PluginLoader>()
+                        .LoadComponent<IMiddlewareBootstrapper>(
+                            Path.Join(launcherConfiguration.ServiceFolder, packageConfiguration.Package, $"{packageConfiguration.Package}.dll"),
+                            new[] {
+                                typeof(IMiddlewareBootstrapper),
+                                typeof(IPOS),
+                                typeof(IDESSCD),
+                                typeof(IHelper),
+                                typeof(IServiceCollection),
+                                typeof(Microsoft.Extensions.Logging.ILogger),
+                                typeof(ILoggerFactory),
+                                typeof(ILogger<>)
+                        });
 
                     bootstrapper.Id = packageConfiguration.Id;
-                    bootstrapper.Configuration = packageConfiguration.Configuration.ToDictionary(x => x.Key, x => (object?)x.Value.ToString());
+                    bootstrapper.Configuration = packageConfiguration.Configuration.ToDictionary(c => c.Key, c => (object?)c.Value.ToString());
 
                     bootstrapper.ConfigureServices(services);
 
