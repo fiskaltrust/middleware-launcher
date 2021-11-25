@@ -33,6 +33,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<int?>("--download-retry"));
             AddOption(new Option<bool?>("--ssl-validation"));
             AddOption(new Option<string?>("--proxy"));
+            AddOption(new Option<string?>("--processhost-ping-period"));
 
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
             AddOption(new Option<string>("--cashbox-configuration-file", getDefaultValue: () => "cashbox.configuration.json"));
@@ -48,11 +49,10 @@ namespace fiskaltrust.Launcher.Commands
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
-            var cashboxLauncherConfiguration = JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile))?.LauncherConfiguration;
             var launcherConfiguration = GetDefaultLauncherConfiguration();
 
             MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration(), launcherConfiguration);
-            MergeLauncherConfiguration(cashboxLauncherConfiguration, launcherConfiguration);
+            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile))?.LauncherConfiguration, launcherConfiguration);
             MergeLauncherConfiguration(ArgsLauncherConfiguration, launcherConfiguration);
 
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile)) ?? throw new Exception("Empty Configuration File");
@@ -106,6 +106,7 @@ namespace fiskaltrust.Launcher.Commands
                 DownloadRetry = 1,
                 SslValidation = true,
                 Proxy = null,
+                ProcessHostPingPeriodSec = 10,
             };
         }
 

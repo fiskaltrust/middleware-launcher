@@ -21,7 +21,7 @@ namespace fiskaltrust.Launcher.Commands
         public HostCommand() : base("host")
         {
             AddOption(new Option<string>("--package-config"));
-            AddOption(new Option<PackageType>("--package-type"));
+            AddOption(new Option<string>("--plebian-config"));
             AddOption(new Option<string>("--launcher-config"));
         }
     }
@@ -30,12 +30,13 @@ namespace fiskaltrust.Launcher.Commands
     {
         public string PackageConfig { get; set; } = null!;
         public string LauncherConfig { get; set; } = null!;
-        public PackageType PackageType { get; set; }
+        public string PlebianConfig { get; set; } = null!;
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
             var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfig))) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfig)}");
             var packageConfiguration = JsonSerializer.Deserialize<PackageConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PackageConfig))) ?? throw new Exception($"Could not deserialize {nameof(PackageConfig)}");
+            var plebianConfiguration = JsonSerializer.Deserialize<PlebianConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfig))) ?? throw new Exception($"Could not deserialize {nameof(PlebianConfig)}");
 
             var builder = Host.CreateDefaultBuilder()
                 .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(services, packageConfiguration.Id.ToString()))
@@ -44,7 +45,7 @@ namespace fiskaltrust.Launcher.Commands
                 {
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => packageConfiguration);
-                    services.AddSingleton(_ => new PlebianConfiguration { PackageType = PackageType });
+                    services.AddSingleton(_ => plebianConfiguration);
 
                     services.AddSingleton<PluginLoader>();
 

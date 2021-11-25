@@ -24,7 +24,7 @@ namespace fiskaltrust.Launcher.Extensions
             var consoleOutputTemplate = packageConfiguration switch
             {
                 null => $"[{{Timestamp:HH:mm:ss}} {{Level:u3}}] {{Message:lj}}{{NewLine}}{{Exception}}",
-                _ => $"[{{Timestamp:HH:mm:ss}} {{Level:u3}} {packageConfiguration.Package}] {{Message:lj}}{{NewLine}}{{Exception}}",
+                _ => $"[{{Timestamp:HH:mm:ss}} {{Level:u3}} {packageConfiguration.Package} {packageConfiguration.Id}] {{Message:lj}}{{NewLine}}{{Exception}}",
             };
 
             return loggerConfiguration.MinimumLevel.Is(Serilog.Extensions.Logging.LevelConvert.ToSerilogLevel(launcherConfiguration.LogLevel!.Value))

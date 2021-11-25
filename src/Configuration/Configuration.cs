@@ -40,8 +40,12 @@ namespace fiskaltrust.Launcher.Configuration
         [JsonPropertyName("sslValidation")]
         public bool? SslValidation { get; set; }
 
-        [JsonPropertyName("Proxy")]
+        [JsonPropertyName("proxy")]
         public string? Proxy { get; set; }
+
+        [JsonPropertyName("processHostPingPeriodSec")]
+        public int? ProcessHostPingPeriodSec { get; set; }
+        
     }
 
     public record LauncherConfigurationInCashBoxConfiguration

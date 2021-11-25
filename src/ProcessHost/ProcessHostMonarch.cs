@@ -47,8 +47,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             }
             catch (Exception e)
             {
-                // _hosts.Select(h => h.Value.Stopped().Exception);
-                _logger.LogError("{Message}", e.Message);
+                _logger.LogError(e, "Error starting host.");
             }
 
             return;
@@ -119,7 +118,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _process.StartInfo.Arguments = string.Join(" ", new string[] {
                 "host",
-                "--package-type", packageType.ToString(),
+                "--plebian-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new PlebianConfiguration { PackageType = packageType })))}\"",
                 "--launcher-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\"",
                 "--package-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(configuration)))}\""
             });

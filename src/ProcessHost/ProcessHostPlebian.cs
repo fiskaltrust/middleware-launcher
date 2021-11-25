@@ -22,14 +22,16 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly IProcessHostService? _processHostService;
         private readonly HostingService _hosting;
         private readonly PlebianConfiguration _plebianConfiguration;
+        private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ILogger<ProcessHostPlebian> _logger;
         private readonly IServiceProvider _services;
 
         public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services)
         {
             _logger = logger;
-            _packageConfiguration = packageConfiguration;
             _hosting = hosting;
+            _launcherConfiguration = launcherConfiguration;
+            _packageConfiguration = packageConfiguration;
             _plebianConfiguration = plebianConfiguration;
             _services = services;
 
@@ -61,7 +63,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 {
                     while (true)
                     {
-                        Thread.Sleep(10000); // TODO make configurable?
+                        Thread.Sleep(_launcherConfiguration.ProcessHostPingPeriodSec!.Value * 1000);
                         try
                         {
                             await (_processHostService?.Ping() ?? Task.CompletedTask);
@@ -110,7 +112,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError("Could not start {url} hosting. {Message}, {HelpLink}, {InnerException}", url, e.Message, e.HelpLink ?? "", e.InnerException);
+                    _logger.LogError(e, "Could not start {url} hosting.", url);
                 }
             }
 
