@@ -163,16 +163,6 @@ namespace fiskaltrust.Launcher.ProcessHost
                 }
             };
 
-            // _process.OutputDataReceived += (sender, e) =>
-            // {
-            //     Console.WriteLine(e.Data);
-            // };
-
-            // _process.ErrorDataReceived += (sender, e) =>
-            // {
-            //     Console.WriteLine(e.Data);
-            // };
-
             try
             {
                 if (!_process.Start()) { throw new Exception(); }
@@ -182,9 +172,6 @@ namespace fiskaltrust.Launcher.ProcessHost
                 _stopped.SetCanceled(cancellationToken);
                 return Task.CompletedTask;
             }
-
-            // _process.BeginOutputReadLine();
-            // _process.BeginErrorReadLine();
 
             return _started.Task;
         }
