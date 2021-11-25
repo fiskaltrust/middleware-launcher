@@ -13,6 +13,10 @@ using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.ifPOS.v1;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.Launcher.Clients;
+using fiskaltrust.Launcher.Interfaces;
+using fiskaltrust.Launcher.Logging;
+using Grpc.Net.Client;
+using ProtoBuf.Grpc.Client;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -39,7 +43,10 @@ namespace fiskaltrust.Launcher.Commands
             var plebianConfiguration = JsonSerializer.Deserialize<PlebianConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfig))) ?? throw new Exception($"Could not deserialize {nameof(PlebianConfig)}");
 
             var builder = Host.CreateDefaultBuilder()
-                .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(services, packageConfiguration.Id.ToString()))
+                .UseSerilog((hostingContext, services, loggerConfiguration) =>
+                     loggerConfiguration
+                        .AddLoggingConfiguration(services, packageConfiguration.Id.ToString())
+                        .WriteTo.GrpcSink(services.GetService<IProcessHostService>(), packageConfiguration))
                 .UseConsoleLifetime()
                 .ConfigureServices(services =>
                 {
@@ -48,6 +55,11 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => plebianConfiguration);
 
                     services.AddSingleton<PluginLoader>();
+
+                    if (launcherConfiguration.LauncherPort != null)
+                    {
+                        services.AddSingleton(_ => GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort!}").CreateGrpcService<IProcessHostService>());
+                    }
 
                     var bootstrapper = services
                         .BuildServiceProvider()

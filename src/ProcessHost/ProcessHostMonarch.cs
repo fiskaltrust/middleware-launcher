@@ -163,15 +163,15 @@ namespace fiskaltrust.Launcher.ProcessHost
                 }
             };
 
-            _process.OutputDataReceived += (sender, e) =>
-            {
-                Console.WriteLine(e.Data);
-            };
+            // _process.OutputDataReceived += (sender, e) =>
+            // {
+            //     Console.WriteLine(e.Data);
+            // };
 
-            _process.ErrorDataReceived += (sender, e) =>
-            {
-                Console.WriteLine(e.Data);
-            };
+            // _process.ErrorDataReceived += (sender, e) =>
+            // {
+            //     Console.WriteLine(e.Data);
+            // };
 
             try
             {
@@ -183,8 +183,8 @@ namespace fiskaltrust.Launcher.ProcessHost
                 return Task.CompletedTask;
             }
 
-            _process.BeginOutputReadLine();
-            _process.BeginErrorReadLine();
+            // _process.BeginOutputReadLine();
+            // _process.BeginErrorReadLine();
 
             return _started.Task;
         }

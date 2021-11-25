@@ -26,7 +26,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly ILogger<ProcessHostPlebian> _logger;
         private readonly IServiceProvider _services;
 
-        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services)
+        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services, IProcessHostService? processHostService)
         {
             _logger = logger;
             _hosting = hosting;
@@ -34,12 +34,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             _packageConfiguration = packageConfiguration;
             _plebianConfiguration = plebianConfiguration;
             _services = services;
-
-            if (launcherConfiguration.LauncherPort != null)
-            {
-                var channel = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort!}");
-                _processHostService = channel.CreateGrpcService<IProcessHostService>();
-            }
+            _processHostService = processHostService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)

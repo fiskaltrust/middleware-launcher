@@ -31,20 +31,24 @@ namespace fiskaltrust.Launcher.Clients
             switch (configuration.UrlType)
             {
                 case "grpc":
-                    var grpcUrl = configuration.Url.Replace("grpc://", "http://");
-                    //var proxy = GrpcDESSCDFactory.CreateSSCDAsync(new GrpcClientOptions { Url = new Uri(grpcUrl), RetryPolicyOptions = retryPolicyoptions, ChannelOptions = new GrpcChannelOptions { Credentials = ChannelCredentials.Insecure } }).Result;
+                    {
+                        var url = configuration.Url.Replace("grpc://", "http://");
+                        //var proxy = GrpcDESSCDFactory.CreateSSCDAsync(new GrpcClientOptions { Url = new Uri(grpcUrl), RetryPolicyOptions = retryPolicyoptions, ChannelOptions = new GrpcChannelOptions { Credentials = ChannelCredentials.Insecure } }).Result;
 
 
-                    //GrpcClientFactory.AllowUnencryptedHttp2 = true;
-                    var channel = GrpcChannel.ForAddress(new Uri(grpcUrl));
-                    var proxy = channel.CreateGrpcService<IDESSCD>();
+                        //GrpcClientFactory.AllowUnencryptedHttp2 = true;
+                        var channel = GrpcChannel.ForAddress(new Uri(url));
+                        var proxy = channel.CreateGrpcService<IDESSCD>();
 
 
-                    proxy.EchoAsync(new ScuDeEchoRequest { Message = "Hello SCU!" }).Wait();
-                    return proxy;
+                        proxy.EchoAsync(new ScuDeEchoRequest { Message = "Hello SCU!" }).Wait();
+                        return proxy;
+                    }
                 case "rest":
-                    var url = configuration.Url.Replace("rest://", "http://");
-                    return HttpDESSCDFactory.CreateSSCDAsync(new ClientOptions { Url = new Uri(url), RetryPolicyOptions = retryPolicyoptions }).Result;
+                    {
+                        var url = configuration.Url.Replace("rest://", "http://");
+                        return HttpDESSCDFactory.CreateSSCDAsync(new ClientOptions { Url = new Uri(url), RetryPolicyOptions = retryPolicyoptions }).Result;
+                    }
                 default:
                     throw new ArgumentException("This version of the fiskaltrust Launcher currently only supports gRPC and HTTP communication.");
             }

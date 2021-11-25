@@ -1,15 +1,15 @@
 ﻿using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Middlewares;
+using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.IO;
 using ProtoBuf.Grpc.Server;
 using Serilog;
 using System.Net;
 using System.Reflection;
-using System.Linq;
 using fiskaltrust.Launcher.Configuration;
+using fiskaltrust.Launcher.Interfaces;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -18,11 +18,13 @@ namespace fiskaltrust.Launcher.Services
         private readonly List<WebApplication> _hosts = new();
         private readonly PackageConfiguration _packageConfiguration;
         private readonly LauncherConfiguration _launcherConfiguration;
+        private readonly IProcessHostService? _processHostService;
         private readonly ILogger<HostingService> _logger;
-        public HostingService(ILogger<HostingService> logger, PackageConfiguration packageConfiguration, LauncherConfiguration launcherConfiguration)
+        public HostingService(ILogger<HostingService> logger, PackageConfiguration packageConfiguration, LauncherConfiguration launcherConfiguration, IProcessHostService? processHostService)
         {
             _packageConfiguration = packageConfiguration;
             _launcherConfiguration = launcherConfiguration;
+            _processHostService = processHostService;
             _logger = logger;
         }
 
@@ -30,7 +32,11 @@ namespace fiskaltrust.Launcher.Services
         {
             var builder = WebApplication.CreateBuilder();
             builder.Services.AddSingleton(_ => _launcherConfiguration);
-            builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(services, _packageConfiguration.Id.ToString()));
+            builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) =>
+                loggerConfiguration
+                    .AddLoggingConfiguration(services, _packageConfiguration.Id.ToString())
+                    .WriteTo.GrpcSink(_processHostService, _packageConfiguration)
+            );
 
             WebApplication app;
 
