@@ -45,7 +45,7 @@ namespace fiskaltrust.Launcher.Configuration
 
         [JsonPropertyName("processHostPingPeriodSec")]
         public int? ProcessHostPingPeriodSec { get; set; }
-        
+
     }
 
     public record LauncherConfigurationInCashBoxConfiguration

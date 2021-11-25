@@ -1,6 +1,4 @@
 
-using System.Runtime.Serialization;
-using System.Text.Json;
 using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
@@ -39,8 +37,12 @@ namespace fiskaltrust.Launcher.Logging
             writer.Flush();
             _processHostService?.Log(new LogEventDto
             {
-                Id = _packageConfiguration.Id.ToString(),
-                LogEvent = writer.ToString()
+                LogEvent = writer.ToString(),
+                Enrichment = new()
+                {
+                    { "EnrichedId", _packageConfiguration.Id.ToString() },
+                    { "EnrichedPackage", _packageConfiguration.Package }
+                }
             });
         }
     }

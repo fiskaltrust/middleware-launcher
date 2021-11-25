@@ -1,17 +1,11 @@
-using System.Reflection;
 using fiskaltrust.ifPOS.v1;
 using fiskaltrust.ifPOS.v1.de;
-using fiskaltrust.Launcher.AssemblyLoading;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.Services;
-using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.storage.serialization.V0;
-using Grpc.Net.Client;
-using ProtoBuf.Grpc.Client;
-using Serilog;
 
 namespace fiskaltrust.Launcher.ProcessHost
 {
@@ -40,7 +34,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Package: {Package} {Version}", _packageConfiguration.Package, _packageConfiguration.Version);
-            _logger.LogInformation("Id:      {ID}", _packageConfiguration.Id);
+            _logger.LogInformation("Id:      {Id}", _packageConfiguration.Id);
 
             await StartHosting(_packageConfiguration.Url);
 

@@ -4,14 +4,11 @@ using System.Text.Json;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Constants;
-using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.ProcessHost;
 using fiskaltrust.Launcher.Services;
 using fiskaltrust.storage.serialization.V0;
-using Microsoft.AspNetCore;
 using Serilog;
 using ProtoBuf.Grpc.Server;
-using System.CommandLine.Hosting;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -59,7 +56,9 @@ namespace fiskaltrust.Launcher.Commands
 
             var builder = WebApplication.CreateBuilder();
             builder.Host
-                .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration.AddLoggingConfiguration(services, launcherConfiguration.CashboxId.ToString()))
+                .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration
+                    .AddLoggingConfiguration(services, launcherConfiguration.CashboxId.ToString())
+                    .Enrich.FromLogContext())
                 .UseConsoleLifetime()
                 .ConfigureServices((hostContext, services) =>
                 {
