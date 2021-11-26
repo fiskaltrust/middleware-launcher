@@ -57,7 +57,7 @@ namespace fiskaltrust.Launcher.Commands
             var builder = WebApplication.CreateBuilder();
             builder.Host
                 .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration
-                    .AddLoggingConfiguration(services, launcherConfiguration.CashboxId.ToString())
+                    .AddLoggingConfiguration(launcherConfiguration, launcherConfiguration.CashboxId.ToString())
                     .Enrich.FromLogContext())
                 .UseConsoleLifetime()
                 .ConfigureServices((hostContext, services) =>

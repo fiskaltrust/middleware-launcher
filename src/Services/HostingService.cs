@@ -20,7 +20,7 @@ namespace fiskaltrust.Launcher.Services
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly IProcessHostService? _processHostService;
         private readonly ILogger<HostingService> _logger;
-        public HostingService(ILogger<HostingService> logger, PackageConfiguration packageConfiguration, LauncherConfiguration launcherConfiguration, IProcessHostService? processHostService)
+        public HostingService(ILogger<HostingService> logger, PackageConfiguration packageConfiguration, LauncherConfiguration launcherConfiguration, IProcessHostService? processHostService = null)
         {
             _packageConfiguration = packageConfiguration;
             _launcherConfiguration = launcherConfiguration;
@@ -31,12 +31,11 @@ namespace fiskaltrust.Launcher.Services
         public async Task<WebApplication> HostService(Type T, Uri uri, HostingType hostingType, object instance, Action<WebApplication>? addEndpoints = null)
         {
             var builder = WebApplication.CreateBuilder();
-            builder.Services.AddSingleton(_ => _launcherConfiguration);
+
             builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) =>
                 loggerConfiguration
-                    .AddLoggingConfiguration(services, _packageConfiguration.Id.ToString())
-                    .WriteTo.GrpcSink(_processHostService, _packageConfiguration)
-            );
+                    .AddLoggingConfiguration(_launcherConfiguration, _packageConfiguration.Id.ToString())
+                    .WriteTo.GrpcSink(_packageConfiguration, _processHostService));
 
             WebApplication app;
 

@@ -5,6 +5,7 @@ using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.Services;
+using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.ProcessHost
@@ -20,7 +21,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly ILogger<ProcessHostPlebian> _logger;
         private readonly IServiceProvider _services;
 
-        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services, IProcessHostService? processHostService)
+        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services, IProcessHostService? processHostService = null)
         {
             _logger = logger;
             _hosting = hosting;
@@ -70,17 +71,19 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private async Task StartHosting(string[] uris)
         {
-            var hostingFailedCompletely = true;
+            var hostingFailedCompletely = uris.Length > 0;
+
+            (object instance, Type type) = _plebianConfiguration.PackageType switch
+            {
+                PackageType.Queue => ((object)_services.GetRequiredService<IPOS>(), typeof(IPOS)),
+                PackageType.SCU => ((object)_services.GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
+                PackageType.Helper => ((object)_services.GetRequiredService<IHelper>(), typeof(IHelper)),
+                _ => throw new NotImplementedException()
+            };
+
             foreach (var uri in uris)
             {
                 var url = new Uri(uri);
-
-                (object instance, Type type) = _plebianConfiguration.PackageType switch
-                {
-                    PackageType.Queue => ((object)_services.GetRequiredService<IPOS>(), typeof(IPOS)),
-                    PackageType.SCU => ((object)_services.GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
-                    _ => throw new NotImplementedException()
-                };
 
                 var hostingType = Enum.Parse<HostingType>(url.Scheme.ToUpper());
 
@@ -90,10 +93,13 @@ namespace fiskaltrust.Launcher.ProcessHost
                     {
                         PackageType.Queue => (WebApplication app) => app.AddQueueEndpoints((IPOS)instance),
                         PackageType.SCU => (WebApplication app) => app.AddScuEndpoints((IDESSCD)instance),
+                        PackageType.Helper => (WebApplication _) => { }
+                        ,
                         _ => throw new NotImplementedException()
                     },
                     _ => null
                 };
+
                 try
                 {
                     await _hosting.HostService(type, url, hostingType, instance, addEndpoints);

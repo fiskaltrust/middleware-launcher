@@ -11,9 +11,9 @@ namespace fiskaltrust.Launcher.Logging
 {
     public static class GrpcSinkExtensions
     {
-        public static LoggerConfiguration GrpcSink(this LoggerSinkConfiguration loggerConfiguration, IProcessHostService? processHostService, PackageConfiguration packageConfiguration)
+        public static LoggerConfiguration GrpcSink(this LoggerSinkConfiguration loggerConfiguration, PackageConfiguration packageConfiguration, IProcessHostService? processHostService = null)
         {
-            return loggerConfiguration.Sink(new GrpcSink(processHostService, packageConfiguration));
+            return loggerConfiguration.Sink(new GrpcSink(packageConfiguration, processHostService));
         }
     }
 
@@ -23,7 +23,7 @@ namespace fiskaltrust.Launcher.Logging
         private readonly CompactJsonFormatter _formatter;
         private readonly PackageConfiguration _packageConfiguration;
 
-        public GrpcSink(IProcessHostService? processHostService, PackageConfiguration packageConfiguration)
+        public GrpcSink(PackageConfiguration packageConfiguration, IProcessHostService? processHostService = null)
         {
             _formatter = new CompactJsonFormatter();
             _processHostService = processHostService;
@@ -32,18 +32,22 @@ namespace fiskaltrust.Launcher.Logging
 
         public void Emit(LogEvent logEvent)
         {
-            var writer = new StringWriter();
-            _formatter.Format(logEvent, writer);
-            writer.Flush();
-            _processHostService?.Log(new LogEventDto
+            if (_processHostService != null)
             {
-                LogEvent = writer.ToString(),
-                Enrichment = new()
+                var writer = new StringWriter();
+                _formatter.Format(logEvent, writer);
+                writer.Flush();
+
+                Task.Run(async () => await _processHostService!.Log(new LogEventDto
                 {
-                    { "EnrichedId", _packageConfiguration.Id.ToString() },
-                    { "EnrichedPackage", _packageConfiguration.Package }
-                }
-            });
+                    LogEvent = writer.ToString(),
+                    Enrichment = new()
+                    {
+                        { "EnrichedId", _packageConfiguration.Id.ToString() },
+                        { "EnrichedPackage", _packageConfiguration.Package }
+                    }
+                })).Wait();
+            }
         }
     }
 }

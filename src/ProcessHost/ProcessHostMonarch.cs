@@ -36,10 +36,10 @@ namespace fiskaltrust.Launcher.ProcessHost
                 await StartProcessHostMonarch(queue, PackageType.Queue, cancellationToken);
             }
 
-            // foreach (var helper in _cashBoxConfiguration.helpers)
-            // {
-            //     await StartProcessHostMonarch(helper, PackageType.Helper, cancellationToken);
-            // }
+            foreach (var helper in _cashBoxConfiguration.helpers)
+            {
+                await StartProcessHostMonarch(helper, PackageType.Helper, cancellationToken);
+            }
 
             try
             {
@@ -65,8 +65,21 @@ namespace fiskaltrust.Launcher.ProcessHost
                 monarch
             );
 
-            await monarch.Start(cancellationToken);
-            _logger.LogInformation("Started {Package} {Id}.", configuration.Package, configuration.Id);
+            try
+            {
+                await monarch.Start(cancellationToken);
+                _logger.LogInformation("Started {Package} {Id}.", configuration.Package, configuration.Id);
+            }
+            catch (TaskCanceledException)
+            {
+                _logger.LogError("Could not start {Package} {Id}.", configuration.Package, configuration.Id);
+                // not throwing here keeps the launcher alive even when theres a package completely failed
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Could not start {Package} {Id}.", configuration.Package, configuration.Id);
+                throw;
+            }
         }
 
         private PackageConfiguration AddDefaultPackageConfig(PackageConfiguration config)
@@ -149,17 +162,19 @@ namespace fiskaltrust.Launcher.ProcessHost
                         catch
                         {
                             _stopped.SetCanceled(cancellationToken);
+                            _started.TrySetResult();
                         }
                     }
                     else
                     {
                         _stopped.SetResult();
-                        _started.SetCanceled();
+                        _started.TrySetCanceled();
                     }
                 }
                 else
                 {
                     _stopped.SetResult();
+                    _started.TrySetResult();
                 }
             };
 

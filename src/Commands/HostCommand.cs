@@ -26,6 +26,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string>("--package-config"));
             AddOption(new Option<string>("--plebian-config"));
             AddOption(new Option<string>("--launcher-config"));
+            AddOption(new Option<bool>("--no-process-host-service", getDefaultValue: () => false));
         }
     }
 
@@ -34,6 +35,7 @@ namespace fiskaltrust.Launcher.Commands
         public string PackageConfig { get; set; } = null!;
         public string LauncherConfig { get; set; } = null!;
         public string PlebianConfig { get; set; } = null!;
+        public bool NoProcessHostService { get; set; }
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
@@ -41,11 +43,19 @@ namespace fiskaltrust.Launcher.Commands
             var packageConfiguration = JsonSerializer.Deserialize<PackageConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PackageConfig))) ?? throw new Exception($"Could not deserialize {nameof(PackageConfig)}");
             var plebianConfiguration = JsonSerializer.Deserialize<PlebianConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfig))) ?? throw new Exception($"Could not deserialize {nameof(PlebianConfig)}");
 
+            IProcessHostService? processHostService = null;
+            if (!NoProcessHostService)
+            {
+                processHostService = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort!}").CreateGrpcService<IProcessHostService>();
+            }
+
+            Log.Logger = new LoggerConfiguration()
+                .AddLoggingConfiguration(launcherConfiguration, packageConfiguration.Id.ToString())
+                .WriteTo.GrpcSink(packageConfiguration, processHostService)
+                .CreateLogger();
+
             var builder = Host.CreateDefaultBuilder()
-                .UseSerilog((hostingContext, services, loggerConfiguration) =>
-                     loggerConfiguration
-                        .AddLoggingConfiguration(services, packageConfiguration.Id.ToString())
-                        .WriteTo.GrpcSink(services.GetService<IProcessHostService>(), packageConfiguration))
+                .UseSerilog()
                 .UseConsoleLifetime()
                 .ConfigureServices(services =>
                 {
@@ -53,45 +63,64 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => packageConfiguration);
                     services.AddSingleton(_ => plebianConfiguration);
 
-                    services.AddSingleton<PluginLoader>();
+                    var pluginLoader = new PluginLoader();
+                    services.AddSingleton(_ => pluginLoader);
 
-                    if (launcherConfiguration.LauncherPort != null)
+                    if (processHostService != null)
                     {
-                        services.AddSingleton(_ => GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort!}").CreateGrpcService<IProcessHostService>());
+                        services.AddSingleton(_ => processHostService);
                     }
-
-                    var bootstrapper = services
-                        .BuildServiceProvider()
-                        .GetRequiredService<PluginLoader>()
-                        .LoadComponent<IMiddlewareBootstrapper>(
-                            Path.Join(launcherConfiguration.ServiceFolder, packageConfiguration.Package, $"{packageConfiguration.Package}.dll"),
-                            new[] {
-                                typeof(IMiddlewareBootstrapper),
-                                typeof(IPOS),
-                                typeof(IDESSCD),
-                                typeof(IHelper),
-                                typeof(IServiceCollection),
-                                typeof(Microsoft.Extensions.Logging.ILogger),
-                                typeof(ILoggerFactory),
-                                typeof(ILogger<>)
-                        });
-
-                    bootstrapper.Id = packageConfiguration.Id;
-                    bootstrapper.Configuration = packageConfiguration.Configuration.ToDictionary(c => c.Key, c => (object?)c.Value.ToString());
-
-                    bootstrapper.ConfigureServices(services);
-
-                    services.AddSingleton(_ => bootstrapper);
 
                     services.AddSingleton<HostingService>();
                     services.AddHostedService<ProcessHostPlebian>();
 
                     services.AddSingleton<IClientFactory<IDESSCD>, DESSCDClientFactory>();
                     services.AddSingleton<IClientFactory<IPOS>, POSClientFactory>();
+
+                    try
+                    {
+                        var bootstrapper = pluginLoader
+                            .LoadComponent<IMiddlewareBootstrapper>(
+                                Path.Join(launcherConfiguration.ServiceFolder, packageConfiguration.Package, $"{packageConfiguration.Package}.dll"),
+                                new[] {
+                                    typeof(IMiddlewareBootstrapper),
+                                    typeof(IPOS),
+                                    typeof(IDESSCD),
+                                    typeof(IHelper),
+                                    typeof(IServiceCollection),
+                                    typeof(Microsoft.Extensions.Logging.ILogger),
+                                    typeof(ILoggerFactory),
+                                    typeof(ILogger<>)
+                            });
+
+                        bootstrapper.Id = packageConfiguration.Id;
+                        bootstrapper.Configuration = packageConfiguration.Configuration.ToDictionary(c => c.Key, c => (object?)c.Value.ToString());
+
+                        bootstrapper.ConfigureServices(services);
+
+                        services.AddSingleton(_ => bootstrapper);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, "Could not load {Type}.", nameof(IMiddlewareBootstrapper));
+                        throw;
+                    } // Will also be detected and logged propperly later
                 });
 
-            var app = builder.Build();
-            await app.RunAsync();
+            try
+            {
+                var app = builder.Build();
+                await app.RunAsync();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "An unhandled exception occured");
+                return 1;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
 
             return 0;
         }
