@@ -46,7 +46,7 @@ namespace fiskaltrust.Launcher.Logging
                         { "EnrichedId", _packageConfiguration.Id.ToString() },
                         { "EnrichedPackage", _packageConfiguration.Package }
                     }
-                })).Wait();
+                })).GetAwaiter().GetResult();
             }
         }
     }
