@@ -66,7 +66,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             );
 
             await monarch.Start(cancellationToken);
-            _logger.LogInformation("Started {Package} {Id}", configuration.Package, configuration.Id);
+            _logger.LogInformation("Started {Package} {Id}.", configuration.Package, configuration.Id);
         }
 
         private PackageConfiguration AddDefaultPackageConfig(PackageConfiguration config)
@@ -97,7 +97,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 _logger.LogInformation("Admin User: {admin}", principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator));
             }
             _logger.LogInformation("CWD:        {CWD}", Path.GetFullPath("./"));
-            _logger.LogInformation("CashBoxID:  {CashBoxId}", _launcherConfiguration.CashboxId);
+            _logger.LogInformation("CashBoxId:  {CashBoxId}", _launcherConfiguration.CashboxId);
         }
     }
 
@@ -107,7 +107,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly TaskCompletionSource _started;
         private readonly TaskCompletionSource _stopped;
 
-        public ProcessHostMonarch(LauncherConfiguration launcherConfiguration, PackageConfiguration configuration, PackageType packageType)
+        public ProcessHostMonarch(LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PackageType packageType)
         {
             var executable = Environment.ProcessPath ?? throw new Exception("Could not find launcher .exe");
 
@@ -120,7 +120,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 "host",
                 "--plebian-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new PlebianConfiguration { PackageType = packageType })))}\"",
                 "--launcher-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\"",
-                "--package-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(configuration)))}\""
+                "--package-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(packageConfiguration)))}\""
             });
             _process.StartInfo.RedirectStandardError = true;
             _process.StartInfo.RedirectStandardOutput = true;
@@ -163,16 +163,6 @@ namespace fiskaltrust.Launcher.ProcessHost
                 }
             };
 
-            _process.OutputDataReceived += (sender, e) =>
-            {
-                Console.WriteLine(e.Data);
-            };
-
-            _process.ErrorDataReceived += (sender, e) =>
-            {
-                Console.WriteLine(e.Data);
-            };
-
             try
             {
                 if (!_process.Start()) { throw new Exception(); }
@@ -182,9 +172,6 @@ namespace fiskaltrust.Launcher.ProcessHost
                 _stopped.SetCanceled(cancellationToken);
                 return Task.CompletedTask;
             }
-
-            _process.BeginOutputReadLine();
-            _process.BeginErrorReadLine();
 
             return _started.Task;
         }

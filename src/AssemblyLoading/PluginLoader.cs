@@ -1,10 +1,4 @@
-﻿using fiskaltrust.ifPOS.v1;
-using fiskaltrust.ifPOS.v1.de;
-using fiskaltrust.Launcher.Configuration;
-using fiskaltrust.Middleware.Abstractions;
-using McMaster.NETCore.Plugins;
-
-namespace fiskaltrust.Launcher.AssemblyLoading
+﻿namespace fiskaltrust.Launcher.AssemblyLoading
 {
 
     public class PluginLoader
