@@ -9,7 +9,7 @@ using fiskaltrust.Launcher.Services;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
 using ProtoBuf.Grpc.Server;
-using fiskaltrust.Launcher.PackageDownload;
+using fiskaltrust.Launcher.Download;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -44,7 +44,7 @@ namespace fiskaltrust.Launcher.Commands
 
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
-        public string CashboxConfigurationFile { get; set; } = null!;
+        public string? CashboxConfigurationFile { get; set; }
 
 
         public async Task<int> InvokeAsync(InvocationContext context)
@@ -52,8 +52,11 @@ namespace fiskaltrust.Launcher.Commands
             var launcherConfiguration = GetDefaultLauncherConfiguration();
 
             MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration(), launcherConfiguration);
-            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile))?.LauncherConfiguration, launcherConfiguration);
             MergeLauncherConfiguration(ArgsLauncherConfiguration, launcherConfiguration);
+            
+            CashboxConfigurationFile = await Downloader.DownloadConfiguration(launcherConfiguration, CashboxConfigurationFile);
+
+            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile))?.LauncherConfiguration, launcherConfiguration);
 
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile)) ?? throw new Exception("Empty Configuration File");
             
@@ -71,7 +74,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => cashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
-                    services.AddSingleton<PackageDownloader>();
+                    services.AddSingleton<Downloader>();
                     services.AddHostedService<ProcessHostMonarcStartup>();
                     services.AddSingleton(_ => Log.Logger);
                 });

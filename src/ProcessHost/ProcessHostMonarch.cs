@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
-using fiskaltrust.Launcher.PackageDownload;
+using fiskaltrust.Launcher.Download;
 using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.ProcessHost
@@ -12,10 +12,10 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly Dictionary<Guid, ProcessHostMonarch> _hosts;
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ftCashBoxConfiguration _cashBoxConfiguration;
-        private readonly PackageDownloader _downloader;
+        private readonly Downloader _downloader;
         private readonly ILogger _logger;
 
-        public ProcessHostMonarcStartup(ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader)
+        public ProcessHostMonarcStartup(ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, Downloader downloader)
         {
             _logger = logger;
             _hosts = hosts;

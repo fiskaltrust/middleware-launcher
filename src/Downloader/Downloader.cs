@@ -3,14 +3,14 @@ using System.IO.Compression;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.storage.serialization.V0;
 
-namespace fiskaltrust.Launcher.PackageDownload
+namespace fiskaltrust.Launcher.Download
 {
-    public class PackageDownloader
+    public class Downloader
     {
         private readonly LauncherConfiguration _configuration;
-        private readonly ILogger<PackageDownloader> _logger;
+        private readonly ILogger<Downloader> _logger;
 
-        public PackageDownloader(ILogger<PackageDownloader> logger, LauncherConfiguration configuration)
+        public Downloader(ILogger<Downloader> logger, LauncherConfiguration configuration)
         {
             _logger = logger;
             _configuration = configuration;
@@ -70,6 +70,14 @@ namespace fiskaltrust.Launcher.PackageDownload
             }
 
             throw new Exception("Downloaded Package is invalid");
+        }
+
+        public static async Task<string> DownloadConfiguration(LauncherConfiguration configuration, string? cashboxConfigurationFile) {
+            var cashboxConfigurationPath = cashboxConfigurationFile ?? Path.Join(configuration.ServiceFolder!, "service", configuration.CashboxId!.ToString(), "configuration.json");
+
+            // TODO Download newest configuration
+
+            return cashboxConfigurationPath;
         }
     }
 }

@@ -16,7 +16,7 @@ using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.Logging;
 using Grpc.Net.Client;
 using ProtoBuf.Grpc.Client;
-using fiskaltrust.Launcher.PackageDownload;
+using fiskaltrust.Launcher.Download;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -77,7 +77,7 @@ namespace fiskaltrust.Launcher.Commands
 
                     services.AddSingleton<IClientFactory<IDESSCD>, DESSCDClientFactory>();
                     services.AddSingleton<IClientFactory<IPOS>, POSClientFactory>();
-                    var downloader = new PackageDownloader(services.BuildServiceProvider().GetRequiredService<ILogger<PackageDownloader>>(), launcherConfiguration);
+                    var downloader = new Downloader(services.BuildServiceProvider().GetRequiredService<ILogger<Downloader>>(), launcherConfiguration);
 
                     try
                     {
