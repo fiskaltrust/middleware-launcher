@@ -2,6 +2,7 @@
 using fiskaltrust.Launcher.Configuration;
 using Serilog;
 using Serilog.Events;
+using Serilog.Filters;
 
 namespace fiskaltrust.Launcher.Extensions
 {
@@ -24,7 +25,10 @@ namespace fiskaltrust.Launcher.Extensions
             .MinimumLevel.Override("System", LogEventLevel.Warning)
             .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
             .MinimumLevel.Override("ProtoBuf", LogEventLevel.Warning)
-            .WriteTo.File(Path.Join(launcherConfiguration.LogFolder, "logs", $"log{suffix}-.txt"), rollingInterval: RollingInterval.Day, shared: true);
+            .WriteTo.Logger(configuration =>
+                configuration
+                    .Filter.ByExcluding(Matching.WithProperty("EnrichedId"))
+                    .WriteTo.File(Path.Join(launcherConfiguration.LogFolder, $"log{suffix}-.txt"), rollingInterval: RollingInterval.Day, shared: true));
         }
 
     }

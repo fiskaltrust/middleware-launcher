@@ -33,7 +33,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--processhost-ping-period"));
 
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
-            AddOption(new Option<string>("--cashbox-configuration-file", getDefaultValue: () => "cashbox.configuration.json"));
+            AddOption(new Option<string?>("--cashbox-configuration-file"));
         }
     }
 
@@ -74,7 +74,6 @@ namespace fiskaltrust.Launcher.Commands
             }
             builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{launcherConfiguration.LauncherPort!}")));
 
-
             builder.Services.AddCodeFirstGrpc();
 
             var app = builder.Build();
@@ -82,10 +81,7 @@ namespace fiskaltrust.Launcher.Commands
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 
-            await app.StartAsync();
-
-
-            await app.WaitForShutdownAsync();
+            await app.RunAsync();
 
             return 0;
         }
@@ -97,7 +93,7 @@ namespace fiskaltrust.Launcher.Commands
                 LauncherPort = 3000,
                 Sandbox = false,
                 UseOffline = false,
-                LogFolder = Path.Join(Paths.ServiceFolder, "logs"),
+                LogFolder = null,
                 LogLevel = LogLevel.Information,
                 ServiceFolder = Paths.ServiceFolder,
                 PackagesUrl = new Uri("https://packages.fiskaltrust.cloud"),

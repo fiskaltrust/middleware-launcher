@@ -22,8 +22,9 @@ namespace fiskaltrust.Launcher.Configuration
         [JsonPropertyName("useOffline")]
         public bool? UseOffline { get; set; }
 
+        private string? _logFolder;
         [JsonPropertyName("logFolder")]
-        public string? LogFolder { get; set; }
+        public string? LogFolder { get => _logFolder ?? (ServiceFolder != null ? Path.Combine(ServiceFolder!, "logs") : null); set => _logFolder = value; }
 
         [JsonPropertyName("logLevel")]
         public LogLevel? LogLevel { get; set; }

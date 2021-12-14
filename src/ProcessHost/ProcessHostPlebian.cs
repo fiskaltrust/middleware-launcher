@@ -44,6 +44,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             var promise = new TaskCompletionSource();
             cancellationToken.Register(() =>
             {
+                _logger.LogInformation("Stopping Package");
                 promise.SetResult();
             });
 
