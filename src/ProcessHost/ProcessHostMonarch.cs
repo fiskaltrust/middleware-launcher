@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
+using fiskaltrust.Launcher.PackageDownload;
 using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.ProcessHost
@@ -11,14 +12,16 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly Dictionary<Guid, ProcessHostMonarch> _hosts;
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ftCashBoxConfiguration _cashBoxConfiguration;
+        private readonly PackageDownloader _downloader;
         private readonly ILogger _logger;
 
-        public ProcessHostMonarcStartup(ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration)
+        public ProcessHostMonarcStartup(ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader)
         {
             _logger = logger;
             _hosts = hosts;
             _launcherConfiguration = launcherConfiguration;
             _cashBoxConfiguration = cashBoxConfiguration;
+            _downloader = downloader;
         }
 
 
@@ -55,6 +58,14 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private async Task StartProcessHostMonarch(PackageConfiguration configuration, PackageType packageType, CancellationToken cancellationToken)
         {
+            try {
+                await _downloader.DownloadPackage(configuration);
+            } catch(Exception e)
+            {
+                _logger.LogError(e, "Could not download package.");
+                throw new Commands.RunCommandHandler.LoggedException();
+            }
+
             var monarch = new ProcessHostMonarch(
                 _launcherConfiguration,
                 AddDefaultPackageConfig(configuration),
@@ -78,7 +89,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             catch (Exception e)
             {
                 _logger.LogError(e, "Could not start {Package} {Id}.", configuration.Package, configuration.Id);
-                throw;
+                throw new Commands.RunCommandHandler.LoggedException();
             }
         }
 
@@ -89,7 +100,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             config.Configuration.Add("useoffline", true);
             config.Configuration.Add("sandbox", _launcherConfiguration.Sandbox);
             config.Configuration.Add("configuration", JsonSerializer.Serialize(_cashBoxConfiguration));
-            config.Configuration.Add("servicefolder", _launcherConfiguration.ServiceFolder);
+            config.Configuration.Add("servicefolder", Path.Combine(_launcherConfiguration.ServiceFolder!, "service")); // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
             config.Configuration.Add("proxy", _launcherConfiguration.Proxy);
 
             foreach (var keyToRemove in config.Configuration.Where(c => c.Value == null).Select(c => c.Key).ToList())
@@ -157,7 +168,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                     {
                         try
                         {
-                            if (!_process.Start()) { throw new Exception(); }
+                            if (!_process.Start()) { throw new Exception("Could not start ProcessHost process."); }
                         }
                         catch
                         {
@@ -180,7 +191,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             try
             {
-                if (!_process.Start()) { throw new Exception(); }
+                if (!_process.Start()) { throw new Exception("Could not start ProcessHost process."); }
             }
             catch
             {

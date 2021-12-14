@@ -9,6 +9,7 @@ using fiskaltrust.Launcher.Services;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
 using ProtoBuf.Grpc.Server;
+using fiskaltrust.Launcher.PackageDownload;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -39,6 +40,8 @@ namespace fiskaltrust.Launcher.Commands
 
     public class RunCommandHandler : ICommandHandler
     {
+        public class LoggedException : Exception {}
+
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
         public string CashboxConfigurationFile { get; set; } = null!;
@@ -53,19 +56,24 @@ namespace fiskaltrust.Launcher.Commands
             MergeLauncherConfiguration(ArgsLauncherConfiguration, launcherConfiguration);
 
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile)) ?? throw new Exception("Empty Configuration File");
+            
+            Log.Logger = new LoggerConfiguration()
+                .AddLoggingConfiguration(launcherConfiguration, launcherConfiguration.CashboxId.ToString())
+                .Enrich.FromLogContext()
+                .CreateLogger();
 
             var builder = WebApplication.CreateBuilder();
             builder.Host
-                .UseSerilog((hostingContext, services, loggerConfiguration) => loggerConfiguration
-                    .AddLoggingConfiguration(launcherConfiguration, launcherConfiguration.CashboxId.ToString())
-                    .Enrich.FromLogContext())
+                .UseSerilog()
                 .UseConsoleLifetime()
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => cashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
+                    services.AddSingleton<PackageDownloader>();
                     services.AddHostedService<ProcessHostMonarcStartup>();
+                    services.AddSingleton(_ => Log.Logger);
                 });
 
             if (launcherConfiguration.LauncherPort == null)
@@ -80,8 +88,25 @@ namespace fiskaltrust.Launcher.Commands
 
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
+    
 
-            await app.RunAsync();
+            try
+            {
+                await app.RunAsync();
+            }
+            catch (LoggedException)
+            {
+                return 1;
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "An unhandled exception occured");
+                return 1;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
 
             return 0;
         }
