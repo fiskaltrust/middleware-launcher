@@ -14,9 +14,11 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly ftCashBoxConfiguration _cashBoxConfiguration;
         private readonly Downloader _downloader;
         private readonly ILogger _logger;
+        private readonly ILoggerFactory _loggerFactory;
 
-        public ProcessHostMonarcStartup(ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, Downloader downloader)
+        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, Downloader downloader)
         {
+            _loggerFactory = loggerFactory;
             _logger = logger;
             _hosts = hosts;
             _launcherConfiguration = launcherConfiguration;
@@ -48,25 +50,29 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 await Task.WhenAll(_hosts.Select(h => h.Value.Stopped()));
             }
-            catch (Exception e)
+            catch
             {
-                _logger.LogError(e, "Error starting host.");
+                foreach (var failed in _hosts.Where(h => !h.Value.Stopped().IsCompletedSuccessfully).Select(h => (h.Key, h.Value.Stopped().Exception)))
+                {
+                    _logger.LogWarning(failed.Exception, "ProcessHost {Id} had crashed.", failed.Key);
+                }
             }
-
-            return;
         }
 
         private async Task StartProcessHostMonarch(PackageConfiguration configuration, PackageType packageType, CancellationToken cancellationToken)
         {
-            try {
+            try
+            {
                 await _downloader.DownloadPackage(configuration);
-            } catch(Exception e)
+            }
+            catch (Exception e)
             {
                 _logger.LogError(e, "Could not download package.");
-                throw new Commands.RunCommandHandler.LoggedException();
+                throw new Commands.RunCommandHandler.AlreadyLoggedException();
             }
 
             var monarch = new ProcessHostMonarch(
+                _loggerFactory.CreateLogger<ProcessHostMonarch>(),
                 _launcherConfiguration,
                 AddDefaultPackageConfig(configuration),
                 packageType);
@@ -89,7 +95,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             catch (Exception e)
             {
                 _logger.LogError(e, "Could not start {Package} {Id}.", configuration.Package, configuration.Id);
-                throw new Commands.RunCommandHandler.LoggedException();
+                throw new Commands.RunCommandHandler.AlreadyLoggedException();
             }
         }
 
@@ -130,9 +136,11 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly Process _process;
         private readonly TaskCompletionSource _started;
         private readonly TaskCompletionSource _stopped;
+        private readonly ILogger<ProcessHostMonarch> _logger;
 
-        public ProcessHostMonarch(LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PackageType packageType)
+        public ProcessHostMonarch(ILogger<ProcessHostMonarch> logger, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PackageType packageType)
         {
+            _logger = logger;
             var executable = Environment.ProcessPath ?? throw new Exception("Could not find launcher .exe");
 
             _process = new Process();
@@ -157,7 +165,11 @@ namespace fiskaltrust.Launcher.ProcessHost
         {
             cancellationToken.Register(() =>
             {
-                _process.Kill();
+                try
+                {
+                    _process.Kill();
+                }
+                catch { }
             });
 
             _process.Exited += (sender, e) =>
@@ -191,10 +203,11 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             try
             {
-                if (!_process.Start()) { throw new Exception("Could not start ProcessHost process."); }
+                if (!_process.Start()) { throw new Exception("Process.Start() was false."); }
             }
-            catch
+            catch (Exception e)
             {
+                _logger.LogError(e, "Could not start ProcessHost process.");
                 _stopped.SetCanceled(cancellationToken);
                 return Task.CompletedTask;
             }

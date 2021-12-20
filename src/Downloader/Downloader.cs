@@ -1,19 +1,83 @@
 
 using System.IO.Compression;
+using System.Net;
+using System.Text.Json;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.Download
 {
-    public class Downloader
+    public class Downloader : IDisposable
     {
         private readonly LauncherConfiguration _configuration;
-        private readonly ILogger<Downloader> _logger;
+        private readonly ILogger<Downloader>? _logger;
+        private readonly HttpClient _httpClient;
 
-        public Downloader(ILogger<Downloader> logger, LauncherConfiguration configuration)
+        public Downloader(ILogger<Downloader>? logger, LauncherConfiguration configuration)
         {
             _logger = logger;
             _configuration = configuration;
+            _httpClient = new HttpClient(new HttpClientHandler { Proxy = CreateProxy(configuration.Proxy) });
+        }
+
+        private static WebProxy? CreateProxy(string? proxyString)
+        {
+            if (proxyString != null)
+            {
+                string address = string.Empty;
+                bool bypasslocalhost = true;
+                List<string> bypass = new();
+                string username = string.Empty;
+                string password = string.Empty;
+
+                if (proxyString.ToLower() == "off")
+                {
+                    return new WebProxy();
+                }
+                else
+                {
+
+                    foreach (string keyvalue in proxyString.Split(new char[] { ';' }))
+                    {
+                        var data = keyvalue.Split(new char[] { '=' });
+                        if (data.Length < 2)
+                        {
+                            continue;
+                        }
+
+                        switch (data[0].ToLower().Trim())
+                        {
+                            case "address": address = data[1]; break;
+                            case "bypasslocalhost": if(!bool.TryParse(data[1], out bypasslocalhost)) { bypasslocalhost = false; } break;
+                            case "bypass": bypass.Add(data[1]); break;
+                            case "username": username = data[1]; break;
+                            case "password": password = data[1]; break;
+                            default: break;
+                        }
+                    }
+
+                    WebProxy? proxy = null;
+
+                    if (!string.IsNullOrWhiteSpace(address))
+                    {
+                        proxy = new WebProxy(address, bypasslocalhost, bypass.ToArray());
+                    }
+                    else
+                    {
+                        return null;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(username))
+                    {
+                        proxy.UseDefaultCredentials = false;
+                        proxy.Credentials = new NetworkCredential(username, password);
+                    }
+
+                    return proxy;
+                }
+            }
+
+            return null;
         }
 
         public string GetPackagePath(PackageConfiguration configuration)
@@ -24,8 +88,10 @@ namespace fiskaltrust.Launcher.Download
             if (File.Exists(targetName))
             {
                 return targetName;
-            } else {
-              throw new Exception("Could not find Package.");
+            }
+            else
+            {
+                throw new Exception("Could not find Package.");
             }
         }
 
@@ -50,12 +116,12 @@ namespace fiskaltrust.Launcher.Download
             {
                 if (!File.Exists(sourcePath))
                 {
-                    _logger.LogInformation("Downloading Package.");
+                    _logger?.LogInformation("Downloading Package.");
                     // TODO Download Package
                 }
                 else
                 {
-                    _logger.LogDebug("Found Package in cache.");
+                    _logger?.LogDebug("Found Package in cache.");
                 }
 
                 ZipFile.ExtractToDirectory(sourcePath, targetPath);
@@ -72,12 +138,31 @@ namespace fiskaltrust.Launcher.Download
             throw new Exception("Downloaded Package is invalid");
         }
 
-        public static async Task<string> DownloadConfiguration(LauncherConfiguration configuration, string? cashboxConfigurationFile) {
-            var cashboxConfigurationPath = cashboxConfigurationFile ?? Path.Join(configuration.ServiceFolder!, "service", configuration.CashboxId!.ToString(), "configuration.json");
+        public async Task<string> DownloadConfiguration(string? cashboxConfigurationFile)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}/api/configuration"));
 
-            // TODO Download newest configuration
+            request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+            request.Headers.Add("accesstoken", _configuration.AccessToken);
+
+            var response = await _httpClient.SendAsync(request);
+
+            response.EnsureSuccessStatusCode();
+
+            var responseString = await response.Content.ReadAsStringAsync();
+
+            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(responseString) ?? throw new Exception("Downloaded Configuration is Invalid");
+
+            var cashboxConfigurationPath = cashboxConfigurationFile ?? Path.Join(_configuration.ServiceFolder!, "service", _configuration.CashboxId!.ToString(), "configuration.json");
+
+            await File.WriteAllTextAsync(cashboxConfigurationPath, JsonSerializer.Serialize(cashboxConfiguration));
 
             return cashboxConfigurationPath;
+        }
+
+        public void Dispose()
+        {
+            _httpClient.Dispose();
         }
     }
 }

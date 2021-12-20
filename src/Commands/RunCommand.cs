@@ -21,7 +21,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--cashbox-id"));
             AddOption(new Option<string?>("--access-token"));
             AddOption(new Option<int?>("--launcher-port"));
-            AddOption(new Option<bool?>("--sandbox"));
+            AddOption(new Option<bool>("--sandbox"));
             AddOption(new Option<bool?>("--use-offline"));
             AddOption(new Option<string?>("--log-folder"));
             AddOption(new Option<LogLevel?>("--log-level"));
@@ -40,7 +40,7 @@ namespace fiskaltrust.Launcher.Commands
 
     public class RunCommandHandler : ICommandHandler
     {
-        public class LoggedException : Exception {}
+        public class AlreadyLoggedException : Exception { }
 
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
@@ -53,17 +53,30 @@ namespace fiskaltrust.Launcher.Commands
 
             MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration(), launcherConfiguration);
             MergeLauncherConfiguration(ArgsLauncherConfiguration, launcherConfiguration);
-            
-            CashboxConfigurationFile = await Downloader.DownloadConfiguration(launcherConfiguration, CashboxConfigurationFile);
 
-            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile))?.LauncherConfiguration, launcherConfiguration);
+            Exception? configDownloadException = null;
+            try
+            {
+                CashboxConfigurationFile = await new Downloader(null, launcherConfiguration).DownloadConfiguration(CashboxConfigurationFile);
+            }
+            catch (Exception e)
+            {
+                configDownloadException = e;
+            }
 
-            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile)) ?? throw new Exception("Empty Configuration File");
-            
+            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile!))?.LauncherConfiguration, launcherConfiguration);
+
+            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile!)) ?? throw new Exception("Invalid Configuration File");
+
             Log.Logger = new LoggerConfiguration()
                 .AddLoggingConfiguration(launcherConfiguration, launcherConfiguration.CashboxId.ToString())
                 .Enrich.FromLogContext()
                 .CreateLogger();
+
+            if(configDownloadException != null)
+            {
+                Log.Error(configDownloadException, "Could not update Cashbox configuration");
+            }
 
             var builder = WebApplication.CreateBuilder();
             builder.Host
@@ -91,13 +104,13 @@ namespace fiskaltrust.Launcher.Commands
 
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
-    
+
 
             try
             {
                 await app.RunAsync();
             }
-            catch (LoggedException)
+            catch (AlreadyLoggedException)
             {
                 return 1;
             }
@@ -124,7 +137,6 @@ namespace fiskaltrust.Launcher.Commands
                 LogFolder = null,
                 LogLevel = LogLevel.Information,
                 ServiceFolder = Paths.ServiceFolder,
-                PackagesUrl = new Uri("https://packages.fiskaltrust.cloud"),
                 DownloadTimeoutSec = 15,
                 DownloadRetry = 1,
                 SslValidation = true,

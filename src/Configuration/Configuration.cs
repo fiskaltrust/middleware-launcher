@@ -29,8 +29,9 @@ namespace fiskaltrust.Launcher.Configuration
         [JsonPropertyName("logLevel")]
         public LogLevel? LogLevel { get; set; }
 
+        private Uri? _packagesUrl;
         [JsonPropertyName("packagesUrl")]
-        public Uri? PackagesUrl { get; set; }
+        public Uri? PackagesUrl { get => _packagesUrl ?? new Uri((Sandbox ?? false) ? "https://packages-sandbox.fiskaltrust.cloud" : "https://packages.fiskaltrust.cloud"); set => _packagesUrl = value; }
 
         [JsonPropertyName("downloadTimeout")]
         public int? DownloadTimeoutSec { get; set; }
