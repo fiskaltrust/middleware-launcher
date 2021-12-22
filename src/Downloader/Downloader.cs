@@ -95,7 +95,7 @@ namespace fiskaltrust.Launcher.Download
             }
         }
 
-        public Task DownloadPackage(PackageConfiguration configuration)
+        public async Task DownloadPackage(PackageConfiguration configuration)
         {
             var name = $"{configuration.Package}-{configuration.Version}";
             var targetPath = Path.Combine(_configuration.ServiceFolder, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
@@ -103,7 +103,7 @@ namespace fiskaltrust.Launcher.Download
 
             if (File.Exists(targetName))
             {
-                return Task.CompletedTask;
+                return;
             }
 
             if (Directory.Exists(targetPath)) { Directory.Delete(targetPath, true); }
@@ -116,8 +116,18 @@ namespace fiskaltrust.Launcher.Download
             {
                 if (!File.Exists(sourcePath))
                 {
-                    _logger?.LogInformation("Downloading Package.");
-                    // TODO Download Package
+                    _logger?.LogInformation("Downloading package {name}.", name);
+                    var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}/api/download/{name}"));
+
+                    request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                    request.Headers.Add("accesstoken", _configuration.AccessToken);
+
+                    var response = await _httpClient.SendAsync(request);
+
+                    response.EnsureSuccessStatusCode();
+
+                    using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                    await response.Content.CopyToAsync(fileStream);
                 }
                 else
                 {
@@ -132,7 +142,7 @@ namespace fiskaltrust.Launcher.Download
                     continue;
                 }
 
-                return Task.CompletedTask;
+                return;
             }
 
             throw new Exception("Downloaded Package is invalid");
@@ -140,7 +150,7 @@ namespace fiskaltrust.Launcher.Download
 
         public async Task DownloadConfiguration()
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}/api/configuration"));
+            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.HelipadUrl}/api/configuration"));
 
             request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
             request.Headers.Add("accesstoken", _configuration.AccessToken);

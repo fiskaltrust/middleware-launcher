@@ -27,6 +27,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<LogLevel?>("--log-level"));
             AddOption(new Option<string?>("--service-folder"));
             AddOption(new Option<Uri?>("--packages-url"));
+            AddOption(new Option<Uri?>("--helipad-url"));
             AddOption(new Option<int?>("--download-timeout-sec"));
             AddOption(new Option<int?>("--download-retry"));
             AddOption(new Option<bool?>("--ssl-validation"));

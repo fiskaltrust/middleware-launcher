@@ -34,6 +34,10 @@ namespace fiskaltrust.Launcher.Configuration
         [JsonPropertyName("packagesUrl")]
         public Uri PackagesUrl { get => _packagesUrl ?? new Uri(Sandbox ? "https://packages-sandbox.fiskaltrust.cloud" : "https://packages.fiskaltrust.cloud"); set => _packagesUrl = value; }
 
+        private Uri? _helipadUrl;
+        [JsonPropertyName("helipadUrl")]
+        public Uri HelipadUrl { get => _helipadUrl ?? new Uri(Sandbox ? "https://helipad-sandbox.fiskaltrust.cloud" : "https://helipad.fiskaltrust.cloud"); set => _helipadUrl = value; }
+
         [JsonPropertyName("downloadTimeout")]
         public int DownloadTimeoutSec { get; set; } = 15; // TODO implement
 
