@@ -19,7 +19,7 @@ namespace fiskaltrust.Launcher.Extensions
                 suffix = "";
             }
 
-            return loggerConfiguration.MinimumLevel.Is(Serilog.Extensions.Logging.LevelConvert.ToSerilogLevel(launcherConfiguration.LogLevel!.Value))
+            return loggerConfiguration.MinimumLevel.Is(Serilog.Extensions.Logging.LevelConvert.ToSerilogLevel(launcherConfiguration.LogLevel))
             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}{EnrichedPackage}{EnrichedId}] {Message:lj}{NewLine}{Exception}")
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("System", LogEventLevel.Warning)

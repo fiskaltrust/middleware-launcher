@@ -32,9 +32,9 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<bool?>("--ssl-validation"));
             AddOption(new Option<string?>("--proxy"));
             AddOption(new Option<string?>("--processhost-ping-period"));
+            AddOption(new Option<string?>("--cashbox-configuration-file"));
 
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
-            AddOption(new Option<string?>("--cashbox-configuration-file"));
         }
     }
 
@@ -44,12 +44,10 @@ namespace fiskaltrust.Launcher.Commands
 
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
-        public string? CashboxConfigurationFile { get; set; }
-
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
-            var launcherConfiguration = GetDefaultLauncherConfiguration();
+            var launcherConfiguration = new LauncherConfiguration();
 
             MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration(), launcherConfiguration);
             MergeLauncherConfiguration(ArgsLauncherConfiguration, launcherConfiguration);
@@ -57,23 +55,23 @@ namespace fiskaltrust.Launcher.Commands
             Exception? configDownloadException = null;
             try
             {
-                CashboxConfigurationFile = await new Downloader(null, launcherConfiguration).DownloadConfiguration(CashboxConfigurationFile);
+                await new Downloader(null, launcherConfiguration).DownloadConfiguration();
             }
             catch (Exception e)
             {
                 configDownloadException = e;
             }
 
-            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile!))?.LauncherConfiguration, launcherConfiguration);
+            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile))?.LauncherConfiguration, launcherConfiguration);
 
-            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(CashboxConfigurationFile!)) ?? throw new Exception("Invalid Configuration File");
+            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile)) ?? throw new Exception("Invalid Configuration File");
 
             Log.Logger = new LoggerConfiguration()
                 .AddLoggingConfiguration(launcherConfiguration, launcherConfiguration.CashboxId.ToString())
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
-            if(configDownloadException != null)
+            if (configDownloadException != null)
             {
                 Log.Error(configDownloadException, "Could not update Cashbox configuration");
             }
@@ -92,11 +90,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => Log.Logger);
                 });
 
-            if (launcherConfiguration.LauncherPort == null)
-            {
-                throw new Exception("Launcher port cannot be null.");
-            }
-            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{launcherConfiguration.LauncherPort!}")));
+            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{launcherConfiguration.LauncherPort}")));
 
             builder.Services.AddCodeFirstGrpc();
 
@@ -125,24 +119,6 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             return 0;
-        }
-
-        private static LauncherConfiguration GetDefaultLauncherConfiguration()
-        {
-            return new LauncherConfiguration
-            {
-                LauncherPort = 3000,
-                Sandbox = false,
-                UseOffline = false,
-                LogFolder = null,
-                LogLevel = LogLevel.Information,
-                ServiceFolder = Paths.ServiceFolder,
-                DownloadTimeoutSec = 15,
-                DownloadRetry = 1,
-                SslValidation = true,
-                Proxy = null,
-                ProcessHostPingPeriodSec = 10,
-            };
         }
 
         private static void MergeLauncherConfiguration(LauncherConfiguration? source, LauncherConfiguration? target)

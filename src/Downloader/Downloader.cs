@@ -48,7 +48,7 @@ namespace fiskaltrust.Launcher.Download
                         switch (data[0].ToLower().Trim())
                         {
                             case "address": address = data[1]; break;
-                            case "bypasslocalhost": if(!bool.TryParse(data[1], out bypasslocalhost)) { bypasslocalhost = false; } break;
+                            case "bypasslocalhost": if (!bool.TryParse(data[1], out bypasslocalhost)) { bypasslocalhost = false; } break;
                             case "bypass": bypass.Add(data[1]); break;
                             case "username": username = data[1]; break;
                             case "password": password = data[1]; break;
@@ -82,7 +82,7 @@ namespace fiskaltrust.Launcher.Download
 
         public string GetPackagePath(PackageConfiguration configuration)
         {
-            var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
+            var targetPath = Path.Combine(_configuration.ServiceFolder, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
             var targetName = Path.Combine(targetPath, $"{configuration.Package}.dll");
 
             if (File.Exists(targetName))
@@ -95,22 +95,22 @@ namespace fiskaltrust.Launcher.Download
             }
         }
 
-        public async Task DownloadPackage(PackageConfiguration configuration)
+        public Task DownloadPackage(PackageConfiguration configuration)
         {
             var name = $"{configuration.Package}-{configuration.Version}";
-            var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
+            var targetPath = Path.Combine(_configuration.ServiceFolder, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
             var targetName = Path.Combine(targetPath, $"{configuration.Package}.dll");
 
             if (File.Exists(targetName))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (Directory.Exists(targetPath)) { Directory.Delete(targetPath, true); }
 
             Directory.CreateDirectory(targetPath);
 
-            var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{name}.zip");
+            var sourcePath = Path.Combine(_configuration.ServiceFolder, "cache", "packages", $"{name}.zip");
 
             for (var i = 0; i <= 1; i++)
             {
@@ -132,13 +132,13 @@ namespace fiskaltrust.Launcher.Download
                     continue;
                 }
 
-                return;
+                return Task.CompletedTask;
             }
 
             throw new Exception("Downloaded Package is invalid");
         }
 
-        public async Task<string> DownloadConfiguration(string? cashboxConfigurationFile)
+        public async Task DownloadConfiguration()
         {
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}/api/configuration"));
 
@@ -153,11 +153,7 @@ namespace fiskaltrust.Launcher.Download
 
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(responseString) ?? throw new Exception("Downloaded Configuration is Invalid");
 
-            var cashboxConfigurationPath = cashboxConfigurationFile ?? Path.Join(_configuration.ServiceFolder!, "service", _configuration.CashboxId!.ToString(), "configuration.json");
-
-            await File.WriteAllTextAsync(cashboxConfigurationPath, JsonSerializer.Serialize(cashboxConfiguration));
-
-            return cashboxConfigurationPath;
+            await File.WriteAllTextAsync(_configuration.CashboxConfigurationFile, JsonSerializer.Serialize(cashboxConfiguration));
         }
 
         public void Dispose()

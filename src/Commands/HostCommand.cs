@@ -17,6 +17,7 @@ using fiskaltrust.Launcher.Logging;
 using Grpc.Net.Client;
 using ProtoBuf.Grpc.Client;
 using fiskaltrust.Launcher.Download;
+using fiskaltrust.Launcher.Constants;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -24,30 +25,38 @@ namespace fiskaltrust.Launcher.Commands
     {
         public HostCommand() : base("host")
         {
-            AddOption(new Option<string>("--package-config"));
-            AddOption(new Option<string>("--plebian-config"));
-            AddOption(new Option<string>("--launcher-config"));
+            AddOption(new Option<string>("--plebian-configuration"));
+            AddOption(new Option<string>("--launcher-configuration"));
             AddOption(new Option<bool>("--no-process-host-service", getDefaultValue: () => false));
         }
     }
 
     public class HostCommandHandler : ICommandHandler
     {
-        public string PackageConfig { get; set; } = null!;
-        public string LauncherConfig { get; set; } = null!;
-        public string PlebianConfig { get; set; } = null!;
+        public string LauncherConfiguration { get; set; } = null!;
+        public string PlebianConfiguration { get; set; } = null!;
         public bool NoProcessHostService { get; set; }
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
-            var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfig))) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfig)}");
-            var packageConfiguration = JsonSerializer.Deserialize<PackageConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PackageConfig))) ?? throw new Exception($"Could not deserialize {nameof(PackageConfig)}");
-            var plebianConfiguration = JsonSerializer.Deserialize<PlebianConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfig))) ?? throw new Exception($"Could not deserialize {nameof(PlebianConfig)}");
+            var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration))) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
+            var plebianConfiguration = JsonSerializer.Deserialize<PlebianConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration))) ?? throw new Exception($"Could not deserialize {nameof(PlebianConfiguration)}");
+            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile)) ?? throw new Exception($"Could not deserialize {nameof(ftCashBoxConfiguration)}");
+            var packageConfiguration = (plebianConfiguration.PackageType switch
+            {
+                PackageType.Queue => cashboxConfiguration.ftQueues,
+                PackageType.SCU => cashboxConfiguration.ftSignaturCreationDevices,
+                PackageType.Helper => cashboxConfiguration.helpers,
+                var unknown => throw new Exception($"Unknown PackageType {unknown}")
+            }).First(p => p.Id == plebianConfiguration.PackageId);
+
+            packageConfiguration.Configuration = packageConfiguration.Configuration.Union(DefaultPackageConfig(launcherConfiguration, cashboxConfiguration)).ToDictionary(k => k.Key, v => v.Value);
+
 
             IProcessHostService? processHostService = null;
             if (!NoProcessHostService)
             {
-                processHostService = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort!}").CreateGrpcService<IProcessHostService>();
+                processHostService = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>();
             }
 
             Log.Logger = new LoggerConfiguration()
@@ -125,6 +134,27 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             return 0;
+        }
+
+        
+        private static Dictionary<string, object> DefaultPackageConfig(LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration)
+        {
+            var config = new Dictionary<string, object>
+            {
+                { "cashboxid", launcherConfiguration.CashboxId! },
+                { "accesstoken", launcherConfiguration.AccessToken! },
+                { "useoffline", true },
+                { "sandbox", launcherConfiguration.Sandbox },
+                { "configuration", JsonSerializer.Serialize(cashBoxConfiguration) },
+                { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder, "service") }, // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
+            };
+
+            if(launcherConfiguration.Proxy != null)
+            {
+                config.Add("proxy", launcherConfiguration.Proxy!);
+            }
+
+            return config;
         }
     }
 }

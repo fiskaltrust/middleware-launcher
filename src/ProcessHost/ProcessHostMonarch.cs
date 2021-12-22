@@ -74,7 +74,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             var monarch = new ProcessHostMonarch(
                 _loggerFactory.CreateLogger<ProcessHostMonarch>(),
                 _launcherConfiguration,
-                AddDefaultPackageConfig(configuration),
+                configuration,
                 packageType);
 
             _hosts.Add(
@@ -97,24 +97,6 @@ namespace fiskaltrust.Launcher.ProcessHost
                 _logger.LogError(e, "Could not start {Package} {Id}.", configuration.Package, configuration.Id);
                 throw new Commands.RunCommandHandler.AlreadyLoggedException();
             }
-        }
-
-        private PackageConfiguration AddDefaultPackageConfig(PackageConfiguration config)
-        {
-            config.Configuration.Add("cashboxid", _launcherConfiguration.CashboxId);
-            config.Configuration.Add("accesstoken", _launcherConfiguration.AccessToken);
-            config.Configuration.Add("useoffline", true);
-            config.Configuration.Add("sandbox", _launcherConfiguration.Sandbox);
-            config.Configuration.Add("configuration", JsonSerializer.Serialize(_cashBoxConfiguration));
-            config.Configuration.Add("servicefolder", Path.Combine(_launcherConfiguration.ServiceFolder!, "service")); // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
-            config.Configuration.Add("proxy", _launcherConfiguration.Proxy);
-
-            foreach (var keyToRemove in config.Configuration.Where(c => c.Value == null).Select(c => c.Key).ToList())
-            {
-                config.Configuration.Remove(keyToRemove);
-            }
-
-            return config;
         }
 
         private void StartupLogging()
@@ -150,9 +132,8 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _process.StartInfo.Arguments = string.Join(" ", new string[] {
                 "host",
-                "--plebian-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new PlebianConfiguration { PackageType = packageType })))}\"",
-                "--launcher-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\"",
-                "--package-config", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(packageConfiguration)))}\""
+                "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new PlebianConfiguration { PackageType = packageType, PackageId = packageConfiguration.Id })))}\"",
+                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\"",
             });
             _process.StartInfo.RedirectStandardError = true;
             _process.StartInfo.RedirectStandardOutput = true;
