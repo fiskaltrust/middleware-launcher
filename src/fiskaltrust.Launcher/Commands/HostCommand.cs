@@ -142,7 +142,7 @@ namespace fiskaltrust.Launcher.Commands
             return 0;
         }
 
-        
+
         private static Dictionary<string, object> DefaultPackageConfig(LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration)
         {
             var config = new Dictionary<string, object>
@@ -155,7 +155,7 @@ namespace fiskaltrust.Launcher.Commands
                 { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder, "service") }, // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
             };
 
-            if(launcherConfiguration.Proxy != null)
+            if (launcherConfiguration.Proxy != null)
             {
                 config.Add("proxy", launcherConfiguration.Proxy!);
             }

@@ -166,11 +166,11 @@ namespace fiskaltrust.Launcher.Download
             await File.WriteAllTextAsync(_configuration.CashboxConfigurationFile, JsonSerializer.Serialize(cashboxConfiguration));
         }
 
-        #pragma warning disable CA1816
+#pragma warning disable CA1816
         public void Dispose()
         {
             _httpClient.Dispose();
         }
-        #pragma warning restore CA1816
+#pragma warning restore CA1816
     }
 }

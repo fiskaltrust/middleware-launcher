@@ -38,15 +38,19 @@ namespace fiskaltrust.Launcher.Logging
                 _formatter.Format(logEvent, writer);
                 writer.Flush();
 
-                Task.Run(async () => await _processHostService!.Log(new LogEventDto
+                try
                 {
-                    LogEvent = writer.ToString(),
-                    Enrichment = new()
+                    Task.Run(async () => await _processHostService!.Log(new LogEventDto
                     {
-                        { "EnrichedId", _packageConfiguration.Id.ToString() },
-                        { "EnrichedPackage", _packageConfiguration.Package }
-                    }
-                })).GetAwaiter().GetResult();
+                        LogEvent = writer.ToString(),
+                        Enrichment = new()
+                        {
+                            { "EnrichedId", _packageConfiguration.Id.ToString() },
+                            { "EnrichedPackage", _packageConfiguration.Package }
+                        }
+                    })).GetAwaiter().GetResult();
+                }
+                catch { }
             }
         }
     }

@@ -124,7 +124,7 @@ namespace fiskaltrust.Launcher.Services
             }
         }
 
-        #pragma warning disable CA1816
+#pragma warning disable CA1816
         public async ValueTask DisposeAsync()
         {
             foreach (var host in _hosts)
@@ -132,6 +132,6 @@ namespace fiskaltrust.Launcher.Services
                 await host.StopAsync();
             }
         }
-        #pragma warning restore CA1816
+#pragma warning restore CA1816
     }
 }

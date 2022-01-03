@@ -58,34 +58,73 @@ namespace fiskaltrust.Launcher.Commands
         {
             var launcherConfiguration = new LauncherConfiguration();
 
-            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration(), launcherConfiguration);
+            List<(string message, Exception? e)> fatal = new();
+            List<(string message, Exception? e)> errors = new();
+            List<(string message, Exception? e)> warnings = new();
+
+            try
+            {
+                MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration(), launcherConfiguration);
+            }
+            catch (Exception e)
+            {
+                warnings.Add(("Could not read launcher configuration file", e));
+            }
+
             MergeLauncherConfiguration(ArgsLauncherConfiguration, launcherConfiguration);
 
-            Exception? configDownloadException = null;
             try
             {
                 await new Downloader(null, launcherConfiguration).DownloadConfiguration();
             }
             catch (Exception e)
             {
-                configDownloadException = e;
+                errors.Add(("Could not update Cashbox configuration", e));
             }
 
-            MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile))?.LauncherConfiguration, launcherConfiguration);
+            try
+            {
+                MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile))?.LauncherConfiguration, launcherConfiguration);
+            }
+            catch (Exception e)
+            {
+                fatal.Add(("Could not read cashbox configuration file", e));
+            }
 
-            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile)) ?? throw new Exception("Invalid Configuration File");
+            ftCashBoxConfiguration cashboxConfiguration = null!;
+            try
+            {
+                cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile)) ?? throw new Exception("Invalid Configuration File");
+            }
+            catch (Exception e)
+            {
+                fatal.Add(("Could not parse cashbox configuration", e));
+            }
 
             Log.Logger = new LoggerConfiguration()
                 .AddLoggingConfiguration(launcherConfiguration, launcherConfiguration.CashboxId.ToString())
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
+            foreach (var (message, e) in fatal.Concat(errors))
+            {
+                Log.Error(e, message);
+            }
+
+            foreach (var (message, e) in warnings)
+            {
+                Log.Warning(e, message);
+            }
+
+            if (fatal.Count > 0)
+            {
+                return 1;
+            }
+
+            Log.Debug($"Launcher Configuration File: {LauncherConfigurationFile}");
+            Log.Debug($"Cashbox Configuration File: {launcherConfiguration.CashboxConfigurationFile}");
             Log.Debug($"Launcher Configuration: {JsonSerializer.Serialize(launcherConfiguration)}");
 
-            if (configDownloadException != null)
-            {
-                Log.Error(configDownloadException, "Could not update Cashbox configuration");
-            }
 
             var builder = WebApplication.CreateBuilder();
             builder.Host
