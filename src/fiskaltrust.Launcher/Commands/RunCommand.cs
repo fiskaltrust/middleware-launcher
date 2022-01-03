@@ -10,6 +10,7 @@ using fiskaltrust.storage.serialization.V0;
 using Serilog;
 using ProtoBuf.Grpc.Server;
 using fiskaltrust.Launcher.Download;
+using Microsoft.Extensions.Hosting.WindowsServices;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -46,6 +47,13 @@ namespace fiskaltrust.Launcher.Commands
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
 
+        private readonly CancellationToken _cancellationToken;
+
+        public RunCommandHandler(IHostApplicationLifetime lifetime)
+        {
+            _cancellationToken = lifetime.ApplicationStopping;
+        }
+
         public async Task<int> InvokeAsync(InvocationContext context)
         {
             var launcherConfiguration = new LauncherConfiguration();
@@ -72,6 +80,8 @@ namespace fiskaltrust.Launcher.Commands
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
+            Log.Debug($"Launcher Configuration: {JsonSerializer.Serialize(launcherConfiguration)}");
+
             if (configDownloadException != null)
             {
                 Log.Error(configDownloadException, "Could not update Cashbox configuration");
@@ -80,7 +90,6 @@ namespace fiskaltrust.Launcher.Commands
             var builder = WebApplication.CreateBuilder();
             builder.Host
                 .UseSerilog()
-                .UseConsoleLifetime()
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddSingleton(_ => launcherConfiguration);
@@ -103,7 +112,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                await app.RunAsync();
+                await app.RunAsync(_cancellationToken);
             }
             catch (AlreadyLoggedException)
             {

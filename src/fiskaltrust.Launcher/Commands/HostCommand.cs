@@ -37,6 +37,13 @@ namespace fiskaltrust.Launcher.Commands
         public string PlebianConfiguration { get; set; } = null!;
         public bool NoProcessHostService { get; set; }
 
+        private readonly CancellationToken _cancellationToken;
+
+        public HostCommandHandler(IHostApplicationLifetime lifetime)
+        {
+            _cancellationToken = lifetime.ApplicationStopping;
+        }
+
         public async Task<int> InvokeAsync(InvocationContext context)
         {
             var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration))) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
@@ -66,7 +73,6 @@ namespace fiskaltrust.Launcher.Commands
 
             var builder = Host.CreateDefaultBuilder()
                 .UseSerilog()
-                .UseConsoleLifetime()
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton(_ => launcherConfiguration);
@@ -121,7 +127,7 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 var app = builder.Build();
-                await app.RunAsync();
+                await app.RunAsync(_cancellationToken);
             }
             catch (Exception e)
             {

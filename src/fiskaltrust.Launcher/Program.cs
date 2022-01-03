@@ -1,11 +1,33 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Parsing;
 using fiskaltrust.Launcher.Commands;
-using System.CommandLine.Invocation;
+using Microsoft.Extensions.Hosting.WindowsServices;
+using System.CommandLine.Builder;
+using System.CommandLine.Hosting;
 
 var command = new RootCommand {
-  new RunCommand() { Handler = CommandHandler.Create(typeof(RunCommandHandler).GetMethod(nameof(ICommandHandler.InvokeAsync))!)},
-  new HostCommand() { Handler = CommandHandler.Create(typeof(HostCommandHandler).GetMethod(nameof(ICommandHandler.InvokeAsync))!)},
+  new RunCommand(),
+  new HostCommand(),
 };
 
-await command.InvokeAsync(args);
+
+await new CommandLineBuilder(command)
+  .UseHost(host =>
+  {
+      if (WindowsServiceHelpers.IsWindowsService())
+      {
+          host.UseWindowsService();
+      }
+      else
+      {
+          host.UseConsoleLifetime();
+      }
+
+      host
+        .UseCommandHandler<HostCommand, HostCommandHandler>()
+        .UseCommandHandler<RunCommand, RunCommandHandler>();
+  })
+  .Build().InvokeAsync(args);
+
+
+
