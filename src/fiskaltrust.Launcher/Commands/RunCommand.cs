@@ -62,14 +62,14 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration(), launcherConfiguration);
+                launcherConfiguration.OverwriteWith(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration());
             }
             catch (Exception e)
             {
                 warnings.Add(("Could not read launcher configuration file", e));
             }
 
-            MergeLauncherConfiguration(ArgsLauncherConfiguration, launcherConfiguration);
+            launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
 
             try
             {
@@ -82,7 +82,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                MergeLauncherConfiguration(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile))?.LauncherConfiguration, launcherConfiguration);
+                launcherConfiguration.OverwriteWith(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile))?.LauncherConfiguration);
             }
             catch (Exception e)
             {
@@ -166,22 +166,6 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             return 0;
-        }
-
-        private static void MergeLauncherConfiguration(LauncherConfiguration? source, LauncherConfiguration? target)
-        {
-            if (source != null && target != null)
-            {
-                foreach (var property in typeof(LauncherConfiguration).GetProperties())
-                {
-                    var value = property.GetValue(source, null);
-
-                    if (value != null)
-                    {
-                        property.SetValue(target, value, null);
-                    }
-                }
-            }
         }
     }
 }

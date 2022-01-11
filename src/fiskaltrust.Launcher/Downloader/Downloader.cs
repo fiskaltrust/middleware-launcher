@@ -1,6 +1,7 @@
 
 using System.IO.Compression;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text.Json;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.storage.serialization.V0;
@@ -100,6 +101,7 @@ namespace fiskaltrust.Launcher.Download
             var name = $"{configuration.Package}-{configuration.Version}";
             var targetPath = Path.Combine(_configuration.ServiceFolder, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
             var targetName = Path.Combine(targetPath, $"{configuration.Package}.dll");
+            var sourcePath = Path.Combine(_configuration.ServiceFolder, "cache", "packages", $"{name}.zip");
 
             if (File.Exists(targetName))
             {
@@ -110,28 +112,48 @@ namespace fiskaltrust.Launcher.Download
 
             Directory.CreateDirectory(targetPath);
 
-            var sourcePath = Path.Combine(_configuration.ServiceFolder, "cache", "packages", $"{name}.zip");
 
             for (var i = 0; i <= 1; i++)
             {
                 if (!File.Exists(sourcePath))
                 {
                     _logger?.LogInformation("Downloading package {name}.", name);
-                    var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}/api/download/{name}"));
+                    Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
 
-                    request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
-                    request.Headers.Add("accesstoken", _configuration.AccessToken);
+                    {
+                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{configuration.Package}?version={configuration.Version}"));
 
-                    var response = await _httpClient.SendAsync(request);
+                        request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                        request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-                    response.EnsureSuccessStatusCode();
+                        var response = await _httpClient.SendAsync(request);
 
-                    using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                    await response.Content.CopyToAsync(fileStream);
+                        response.EnsureSuccessStatusCode();
+
+                        using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                        await response.Content.CopyToAsync(fileStream);
+                    }
+
+                    {
+                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{configuration.Package}/hash?version={configuration.Version}"));
+
+                        request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                        request.Headers.Add("accesstoken", _configuration.AccessToken);
+
+                        var response = await _httpClient.SendAsync(request);
+
+                        response.EnsureSuccessStatusCode();
+                        await File.WriteAllTextAsync($"{sourcePath}.hash", await response.Content.ReadAsStringAsync());
+                    }
                 }
                 else
                 {
                     _logger?.LogDebug("Found Package in cache.");
+                }
+
+                if(!await CheckHash(sourcePath))
+                {
+                    continue;
                 }
 
                 ZipFile.ExtractToDirectory(sourcePath, targetPath);
@@ -148,6 +170,21 @@ namespace fiskaltrust.Launcher.Download
             throw new Exception("Downloaded Package is invalid");
         }
 
+        public async Task<bool> CheckHash(string sourcePath)
+        {
+            using FileStream stream = File.OpenRead(sourcePath);
+            var computedHash = SHA256.Create().ComputeHash(stream);
+
+            var hash = Convert.FromBase64String(await File.ReadAllTextAsync($"{sourcePath}.hash"));
+
+            if (!computedHash.SequenceEqual(hash))
+            {
+                _logger?.LogWarning("Incorrect Hash");
+                return false;
+            }
+
+            return true;
+        }
         public async Task DownloadConfiguration()
         {
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.HelipadUrl}/api/configuration"));
