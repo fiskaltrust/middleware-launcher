@@ -48,7 +48,7 @@ namespace fiskaltrust.Launcher.Commands
         {
             var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration))) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
             var plebianConfiguration = JsonSerializer.Deserialize<PlebianConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration))) ?? throw new Exception($"Could not deserialize {nameof(PlebianConfiguration)}");
-            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile)) ?? throw new Exception($"Could not deserialize {nameof(ftCashBoxConfiguration)}");
+            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!)) ?? throw new Exception($"Could not deserialize {nameof(ftCashBoxConfiguration)}");
             var packageConfiguration = (plebianConfiguration.PackageType switch
             {
                 PackageType.Queue => cashboxConfiguration.ftQueues,
@@ -150,9 +150,9 @@ namespace fiskaltrust.Launcher.Commands
                 { "cashboxid", launcherConfiguration.CashboxId! },
                 { "accesstoken", launcherConfiguration.AccessToken! },
                 { "useoffline", true },
-                { "sandbox", launcherConfiguration.Sandbox },
+                { "sandbox", launcherConfiguration.Sandbox! },
                 { "configuration", JsonSerializer.Serialize(cashBoxConfiguration) },
-                { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder, "service") }, // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
+                { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder!, "service") }, // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
             };
 
             if (launcherConfiguration.Proxy != null)

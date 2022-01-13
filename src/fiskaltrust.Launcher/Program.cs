@@ -8,6 +8,8 @@ using System.CommandLine.Hosting;
 var command = new RootCommand {
   new RunCommand(),
   new HostCommand() { IsHidden = true },
+  new InstallCommand(),
+  new UninstallCommand(),
 };
 
 command.AddValidator(result => "Must specify command.");
@@ -31,7 +33,9 @@ await new CommandLineBuilder(command)
 
       host
         .UseCommandHandler<HostCommand, HostCommandHandler>()
-        .UseCommandHandler<RunCommand, RunCommandHandler>();
+        .UseCommandHandler<RunCommand, RunCommandHandler>()
+        .UseCommandHandler<InstallCommand, InstallCommandHandler>()
+        .UseCommandHandler<UninstallCommand, UninstallCommandHandler>();
   })
   .UseHelp()
   .UseVersionOption()

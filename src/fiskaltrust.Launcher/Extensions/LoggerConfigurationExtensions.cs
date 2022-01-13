@@ -19,8 +19,8 @@ namespace fiskaltrust.Launcher.Extensions
                 suffix = "";
             }
 
-            return loggerConfiguration.MinimumLevel.Is(Serilog.Extensions.Logging.LevelConvert.ToSerilogLevel(launcherConfiguration.LogLevel))
-            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}{EnrichedPackage}{EnrichedId}] {Message:lj}{NewLine}{Exception}")
+            return loggerConfiguration.MinimumLevel.Is(Serilog.Extensions.Logging.LevelConvert.ToSerilogLevel(launcherConfiguration.LogLevel!.Value))
+            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}{EnrichedPackage}{EnrichedId}{EnrichedContext}] {Message:lj}{NewLine}{Exception}")
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("System", LogEventLevel.Warning)
             .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
@@ -28,7 +28,11 @@ namespace fiskaltrust.Launcher.Extensions
             .WriteTo.Logger(configuration =>
                 configuration
                     .Filter.ByExcluding(Matching.WithProperty("EnrichedId"))
-                    .WriteTo.File(Path.Join(launcherConfiguration.LogFolder, $"log{suffix}-.txt"), rollingInterval: RollingInterval.Day, shared: true));
+                    .WriteTo.File(
+                        Path.Join(launcherConfiguration.LogFolder, $"log{suffix}-.txt"),
+                        rollingInterval: RollingInterval.Day,
+                        shared: true,
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}{EnrichedContext}] {Message:lj}{NewLine}{Exception}"));
         }
 
     }

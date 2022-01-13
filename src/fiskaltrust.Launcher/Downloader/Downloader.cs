@@ -83,7 +83,7 @@ namespace fiskaltrust.Launcher.Download
 
         public string GetPackagePath(PackageConfiguration configuration)
         {
-            var targetPath = Path.Combine(_configuration.ServiceFolder, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
+            var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
             var targetName = Path.Combine(targetPath, $"{configuration.Package}.dll");
 
             if (File.Exists(targetName))
@@ -99,9 +99,9 @@ namespace fiskaltrust.Launcher.Download
         public async Task DownloadPackage(PackageConfiguration configuration)
         {
             var name = $"{configuration.Package}-{configuration.Version}";
-            var targetPath = Path.Combine(_configuration.ServiceFolder, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
+            var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
             var targetName = Path.Combine(targetPath, $"{configuration.Package}.dll");
-            var sourcePath = Path.Combine(_configuration.ServiceFolder, "cache", "packages", $"{name}.zip");
+            var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{name}.zip");
 
             if (File.Exists(targetName))
             {
@@ -200,7 +200,7 @@ namespace fiskaltrust.Launcher.Download
 
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(responseString) ?? throw new Exception("Downloaded Configuration is Invalid");
 
-            await File.WriteAllTextAsync(_configuration.CashboxConfigurationFile, JsonSerializer.Serialize(cashboxConfiguration));
+            await File.WriteAllTextAsync(_configuration.CashboxConfigurationFile!, JsonSerializer.Serialize(cashboxConfiguration));
         }
 
 #pragma warning disable CA1816
