@@ -351,3 +351,5 @@ MigrationBackup/
 .ionide/
 
 tmp
+
+src/**/Properties/**.json

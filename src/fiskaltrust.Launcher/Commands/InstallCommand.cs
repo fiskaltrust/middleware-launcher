@@ -49,7 +49,7 @@ namespace fiskaltrust.Launcher.Commands
                 if (!principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator))
                 {
                     Log.Error("Run as admin to install service {link}", ""); // TODO
-                    // return 1;
+                    return 1;
                 }
             }
 
