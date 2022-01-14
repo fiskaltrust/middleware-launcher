@@ -123,11 +123,10 @@ namespace fiskaltrust.Launcher.ProcessHost
         public ProcessHostMonarch(ILogger<ProcessHostMonarch> logger, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PackageType packageType)
         {
             _logger = logger;
-            var executable = Environment.ProcessPath ?? throw new Exception("Could not find launcher .exe");
 
             _process = new Process();
             _process.StartInfo.UseShellExecute = false;
-            _process.StartInfo.FileName = executable;
+            _process.StartInfo.FileName =  Environment.ProcessPath ?? throw new Exception("Could not find launcher executable");
             _process.StartInfo.CreateNoWindow = false;
 
             _process.StartInfo.Arguments = string.Join(" ", new string[] {
