@@ -74,7 +74,7 @@ namespace fiskaltrust.Launcher.Configuration
 
         private Uri? _packagesUrl;
         [JsonPropertyName("packagesUrl")]
-        public Uri? PackagesUrl { get => WithDefault(_packagesUrl, () => new Uri(Sandbox!.Value ? "https://packages-sandbox.fiskaltrust.cloud" : "https://packages.fiskaltrust.cloud")); set => _packagesUrl = value; }
+        public Uri? PackagesUrl { get => WithDefault(_packagesUrl, () => new Uri(Sandbox!.Value ? "https://packages-2-0-sandbox.fiskaltrust.cloud" : "https://packages-2-0.fiskaltrust.cloud")); set => _packagesUrl = value; }
 
         private Uri? _helipadUrl;
         [JsonPropertyName("helipadUrl")]

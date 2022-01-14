@@ -9,14 +9,17 @@ namespace fiskaltrust.Launcher.ProcessHost
 {
     public class ProcessHostMonarcStartup : BackgroundService
     {
+        public class AlreadyLoggedException : Exception { }
+
         private readonly Dictionary<Guid, ProcessHostMonarch> _hosts;
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ftCashBoxConfiguration _cashBoxConfiguration;
         private readonly Downloader _downloader;
         private readonly ILogger _logger;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly IHostApplicationLifetime _lifetime;
 
-        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, Downloader downloader)
+        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, Downloader downloader, IHostApplicationLifetime lifetime)
         {
             _loggerFactory = loggerFactory;
             _logger = logger;
@@ -24,6 +27,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             _launcherConfiguration = launcherConfiguration;
             _cashBoxConfiguration = cashBoxConfiguration;
             _downloader = downloader;
+            _lifetime = lifetime;
         }
 
 
@@ -31,19 +35,28 @@ namespace fiskaltrust.Launcher.ProcessHost
         {
             StartupLogging();
 
-            foreach (var scu in _cashBoxConfiguration.ftSignaturCreationDevices)
+            try
             {
-                await StartProcessHostMonarch(scu, PackageType.SCU, cancellationToken);
-            }
+                foreach (var scu in _cashBoxConfiguration.ftSignaturCreationDevices)
+                {
+                    await StartProcessHostMonarch(scu, PackageType.SCU, cancellationToken);
+                }
 
-            foreach (var queue in _cashBoxConfiguration.ftQueues)
-            {
-                await StartProcessHostMonarch(queue, PackageType.Queue, cancellationToken);
-            }
+                foreach (var queue in _cashBoxConfiguration.ftQueues)
+                {
+                    await StartProcessHostMonarch(queue, PackageType.Queue, cancellationToken);
+                }
 
-            foreach (var helper in _cashBoxConfiguration.helpers)
+                foreach (var helper in _cashBoxConfiguration.helpers)
+                {
+                    await StartProcessHostMonarch(helper, PackageType.Helper, cancellationToken);
+                }
+            }
+            catch(Exception e)
             {
-                await StartProcessHostMonarch(helper, PackageType.Helper, cancellationToken);
+                if(e is not AlreadyLoggedException) { _logger.LogError(e, "Error Starting Monarchs"); }
+                _lifetime.StopApplication();
+                return;
             }
 
             try
@@ -68,7 +81,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             catch (Exception e)
             {
                 _logger.LogError(e, "Could not download package.");
-                throw new Commands.RunCommandHandler.AlreadyLoggedException();
+                throw new AlreadyLoggedException();
             }
 
             var monarch = new ProcessHostMonarch(
@@ -95,7 +108,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             catch (Exception e)
             {
                 _logger.LogError(e, "Could not start {Package} {Id}.", configuration.Package, configuration.Id);
-                throw new Commands.RunCommandHandler.AlreadyLoggedException();
+                throw new AlreadyLoggedException();
             }
         }
 

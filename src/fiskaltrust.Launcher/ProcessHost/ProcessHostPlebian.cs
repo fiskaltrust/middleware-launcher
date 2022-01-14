@@ -20,8 +20,9 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ILogger<ProcessHostPlebian> _logger;
         private readonly IServiceProvider _services;
+        private readonly IHostApplicationLifetime _lifetime;
 
-        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services, IProcessHostService? processHostService = null)
+        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services, IHostApplicationLifetime lifetime, IProcessHostService? processHostService = null)
         {
             _logger = logger;
             _hosting = hosting;
@@ -30,6 +31,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             _plebianConfiguration = plebianConfiguration;
             _services = services;
             _processHostService = processHostService;
+            _lifetime = lifetime;
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -37,7 +39,16 @@ namespace fiskaltrust.Launcher.ProcessHost
             _logger.LogInformation("Package: {Package} {Version}", _packageConfiguration.Package, _packageConfiguration.Version);
             _logger.LogInformation("Id:      {Id}", _packageConfiguration.Id);
 
-            await StartHosting(_packageConfiguration.Url);
+            try
+            {
+                await StartHosting(_packageConfiguration.Url);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error Starting Hosting");
+                _lifetime.StopApplication();
+                return;
+            }
 
             await (_processHostService?.Started(_packageConfiguration.Id.ToString()) ?? Task.CompletedTask);
 
@@ -61,7 +72,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                         }
                         catch
                         {
-                            Environment.Exit(0);
+                            _lifetime.StopApplication();
                         }
                     }
                 }, cancellationToken);

@@ -126,8 +126,6 @@ namespace fiskaltrust.Launcher.Commands
 
     public class RunCommandHandler : CommonRunCommandHandler
     {
-        public class AlreadyLoggedException : Exception { }
-
         private readonly CancellationToken _cancellationToken;
 
         public RunCommandHandler(IHostApplicationLifetime lifetime)
@@ -169,7 +167,7 @@ namespace fiskaltrust.Launcher.Commands
             {
                 await app.RunAsync(_cancellationToken);
             }
-            catch (AlreadyLoggedException)
+            catch(TaskCanceledException)
             {
                 return 1;
             }
