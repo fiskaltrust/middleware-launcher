@@ -18,6 +18,7 @@ using Grpc.Net.Client;
 using ProtoBuf.Grpc.Client;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Constants;
+using System.Diagnostics;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -26,6 +27,7 @@ namespace fiskaltrust.Launcher.Commands
         public HostCommand() : base("host")
         {
             AddOption(new Option<string>("--plebian-configuration"));
+            AddOption(new Option<string>("--debugging"));
             AddOption(new Option<string>("--launcher-configuration"));
             AddOption(new Option<bool>("--no-process-host-service", getDefaultValue: () => false));
         }
@@ -36,6 +38,7 @@ namespace fiskaltrust.Launcher.Commands
         public string LauncherConfiguration { get; set; } = null!;
         public string PlebianConfiguration { get; set; } = null!;
         public bool NoProcessHostService { get; set; }
+        public bool Debugging { get; set; }
 
         private readonly CancellationToken _cancellationToken;
 
@@ -46,6 +49,13 @@ namespace fiskaltrust.Launcher.Commands
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
+            if(Debugging)
+            {
+                while (!Debugger.IsAttached)
+                {
+                    Thread.Sleep(100);
+                }
+            }
             var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration))) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
             var plebianConfiguration = JsonSerializer.Deserialize<PlebianConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration))) ?? throw new Exception($"Could not deserialize {nameof(PlebianConfiguration)}");
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!)) ?? throw new Exception($"Could not deserialize {nameof(ftCashBoxConfiguration)}");
@@ -102,6 +112,8 @@ namespace fiskaltrust.Launcher.Commands
                                 new[] {
                                     typeof(IMiddlewareBootstrapper),
                                     typeof(IPOS),
+                                    typeof(JournalRequest),
+                                    typeof(JournalResponse),
                                     typeof(IDESSCD),
                                     typeof(IHelper),
                                     typeof(IServiceCollection),

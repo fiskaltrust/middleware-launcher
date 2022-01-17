@@ -32,7 +32,6 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--proxy"));
             AddOption(new Option<string?>("--processhost-ping-period-sec"));
             AddOption(new Option<string?>("--cashbox-configuration-file"));
-
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
         }
     }

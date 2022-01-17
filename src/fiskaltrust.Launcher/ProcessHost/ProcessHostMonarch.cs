@@ -147,6 +147,12 @@ namespace fiskaltrust.Launcher.ProcessHost
                 "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new PlebianConfiguration { PackageType = packageType, PackageId = packageConfiguration.Id })))}\"",
                 "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\"",
             });
+
+            // if(Debugger.IsAttached)
+            // {
+            //     _process.StartInfo.Arguments += " --debugging";
+            // }
+
             _process.StartInfo.RedirectStandardError = true;
             _process.StartInfo.RedirectStandardOutput = true;
             _process.EnableRaisingEvents = true;
@@ -204,7 +210,11 @@ namespace fiskaltrust.Launcher.ProcessHost
                 _stopped.SetCanceled(cancellationToken);
                 return Task.CompletedTask;
             }
-
+            _logger.LogDebug("ProcessId {id}", _process.Id);
+            if(Debugger.IsAttached)
+            {
+                Debug.WriteLine($"ProcessId {_process.Id}");
+            }
             return _started.Task;
         }
 
