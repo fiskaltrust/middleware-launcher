@@ -162,10 +162,37 @@ namespace fiskaltrust.Launcher.Commands
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 
+            var guiBuilder = WebApplication.CreateBuilder();
 
+            // Add services to the container.
+
+            guiBuilder.Services.AddControllersWithViews();
+
+            var guiApp = guiBuilder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!guiApp.Environment.IsDevelopment())
+            {
+                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                guiApp.UseHsts();
+            }
+
+            guiApp.UseStaticFiles();
+            guiApp.UseRouting();
+
+
+            guiApp.MapControllerRoute(
+                name: "default",
+                pattern: "{controller}/{action=Index}/{id?}");
+
+            guiApp.MapFallbackToFile("index.html");;
+
+            guiApp.Run();
             try
             {
+                await guiApp.StartAsync(_cancellationToken);
                 await app.RunAsync(_cancellationToken);
+                await guiApp.StopAsync();
             }
             catch(TaskCanceledException)
             {
