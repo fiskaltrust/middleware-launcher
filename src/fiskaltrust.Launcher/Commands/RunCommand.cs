@@ -9,6 +9,7 @@ using fiskaltrust.storage.serialization.V0;
 using Serilog;
 using ProtoBuf.Grpc.Server;
 using fiskaltrust.Launcher.Download;
+using System.Security.Cryptography;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -48,15 +49,18 @@ namespace fiskaltrust.Launcher.Commands
 
         protected LauncherConfiguration _launcherConfiguration = null!;
         protected ftCashBoxConfiguration _cashboxConfiguration = null!;
+        protected ECDiffieHellman _clientEcdh = null!;
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
+            _clientEcdh = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
+
             _launcherConfiguration = new LauncherConfiguration();
 
             List<(string message, Exception? e)> fatal = new();
             List<(string message, Exception? e)> errors = new();
             List<(string message, Exception? e)> warnings = new();
-
+            Console.WriteLine(Directory.GetCurrentDirectory());
             try
             {
                 _launcherConfiguration.OverwriteWith(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration());
@@ -67,16 +71,16 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
-
+            
             try
             {
-                await new Downloader(null, _launcherConfiguration).DownloadConfiguration();
+                await new Downloader(null, _launcherConfiguration).DownloadConfiguration(_clientEcdh);
             }
             catch (Exception e)
             {
                 errors.Add(("Could not update Cashbox configuration", e));
             }
-
+            
             try
             {
                 _launcherConfiguration.OverwriteWith(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!))?.LauncherConfiguration);
@@ -89,6 +93,7 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 _cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!)) ?? throw new Exception("Invalid Configuration File");
+                _cashboxConfiguration.Decrypt(_clientEcdh, _launcherConfiguration);
             }
             catch (Exception e)
             {

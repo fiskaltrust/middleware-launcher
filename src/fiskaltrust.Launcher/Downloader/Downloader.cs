@@ -2,6 +2,7 @@
 using System.IO.Compression;
 using System.Net;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.storage.serialization.V0;
@@ -185,20 +186,21 @@ namespace fiskaltrust.Launcher.Download
 
             return true;
         }
-        public async Task DownloadConfiguration()
+        public async Task DownloadConfiguration(ECDiffieHellman clientEcdh)
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.HelipadUrl}/api/configuration"));
+            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.ConfigurationUrl}api/configuration/{_configuration.CashboxId}"));
 
-            request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
-            request.Headers.Add("accesstoken", _configuration.AccessToken);
+            request.Headers.Add("AccessToken", _configuration.AccessToken);
+            
+            var clientPublicKey = Convert.ToBase64String(clientEcdh.PublicKey.ExportSubjectPublicKeyInfo());
+
+            request.Content = new StringContent($"{{ \"publicKeyX509\": \"{clientPublicKey}\" }}", Encoding.UTF8, "application/json");
 
             var response = await _httpClient.SendAsync(request);
 
             response.EnsureSuccessStatusCode();
 
-            var responseString = await response.Content.ReadAsStringAsync();
-
-            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(responseString) ?? throw new Exception("Downloaded Configuration is Invalid");
+            var cashboxConfiguration = await response.Content.ReadFromJsonAsync<ftCashBoxConfiguration>();
 
             await File.WriteAllTextAsync(_configuration.CashboxConfigurationFile!, JsonSerializer.Serialize(cashboxConfiguration));
         }

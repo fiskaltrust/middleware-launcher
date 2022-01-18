@@ -1,31 +1,37 @@
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Constants;
+using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.Configuration
 {
     public record LauncherConfiguration
     {
-        public bool UseDefaults { get; private set; }
+        private bool _useDefaults;
+
+        [JsonConstructor]
+        public LauncherConfiguration() { _useDefaults = false; }
 
         public LauncherConfiguration(bool useDefaults = true)
         {
-            UseDefaults = useDefaults;
+            _useDefaults = useDefaults;
         }
 
         public void EnableDefaults()
         {
-            UseDefaults = true;
+            _useDefaults = true;
         }
 
         public void DisableDefaults()
         {
-            UseDefaults = false;
+            _useDefaults = false;
         }
 
         private T WithDefault<T>(T value, T defaultValue)
         {
-            if(!UseDefaults)
+            if (!_useDefaults)
             {
                 return value;
             }
@@ -34,12 +40,13 @@ namespace fiskaltrust.Launcher.Configuration
 
         private T WithDefault<T>(T value, Func<T> defaultValue)
         {
-            if(!UseDefaults)
+            if (!_useDefaults)
             {
                 return value;
             }
             return value ?? defaultValue();
         }
+
         private Guid? _cashboxId;
         [JsonPropertyName("ftCashBoxId")]
         public Guid? CashboxId { get => _cashboxId; set => _cashboxId = value; }
@@ -80,6 +87,10 @@ namespace fiskaltrust.Launcher.Configuration
         [JsonPropertyName("helipadUrl")]
         public Uri? HelipadUrl { get => WithDefault(_helipadUrl, () => new Uri(Sandbox!.Value ? "https://helipad-sandbox.fiskaltrust.cloud" : "https://helipad.fiskaltrust.cloud")); set => _helipadUrl = value; }
 
+        private Uri? _configurationUrl;
+        [JsonPropertyName("configurationUrl")]
+        public Uri? ConfigurationUrl { get => WithDefault(_configurationUrl, () => new Uri(Sandbox!.Value ? "https://configuration-sandbox.fiskaltrust.cloud" : "https://configuration.fiskaltrust.cloud")); set => _configurationUrl = value; }
+
         private int? _downloadTimeoutSec;
         [JsonPropertyName("downloadTimeout")]
         public int? DownloadTimeoutSec { get => WithDefault(_downloadTimeoutSec, 15); set => _downloadTimeoutSec = value; } // TODO implement
@@ -106,7 +117,7 @@ namespace fiskaltrust.Launcher.Configuration
 
         public void OverwriteWith(LauncherConfiguration? source)
         {
-            if(source == null) { return; }
+            if (source == null) { return; }
 
             foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
             {
@@ -124,5 +135,61 @@ namespace fiskaltrust.Launcher.Configuration
     {
         [JsonPropertyName("launcher")]
         public LauncherConfiguration? LauncherConfiguration { get; set; }
+    }
+
+    public static class CashBoxConfigurationExt
+    {
+        private const string ENCRYPTION_SUFFIX = "_encrypted";
+        private static readonly List<string> _configKeyToEncrypt = new() { "connectionstring" };
+
+        private static ECDiffieHellmanPublicKey ParsePublicKey(byte[] publicKey)
+        {
+            byte[] keyX = new byte[publicKey.Length / 2];
+            byte[] keyY = new byte[keyX.Length];
+            Buffer.BlockCopy(publicKey, 1, keyX, 0, keyX.Length);
+            Buffer.BlockCopy(publicKey, 1 + keyX.Length, keyY, 0, keyY.Length);
+            ECParameters parameters = new()
+            {
+                Curve = ECCurve.NamedCurves.nistP256,
+                Q =
+                {
+                    X = keyX,
+                    Y = keyY,
+                },
+            };
+            using ECDiffieHellman dh = ECDiffieHellman.Create(parameters);
+            return dh.PublicKey;
+        }
+
+        private static string DecryptValue(string value, byte[] clientSharedSecret, byte[] iv)
+        {
+            var encrypted = Convert.FromBase64String(value);
+            var clientAes = Aes.Create();
+            clientAes.Key = clientSharedSecret;
+            var decrypted = clientAes.DecryptCbc(encrypted, iv);
+            return Encoding.UTF8.GetString(decrypted);
+        }
+
+        public static void Decrypt(this ftCashBoxConfiguration cashboxConfiguration, ECDiffieHellman clientEcdh, LauncherConfiguration launcherConfiguration)
+        {
+            var serverPublicKeyDh = ParsePublicKey(Convert.FromBase64String(launcherConfiguration.AccessToken!));
+
+            var clientSharedSecret = clientEcdh.DeriveKeyMaterial(serverPublicKeyDh);
+            var iv = launcherConfiguration.CashboxId!.Value.ToByteArray();
+
+            foreach (var queue in cashboxConfiguration.ftQueues)
+            {
+                foreach (var configKey in queue.Configuration.Keys.Where(x => _configKeyToEncrypt.Contains(x.ToLower()) || x.ToLower().EndsWith(ENCRYPTION_SUFFIX)))
+                {
+                    var configString = queue.Configuration[configKey]?.ToString();
+                    if (string.IsNullOrEmpty(configString))
+                    {
+                        continue;
+                    }
+                    queue.Configuration[configKey] = DecryptValue(configString, clientSharedSecret, iv);
+                }
+            }
+
+        }
     }
 }
