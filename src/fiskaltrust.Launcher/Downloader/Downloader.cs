@@ -190,7 +190,7 @@ namespace fiskaltrust.Launcher.Download
         {
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.ConfigurationUrl}api/configuration/{_configuration.CashboxId}"));
 
-            request.Headers.Add("AccessToken", _configuration.AccessToken);
+            request.Headers.Add("accesstoken", _configuration.AccessToken);
             
             var clientPublicKey = Convert.ToBase64String(clientEcdh.PublicKey.ExportSubjectPublicKeyInfo());
 
