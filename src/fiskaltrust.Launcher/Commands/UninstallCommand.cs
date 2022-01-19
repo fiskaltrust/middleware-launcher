@@ -14,21 +14,15 @@ using Serilog.Context;
 
 namespace fiskaltrust.Launcher.Commands
 {
-    public class UninstallCommand : Command
+    public class UninstallCommand : CommonCommand
     {
         public UninstallCommand() : base("uninstall")
         {
-            AddOption(new Option<Guid?>("--cashbox-id"));
-            AddOption(new Option<string?>("--cashbox-configuration-file"));
-            AddOption(new Option<string?>("--launcher-configuration-file"));
             AddOption(new Option<string?>("--service-name"));
-            AddOption(new Option<string?>("--log-folder"));
-            AddOption(new Option<LogLevel?>("--log-level"));
-            AddOption(new Option<bool>("--sandbox"));
         }
     }
 
-    public class UninstallCommandHandler : CommonRunCommandHandler
+    public class UninstallCommandHandler : CommonCommandHandler
     {
         public string? ServiceName { get; set; }
 

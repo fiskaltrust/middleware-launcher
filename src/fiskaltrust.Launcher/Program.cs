@@ -19,6 +19,9 @@ command.Handler = System.CommandLine.Invocation.CommandHandler.Create(() =>
     Console.Error.WriteLine("Must specify command.");
 });
 
+var subArguments = new SubArguments(args.SkipWhile(a => a != "--").Skip(1));
+args = args.TakeWhile(a => a != "--").ToArray();
+
 await new CommandLineBuilder(command)
   .UseHost(host =>
   {
@@ -30,6 +33,8 @@ await new CommandLineBuilder(command)
       {
           host.UseConsoleLifetime();
       }
+
+      host.ConfigureServices(services => services.AddSingleton(_ => subArguments));
 
       host
         .UseCommandHandler<HostCommand, HostCommandHandler>()
