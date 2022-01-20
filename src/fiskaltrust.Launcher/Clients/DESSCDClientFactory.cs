@@ -1,9 +1,7 @@
 ﻿using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.Middleware.Interface.Client;
-using fiskaltrust.Middleware.Interface.Client.Grpc;
 using fiskaltrust.Middleware.Interface.Client.Http;
-using Grpc.Core;
 using Grpc.Net.Client;
 using ProtoBuf.Grpc.Client;
 

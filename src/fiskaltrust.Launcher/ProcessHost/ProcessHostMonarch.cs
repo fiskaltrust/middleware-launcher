@@ -14,12 +14,12 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly Dictionary<Guid, ProcessHostMonarch> _hosts;
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ftCashBoxConfiguration _cashBoxConfiguration;
-        private readonly Downloader _downloader;
+        private readonly PackageDownloader _downloader;
         private readonly ILogger _logger;
         private readonly ILoggerFactory _loggerFactory;
         private readonly IHostApplicationLifetime _lifetime;
 
-        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, Downloader downloader, IHostApplicationLifetime lifetime)
+        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, IHostApplicationLifetime lifetime)
         {
             _loggerFactory = loggerFactory;
             _logger = logger;
@@ -76,7 +76,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         {
             try
             {
-                await _downloader.DownloadPackage(configuration);
+                await _downloader.DownloadPackageAsync(configuration);
             }
             catch (Exception e)
             {

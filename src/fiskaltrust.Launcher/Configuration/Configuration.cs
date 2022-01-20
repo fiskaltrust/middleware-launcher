@@ -1,9 +1,6 @@
 using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Constants;
-using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.Configuration
 {
@@ -135,61 +132,5 @@ namespace fiskaltrust.Launcher.Configuration
     {
         [JsonPropertyName("launcher")]
         public LauncherConfiguration? LauncherConfiguration { get; set; }
-    }
-
-    public static class CashBoxConfigurationExt
-    {
-        private const string ENCRYPTION_SUFFIX = "_encrypted";
-        private static readonly List<string> _configKeyToEncrypt = new() { "connectionstring" };
-
-        private static ECDiffieHellmanPublicKey ParsePublicKey(byte[] publicKey)
-        {
-            byte[] keyX = new byte[publicKey.Length / 2];
-            byte[] keyY = new byte[keyX.Length];
-            Buffer.BlockCopy(publicKey, 1, keyX, 0, keyX.Length);
-            Buffer.BlockCopy(publicKey, 1 + keyX.Length, keyY, 0, keyY.Length);
-            ECParameters parameters = new()
-            {
-                Curve = ECCurve.NamedCurves.nistP256,
-                Q =
-                {
-                    X = keyX,
-                    Y = keyY,
-                },
-            };
-            using ECDiffieHellman dh = ECDiffieHellman.Create(parameters);
-            return dh.PublicKey;
-        }
-
-        private static string DecryptValue(string value, byte[] clientSharedSecret, byte[] iv)
-        {
-            var encrypted = Convert.FromBase64String(value);
-            var clientAes = Aes.Create();
-            clientAes.Key = clientSharedSecret;
-            var decrypted = clientAes.DecryptCbc(encrypted, iv);
-            return Encoding.UTF8.GetString(decrypted);
-        }
-
-        public static void Decrypt(this ftCashBoxConfiguration cashboxConfiguration, ECDiffieHellman clientEcdh, LauncherConfiguration launcherConfiguration)
-        {
-            var serverPublicKeyDh = ParsePublicKey(Convert.FromBase64String(launcherConfiguration.AccessToken!));
-
-            var clientSharedSecret = clientEcdh.DeriveKeyMaterial(serverPublicKeyDh);
-            var iv = launcherConfiguration.CashboxId!.Value.ToByteArray();
-
-            foreach (var queue in cashboxConfiguration.ftQueues)
-            {
-                foreach (var configKey in queue.Configuration.Keys.Where(x => _configKeyToEncrypt.Contains(x.ToLower()) || x.ToLower().EndsWith(ENCRYPTION_SUFFIX)))
-                {
-                    var configString = queue.Configuration[configKey]?.ToString();
-                    if (string.IsNullOrEmpty(configString))
-                    {
-                        continue;
-                    }
-                    queue.Configuration[configKey] = DecryptValue(configString, clientSharedSecret, iv);
-                }
-            }
-
-        }
     }
 }
