@@ -48,9 +48,9 @@ namespace fiskaltrust.Launcher.Commands
             {
                 _launcherConfiguration.OverwriteWith(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration());
             }
-            catch (Exception e)
+            catch
             {
-                warnings.Add(("Could not read launcher configuration file", e));
+                warnings.Add(("Could not read launcher configuration file, using command line parameters only.", null));
             }
 
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
@@ -62,7 +62,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                errors.Add(("Could not create Cashbox directory", e));
+                errors.Add(("Could not create Cashbox directory.", e));
             }
 
             try
@@ -72,7 +72,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                errors.Add(("Could not update Cashbox configuration", e));
+                errors.Add(("Could not update Cashbox configuration.", e));
             }
 
             try
@@ -81,7 +81,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                fatal.Add(("Could not read cashbox configuration file", e));
+                fatal.Add(("Could not read Cashbox configuration file.", e));
             }
 
             try
@@ -91,7 +91,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                fatal.Add(("Could not parse cashbox configuration", e));
+                fatal.Add(("Could not parse Cashbox configuration.", e));
             }
 
             Log.Logger = new LoggerConfiguration()
