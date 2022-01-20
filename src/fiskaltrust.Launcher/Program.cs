@@ -12,11 +12,9 @@ var command = new RootCommand {
   new UninstallCommand(),
 };
 
-command.AddValidator(result => "Must specify command.");
-
 command.Handler = System.CommandLine.Invocation.CommandHandler.Create(() =>
 {
-    Console.Error.WriteLine("Must specify command.");
+    Console.Error.WriteLine($"Please specify a command to run this application. Run '{Path.GetFileName(RootCommand.ExecutablePath)} --help' for more information.");
 });
 
 var subArguments = new SubArguments(args.SkipWhile(a => a != "--").Skip(1));

@@ -1,15 +1,10 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Text.Json;
-using fiskaltrust.Launcher.Configuration;
-using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.ProcessHost;
 using fiskaltrust.Launcher.Services;
-using fiskaltrust.storage.serialization.V0;
 using Serilog;
 using ProtoBuf.Grpc.Server;
 using fiskaltrust.Launcher.Download;
-using System.Security.Cryptography;
 
 namespace fiskaltrust.Launcher.Commands
 {
