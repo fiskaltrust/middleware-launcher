@@ -90,6 +90,7 @@ namespace fiskaltrust.Launcher.Download
 
                 if(!await CheckHashAsync(sourcePath))
                 {
+                    File.Delete(sourcePath);
                     continue;
                 }
 
