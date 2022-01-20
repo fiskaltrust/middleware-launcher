@@ -15,7 +15,7 @@ namespace fiskaltrust.Launcher.Download
         {
             _configuration = configuration;
             _httpClient = new HttpClient(new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) });
-        }        
+        }
 
         public async Task DownloadConfigurationAsync(ECDiffieHellman clientEcdh)
         {
