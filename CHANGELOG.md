@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Support for `fiskaltrust.exe.config` files removed.
-- Support for .NET Framework 4.
+- Support for .NET Framework 4. (required framework is now included)
 - Hosting of WCF/SOAP. (SOAP support will be re-added in a leter version)
 
 
