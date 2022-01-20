@@ -25,7 +25,6 @@ namespace fiskaltrust.Launcher.Commands
         }
     }
 
-
     public class CommonCommandHandler : ICommandHandler
     {
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
@@ -44,7 +43,7 @@ namespace fiskaltrust.Launcher.Commands
             List<(string message, Exception? e)> fatal = new();
             List<(string message, Exception? e)> errors = new();
             List<(string message, Exception? e)> warnings = new();
-            Console.WriteLine(Directory.GetCurrentDirectory());
+
             try
             {
                 _launcherConfiguration.OverwriteWith(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration());
@@ -58,7 +57,18 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                await new Downloader(null, _launcherConfiguration).DownloadConfiguration(_clientEcdh);
+                var cashboxDirectory = Path.GetDirectoryName(_launcherConfiguration.CashboxConfigurationFile);
+                Directory.CreateDirectory(cashboxDirectory!);
+            }
+            catch (Exception e)
+            {
+                errors.Add(("Could not create Cashbox directory", e));
+            }
+
+            try
+            {
+                using var downloader = new ConfigurationDownloader(_launcherConfiguration);
+                await downloader.DownloadConfigurationAsync(_clientEcdh);
             }
             catch (Exception e)
             {

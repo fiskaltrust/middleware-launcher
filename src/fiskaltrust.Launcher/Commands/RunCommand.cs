@@ -54,7 +54,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => _launcherConfiguration);
                     services.AddSingleton(_ => _cashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
-                    services.AddSingleton<Downloader>();
+                    services.AddSingleton<PackageDownloader>();
                     services.AddHostedService<ProcessHostMonarcStartup>();
                     services.AddSingleton(_ => Log.Logger);
                 });
