@@ -1,34 +1,20 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Text.Json;
-using fiskaltrust.Launcher.Configuration;
-using fiskaltrust.Launcher.Extensions;
-using fiskaltrust.Launcher.ProcessHost;
-using fiskaltrust.Launcher.Services;
-using fiskaltrust.storage.serialization.V0;
 using Serilog;
-using ProtoBuf.Grpc.Server;
-using fiskaltrust.Launcher.Download;
 using System.Diagnostics;
 using Serilog.Context;
 
 namespace fiskaltrust.Launcher.Commands
 {
-    public class UninstallCommand : Command
+    public class UninstallCommand : CommonCommand
     {
         public UninstallCommand() : base("uninstall")
         {
-            AddOption(new Option<Guid?>("--cashbox-id"));
-            AddOption(new Option<string?>("--cashbox-configuration-file"));
-            AddOption(new Option<string?>("--launcher-configuration-file"));
             AddOption(new Option<string?>("--service-name"));
-            AddOption(new Option<string?>("--log-folder"));
-            AddOption(new Option<LogLevel?>("--log-level"));
-            AddOption(new Option<bool>("--sandbox"));
         }
     }
 
-    public class UninstallCommandHandler : CommonRunCommandHandler
+    public class UninstallCommandHandler : CommonCommandHandler
     {
         public string? ServiceName { get; set; }
 

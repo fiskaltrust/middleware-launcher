@@ -1,20 +1,12 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Text.Json;
-using fiskaltrust.Launcher.Configuration;
-using fiskaltrust.Launcher.Extensions;
-using fiskaltrust.Launcher.ProcessHost;
-using fiskaltrust.Launcher.Services;
-using fiskaltrust.storage.serialization.V0;
 using Serilog;
-using ProtoBuf.Grpc.Server;
-using fiskaltrust.Launcher.Download;
 using System.Diagnostics;
 using Serilog.Context;
 
 namespace fiskaltrust.Launcher.Commands
 {
-    public class InstallCommand : CommonRunCommand
+    public class InstallCommand : CommonCommand
     {
         public InstallCommand() : base("install")
         {
@@ -24,11 +16,17 @@ namespace fiskaltrust.Launcher.Commands
         }
     }
 
-    public class InstallCommandHandler : CommonRunCommandHandler
+    public class InstallCommandHandler : CommonCommandHandler
     {
         public string? ServiceName { get; set; }
         public string? DisplayName { get; set; }
         public bool DelayedStart { get; set; }
+        private readonly SubArguments _subArguments;
+
+        public InstallCommandHandler(SubArguments subArguments)
+        {
+            _subArguments = subArguments;
+        }
 
         public new async Task<int> InvokeAsync(InvocationContext context)
         {
@@ -62,20 +60,13 @@ namespace fiskaltrust.Launcher.Commands
 
             _launcherConfiguration.EnableDefaults();
 
-            var command = $"{Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")} run --launcher-configuration-file {LauncherConfigurationFile}";
-
-            command += typeof(LauncherConfiguration)
-                .GetProperties()
-                .Select(property =>
-                {
-                    var name = property.Name
-                        .Select(c => char.IsUpper(c) ? $"-{c}".ToLower() : c.ToString());
-                    var key = string.Concat(name).TrimStart('-');
-                    var value = property.GetValue(_launcherConfiguration);
-
-                    return (key, value);
-                })
-                .Aggregate("", (acc, s) => acc + (s.value != null ? $" --{s.key} \"{s.value}\"" : ""));
+            var command = $"{Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")} run ";
+            command += string.Join(" ", new string[] {
+                "--cashbox-id", _launcherConfiguration.CashboxId!.Value.ToString(),
+                "--access-token", _launcherConfiguration.AccessToken!,
+                "--sandbox", _launcherConfiguration.Sandbox!.Value.ToString(),
+                "--launcher-configuration-file", LauncherConfigurationFile,
+            }.Concat(_subArguments.Args));
 
             var serviceName = ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}";
 
@@ -87,7 +78,7 @@ namespace fiskaltrust.Launcher.Commands
                 // $"depend=" // TODO
             };
 
-            if(DisplayName != null)
+            if (DisplayName != null)
             {
                 arguments.Add($"DisplayName=\"{DisplayName}\"");
             }
@@ -103,7 +94,9 @@ namespace fiskaltrust.Launcher.Commands
             if (!await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "start", $"\"{serviceName}\"" }))
             {
                 Log.Warning($"Could not start service \"{serviceName}\"");
-            } else {
+            }
+            else
+            {
                 Log.Information($"successfully installed service \"{serviceName}\"");
             }
 
@@ -112,7 +105,7 @@ namespace fiskaltrust.Launcher.Commands
 
         private static string? MakeAbsolutePath(string? path)
         {
-            if(path != null)
+            if (path != null)
             {
                 return Path.GetFullPath(path);
             }
@@ -137,7 +130,8 @@ namespace fiskaltrust.Launcher.Commands
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            var withEnrichedContext = (Action log) => {
+            var withEnrichedContext = (Action log) =>
+            {
                 var enrichedContext = LogContext.PushProperty("EnrichedContext", " sc.exe");
                 log();
                 enrichedContext.Dispose();

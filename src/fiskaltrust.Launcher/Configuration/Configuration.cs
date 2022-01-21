@@ -6,26 +6,29 @@ namespace fiskaltrust.Launcher.Configuration
 {
     public record LauncherConfiguration
     {
-        public bool UseDefaults { get; private set; }
+        private bool _useDefaults;
+
+        [JsonConstructor]
+        public LauncherConfiguration() { _useDefaults = false; }
 
         public LauncherConfiguration(bool useDefaults = true)
         {
-            UseDefaults = useDefaults;
+            _useDefaults = useDefaults;
         }
 
         public void EnableDefaults()
         {
-            UseDefaults = true;
+            _useDefaults = true;
         }
 
         public void DisableDefaults()
         {
-            UseDefaults = false;
+            _useDefaults = false;
         }
 
         private T WithDefault<T>(T value, T defaultValue)
         {
-            if(!UseDefaults)
+            if (!_useDefaults)
             {
                 return value;
             }
@@ -34,12 +37,13 @@ namespace fiskaltrust.Launcher.Configuration
 
         private T WithDefault<T>(T value, Func<T> defaultValue)
         {
-            if(!UseDefaults)
+            if (!_useDefaults)
             {
                 return value;
             }
             return value ?? defaultValue();
         }
+
         private Guid? _cashboxId;
         [JsonPropertyName("ftCashBoxId")]
         public Guid? CashboxId { get => _cashboxId; set => _cashboxId = value; }
@@ -80,6 +84,10 @@ namespace fiskaltrust.Launcher.Configuration
         [JsonPropertyName("helipadUrl")]
         public Uri? HelipadUrl { get => WithDefault(_helipadUrl, () => new Uri(Sandbox!.Value ? "https://helipad-sandbox.fiskaltrust.cloud" : "https://helipad.fiskaltrust.cloud")); set => _helipadUrl = value; }
 
+        private Uri? _configurationUrl;
+        [JsonPropertyName("configurationUrl")]
+        public Uri? ConfigurationUrl { get => WithDefault(_configurationUrl, () => new Uri(Sandbox!.Value ? "https://configuration-sandbox.fiskaltrust.cloud" : "https://configuration.fiskaltrust.cloud")); set => _configurationUrl = value; }
+
         private int? _downloadTimeoutSec;
         [JsonPropertyName("downloadTimeout")]
         public int? DownloadTimeoutSec { get => WithDefault(_downloadTimeoutSec, 15); set => _downloadTimeoutSec = value; } // TODO implement
@@ -106,7 +114,7 @@ namespace fiskaltrust.Launcher.Configuration
 
         public void OverwriteWith(LauncherConfiguration? source)
         {
-            if(source == null) { return; }
+            if (source == null) { return; }
 
             foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
             {

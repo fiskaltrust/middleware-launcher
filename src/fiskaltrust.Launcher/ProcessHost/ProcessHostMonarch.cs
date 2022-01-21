@@ -14,12 +14,12 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly Dictionary<Guid, ProcessHostMonarch> _hosts;
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ftCashBoxConfiguration _cashBoxConfiguration;
-        private readonly Downloader _downloader;
+        private readonly PackageDownloader _downloader;
         private readonly ILogger _logger;
         private readonly ILoggerFactory _loggerFactory;
         private readonly IHostApplicationLifetime _lifetime;
 
-        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, Downloader downloader, IHostApplicationLifetime lifetime)
+        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, IHostApplicationLifetime lifetime)
         {
             _loggerFactory = loggerFactory;
             _logger = logger;
@@ -76,7 +76,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         {
             try
             {
-                await _downloader.DownloadPackage(configuration);
+                await _downloader.DownloadPackageAsync(configuration);
             }
             catch (Exception e)
             {
@@ -147,6 +147,12 @@ namespace fiskaltrust.Launcher.ProcessHost
                 "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new PlebianConfiguration { PackageType = packageType, PackageId = packageConfiguration.Id })))}\"",
                 "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\"",
             });
+
+            // if(Debugger.IsAttached)
+            // {
+            //     _process.StartInfo.Arguments += " --debugging";
+            // }
+
             _process.StartInfo.RedirectStandardError = true;
             _process.StartInfo.RedirectStandardOutput = true;
             _process.EnableRaisingEvents = true;
@@ -204,7 +210,11 @@ namespace fiskaltrust.Launcher.ProcessHost
                 _stopped.SetCanceled(cancellationToken);
                 return Task.CompletedTask;
             }
-
+            _logger.LogDebug("ProcessId {id}", _process.Id);
+            if(Debugger.IsAttached)
+            {
+                Debug.WriteLine($"ProcessId {_process.Id}");
+            }
             return _started.Task;
         }
 
