@@ -13,8 +13,6 @@
     <IsPackable>false</IsPackable>
     <SpaRoot>ClientApp/</SpaRoot>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
-    <SpaProxyServerUrl>https://localhost:44460</SpaProxyServerUrl>
-    <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
     <RootNamespace>fiskaltrust.Launcher</RootNamespace>
   </PropertyGroup>
 
@@ -59,6 +57,18 @@
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
   </Target>
 
+  <Target Name="BuildRunWebpack" AfterTargets="Build">
+    <!-- As part of publishing, ensure the JS resources are freshly built in production mode -->
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build:dev" />
+
+    <ItemGroup>
+      <BuiltFiles Include="$(SpaRoot)build\**">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </BuiltFiles>
+    </ItemGroup>
+    <Copy SourceFiles="@(BuiltFiles)" DestinationFiles="@(BuiltFiles->'$(OutDir)\wwwroot\\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
   <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
     <!-- As part of publishing, ensure the JS resources are freshly built in production mode -->
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
@@ -70,7 +80,7 @@
       <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
         <RelativePath>wwwroot\%(RecursiveDir)%(FileName)%(Extension)</RelativePath>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <!-- <ExcludeFromSingleFile>true</ExcludeFromSingleFile> -->
       </ResolvedFileToPublish>
     </ItemGroup>
   </Target>

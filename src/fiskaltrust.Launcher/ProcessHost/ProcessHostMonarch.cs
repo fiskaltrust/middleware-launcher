@@ -11,7 +11,7 @@ namespace fiskaltrust.Launcher.ProcessHost
     {
         public class AlreadyLoggedException : Exception { }
 
-        private readonly Dictionary<Guid, ProcessHostMonarch> _hosts;
+        public Dictionary<Guid, ProcessHostMonarch> Hosts { get; }
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ftCashBoxConfiguration _cashBoxConfiguration;
         private readonly PackageDownloader _downloader;
@@ -23,7 +23,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         {
             _loggerFactory = loggerFactory;
             _logger = logger;
-            _hosts = hosts;
+            Hosts = hosts;
             _launcherConfiguration = launcherConfiguration;
             _cashBoxConfiguration = cashBoxConfiguration;
             _downloader = downloader;
@@ -61,11 +61,11 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             try
             {
-                await Task.WhenAll(_hosts.Select(h => h.Value.Stopped()));
+                await Task.WhenAll(Hosts.Select(h => h.Value.Stopped()));
             }
             catch
             {
-                foreach (var failed in _hosts.Where(h => !h.Value.Stopped().IsCompletedSuccessfully).Select(h => (h.Key, h.Value.Stopped().Exception)))
+                foreach (var failed in Hosts.Where(h => !h.Value.Stopped().IsCompletedSuccessfully).Select(h => (h.Key, h.Value.Stopped().Exception)))
                 {
                     _logger.LogWarning(failed.Exception, "ProcessHost {Id} had crashed.", failed.Key);
                 }
@@ -90,7 +90,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 configuration,
                 packageType);
 
-            _hosts.Add(
+            Hosts.Add(
                 configuration.Id,
                 monarch
             );
@@ -130,11 +130,16 @@ namespace fiskaltrust.Launcher.ProcessHost
     {
         private readonly Process _process;
         private readonly TaskCompletionSource _started;
+        public bool HasStarted { get => _started.Task.IsCompletedSuccessfully; }
         private readonly TaskCompletionSource _stopped;
+        public bool HasStopped { get => _stopped.Task.IsCompletedSuccessfully; }
+
         private readonly ILogger<ProcessHostMonarch> _logger;
+        public PackageConfiguration PackageConfiguration { get; }
 
         public ProcessHostMonarch(ILogger<ProcessHostMonarch> logger, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PackageType packageType)
         {
+            PackageConfiguration = packageConfiguration;
             _logger = logger;
 
             _process = new Process();

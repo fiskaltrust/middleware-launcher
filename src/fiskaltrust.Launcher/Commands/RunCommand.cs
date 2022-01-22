@@ -5,6 +5,7 @@ using fiskaltrust.Launcher.Services;
 using Serilog;
 using ProtoBuf.Grpc.Server;
 using fiskaltrust.Launcher.Download;
+using Microsoft.Extensions.FileProviders;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -50,7 +51,8 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => _cashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
                     services.AddSingleton<PackageDownloader>();
-                    services.AddHostedService<ProcessHostMonarcStartup>();
+                    services.AddSingleton<ProcessHostMonarcStartup>();
+                    services.AddHostedService(provider => provider.GetRequiredService<ProcessHostMonarcStartup>());
                     services.AddSingleton(_ => Log.Logger);
                 });
 
@@ -64,31 +66,34 @@ namespace fiskaltrust.Launcher.Commands
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 
             var guiBuilder = WebApplication.CreateBuilder();
-
-            // Add services to the container.
+            guiBuilder.Host.UseSerilog();
 
             guiBuilder.Services.AddControllersWithViews();
+            guiBuilder.Services.AddDirectoryBrowser();
+
+            guiBuilder.Host.ConfigureServices(services => {
+                services.AddSingleton(_ => _launcherConfiguration);
+                services.AddSingleton(_ => _cashboxConfiguration);
+                services.AddSingleton(_ => app.Services.GetRequiredService<ProcessHostMonarcStartup>());
+            });
 
             var guiApp = guiBuilder.Build();
 
-            // Configure the HTTP request pipeline.
             if (!guiApp.Environment.IsDevelopment())
             {
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 guiApp.UseHsts();
             }
 
-            guiApp.UseStaticFiles();
+
+            var fileProvider = new PhysicalFileProvider(Path.Combine(Path.GetDirectoryName(Environment.ProcessPath!)!, "wwwroot")); // Use EmbeddedFileProveder
+            
+            guiApp.UseDefaultFiles(new DefaultFilesOptions { FileProvider = fileProvider });
+            guiApp.UseStaticFiles(new StaticFileOptions { FileProvider = fileProvider });
             guiApp.UseRouting();
 
-
-            guiApp.MapControllerRoute(
-                name: "default",
-                pattern: "{controller}/{action=Index}/{id?}");
-
+            guiApp.MapDefaultControllerRoute();
             guiApp.MapFallbackToFile("index.html");;
 
-            guiApp.Run();
             try
             {
                 await guiApp.StartAsync(_cancellationToken);
