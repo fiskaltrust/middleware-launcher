@@ -1,29 +1,25 @@
 ﻿using Serilog;
 using System.Diagnostics;
 
-namespace fiskaltrust.Launcher.Commands
+namespace fiskaltrust.Launcher.ServceInstallation
 {
-    public class InstallLinuxSystemd
+    public class LinuxSystemD
     {
-        private readonly string _launcherConfigurationFile;
         private static readonly string _servicePath = "/etc/systemd/system/";
         private readonly string _serviceName = "fiskaltrustLauncher";
-        private readonly string _serviceDescription = "Service installation of fiskaltrust launcher.";
 
-        public InstallLinuxSystemd(string LauncherConfigurationFile, string? serviceName, string? serviceDescription)
+        public LinuxSystemD(string? serviceName)
         {
-            _launcherConfigurationFile = LauncherConfigurationFile;
             _serviceName = serviceName ?? _serviceName;
-            _serviceDescription = serviceDescription ?? _serviceDescription;
         }
-        public async Task<int> InstallSystemd()
+        public async Task<int> InstallSystemD(string commandArgs, string? serviceDescription)
         {
             if (!IsSystemd())
             {
                 return -1;
             }
             Log.Information("Installing service via systemd.");
-            var serviceFileContent = GetServiceFileConten(_serviceDescription);
+            var serviceFileContent = GetServiceFileContent(serviceDescription ?? "Service installation of fiskaltrust launcher.", commandArgs);
             var serviceFilePath = Path.Combine(_servicePath, _serviceName+ ".service");
             await File.AppendAllLinesAsync(serviceFilePath, serviceFileContent).ConfigureAwait(false);
             RunProcess("systemctl", "daemon-reload");
@@ -32,7 +28,7 @@ namespace fiskaltrust.Launcher.Commands
             Log.Information("Enable service.");
             return RunProcess("systemctl", "enable " + _serviceName);
         }
-        public int UninstallSystemd()
+        public int UninstallSystemD()
         {
             if (!IsSystemd())
             {
@@ -60,10 +56,10 @@ namespace fiskaltrust.Launcher.Commands
             }
             return true;
         }
-        private static int RunProcess(string? fileName, string arguments, string expectetOutput = "")
+        private static int RunProcess(string? fileName, string arguments, string expectedOutput = "")
         {
             string output;
-            using (Process process = new Process())
+            using (Process process = new())
             {
                 process.StartInfo.FileName = fileName;
                 process.StartInfo.Arguments = arguments;   
@@ -74,21 +70,21 @@ namespace fiskaltrust.Launcher.Commands
                 output = reader.ReadToEnd();
                 process.WaitForExit();
             }
-            if (!string.IsNullOrEmpty(expectetOutput))
+            if (!string.IsNullOrEmpty(expectedOutput))
             {
-                var exitcode = CompareOutput(output, expectetOutput);
-                Log.Information(string.Format("Output {0} und expectetOutput {1}", output, expectetOutput));
+                var exitcode = CompareOutput(output, expectedOutput);
+                Log.Information(string.Format("Output {0} und expectedOutput {1}", output, expectedOutput));
                 return exitcode;
             }
             return 0;
         }
-        private static int CompareOutput(string output, string expectetOutput)
+        private static int CompareOutput(string output, string expectedOutput)
         {
-            return output.Contains(expectetOutput) ? 0 : 1;
+            return output.Contains(expectedOutput) ? 0 : 1;
         }
-        private string [] GetServiceFileConten(string serviceDescription)
+        private static string [] GetServiceFileContent(string serviceDescription, string commandArgs)
         {
-            var processPath = $"{Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")} run --launcher-configuration-file {_launcherConfigurationFile}";
+            var processPath = $"{Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")} {commandArgs}";
             return new string[] { "[Unit]",
                                   "Description="+ serviceDescription ,
                                   "",
