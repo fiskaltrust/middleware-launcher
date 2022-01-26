@@ -73,7 +73,7 @@ namespace fiskaltrust.Launcher.ServceInstallation
             if (!string.IsNullOrEmpty(expectedOutput))
             {
                 var exitcode = CompareOutput(output, expectedOutput);
-                Log.Information(string.Format("Output {0} und expectedOutput {1}", output, expectedOutput));
+                Log.Information("Process output: {processOutput} (expected: {expectedOutput})", output, expectedOutput);
                 return exitcode;
             }
             return 0;
@@ -84,13 +84,15 @@ namespace fiskaltrust.Launcher.ServceInstallation
         }
         private static string [] GetServiceFileContent(string serviceDescription, string commandArgs)
         {
-            var processPath = $"{Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")} {commandArgs}";
+            var processPath = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable");
+            
+            var command = $"{processPath} {commandArgs}";
             return new string[] { "[Unit]",
                                   "Description="+ serviceDescription ,
                                   "",
                                   "[Service]",
                                   "Type=simple",
-                                  string.Format("ExecStart={0}", processPath),
+                                  string.Format("ExecStart={0}", command),
                                   "",
                                   "[Install]",
                                   "WantedBy = multi-user.target"

@@ -30,11 +30,13 @@ namespace fiskaltrust.Launcher.ServceInstallation
               return 1;
             }
 
+            var processPath = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable");
+
             var arguments = new List<string> {
                 "create",
                 $"\"{_serviceName}\"",
                 $"start={(delayedStart ? "delayed-auto" : "auto")}",
-                $"binPath=\"{Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")} {commandArgs.Replace("\"", "\\\"")}\"",
+                $"binPath=\"{processPath} {commandArgs.Replace("\"", "\\\"")}\"",
                 // $"depend=" // TODO
             };
 
