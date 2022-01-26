@@ -24,10 +24,14 @@ namespace fiskaltrust.Launcher.Commands
             {
                 return 1;
             }
-
+            if (OperatingSystem.IsLinux())
+            {
+                var installLinux = new InstallLinuxSystemd(LauncherConfigurationFile, ServiceName, "");
+                return installLinux.UninstallSystemd();
+            }
             if (!OperatingSystem.IsWindows())
             {
-                Log.Error("For non windows service un/installation see: {link}", ""); // TODO
+                Log.Error("For non windows or linux(systemd) service installation see: {link}", ""); // TODO
                 return 1;
             }
 

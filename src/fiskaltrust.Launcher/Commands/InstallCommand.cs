@@ -12,6 +12,7 @@ namespace fiskaltrust.Launcher.Commands
         {
             AddOption(new Option<string?>("--service-name"));
             AddOption(new Option<string?>("--display-name"));
+            AddOption(new Option<string?>("--discription"));
             AddOption(new Option<bool>("--delayed-start"));
         }
     }
@@ -20,6 +21,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public string? ServiceName { get; set; }
         public string? DisplayName { get; set; }
+        public string? Discription { get; set; }
         public bool DelayedStart { get; set; }
         private readonly SubArguments _subArguments;
 
@@ -35,9 +37,14 @@ namespace fiskaltrust.Launcher.Commands
                 return 1;
             }
 
+            if (OperatingSystem.IsLinux())
+            {
+                var installLinux = new InstallLinuxSystemd(LauncherConfigurationFile, ServiceName, Discription);
+                return await installLinux.InstallSystemd().ConfigureAwait(false);
+            }
             if (!OperatingSystem.IsWindows())
             {
-                Log.Error("For non windows service installation see: {link}", ""); // TODO
+                Log.Error("For non windows or linux(systemd) service installation see: {link}", ""); // TODO
                 return 1;
             }
 
