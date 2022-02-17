@@ -1,4 +1,4 @@
-using Microsoft.IO;
+using System.Text;
 
 namespace fiskaltrust.Launcher.Middlewares
 {
@@ -6,69 +6,62 @@ namespace fiskaltrust.Launcher.Middlewares
     {
         private readonly RequestDelegate _next;
         private readonly ILogger _logger;
-        private readonly RecyclableMemoryStreamManager _recyclableMemoryStreamManager;
         public RequestResponseLoggingMiddleware(RequestDelegate next, ILoggerFactory loggerFactory)
         {
             _next = next;
             _logger = loggerFactory.CreateLogger<RequestResponseLoggingMiddleware>();
-            _recyclableMemoryStreamManager = new RecyclableMemoryStreamManager();
         }
         public async Task Invoke(HttpContext context)
         {
-            await LogRequest(context);
+            await LogRequest(context.Request);
             await LogResponse(context);
         }
 
-        private async Task LogRequest(HttpContext context)
+        private async Task LogRequest(HttpRequest request)
         {
-            context.Request.EnableBuffering();
+            request.EnableBuffering();
 
-            await using var requestStream = _recyclableMemoryStreamManager.GetStream();
-            await context.Request.Body.CopyToAsync(requestStream);
+            var buffer = new byte[Convert.ToInt32(request.ContentLength)];
 
-            _logger.LogDebug("Http Request Information: Schema \"{Scheme}\" Host \"{Host}\" Path \"{Path}\" QueryString \"{QueryString}\" Body {RequestBodyStream}",
-                context.Request.Scheme, context.Request.Host, context.Request.Path, context.Request.QueryString, ReadStreamInChunks(requestStream));
-            context.Request.Body.Position = 0;
+            await request.Body.ReadAsync(new Memory<byte>(buffer));
+
+            _logger.LogDebug("Http Request Information: Schema \"{Scheme}\" Host = \"{Host}\" Path = \"{Path}\" QueryString = \"{QueryString}\" Body = {body}",
+                request.Scheme, request.Host, request.Path, request.QueryString, buffer.Length == 0 ? null : Encoding.UTF8.GetString(buffer));
+            request.Body.Position = 0;
         }
 
         private async Task LogResponse(HttpContext context)
         {
             var originalBodyStream = context.Response.Body;
-
-            await using var responseBody = _recyclableMemoryStreamManager.GetStream();
+            using var responseBody = new MemoryStream();
             context.Response.Body = responseBody;
 
-            await _next(context);
+            await _next.Invoke(context);
 
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
-            var text = await new StreamReader(context.Response.Body).ReadToEndAsync();
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
+            string text;
+            if (!context.Response.ContentType.Contains("octet-stream"))
+            {
+                responseBody.Position = 0;
+
+                var len = Convert.ToInt32(context.Response.ContentLength ?? responseBody.Length);
+                var buffer = new byte[len];
+                
+                await responseBody.ReadAsync(new Memory<byte>(buffer));
+
+                text = Encoding.UTF8.GetString(buffer);
+            }
+            else
+            {
+                text = "[stream]";
+            }
+            responseBody.Position = 0;
+
+
+            await responseBody.CopyToAsync(originalBodyStream);
+            context.Response.Body = originalBodyStream;
 
             _logger.LogDebug("Http Response Information: StatusCode \"{StatusCode}\" Body {text}",
                 context.Response.StatusCode, text);
-
-            await responseBody.CopyToAsync(originalBodyStream);
-        }
-
-        private static string ReadStreamInChunks(Stream stream)
-        {
-            const int readChunkBufferLength = 4096;
-
-            stream.Seek(0, SeekOrigin.Begin);
-
-            using var textWriter = new StringWriter();
-            using var reader = new StreamReader(stream);
-
-            var readChunk = new char[readChunkBufferLength];
-            int readChunkLength;
-
-            do
-            {
-                readChunkLength = reader.ReadBlock(readChunk, 0, readChunkBufferLength);
-                textWriter.Write(readChunk, 0, readChunkLength);
-            } while (readChunkLength > 0);
-
-            return textWriter.ToString();
         }
     }
 }
