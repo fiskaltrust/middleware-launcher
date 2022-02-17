@@ -1,6 +1,5 @@
 ﻿using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Extensions;
-using fiskaltrust.Launcher.Middlewares;
 using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -10,6 +9,7 @@ using System.Net;
 using System.Reflection;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Interfaces;
+using Microsoft.AspNetCore.HttpLogging;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -34,9 +34,21 @@ namespace fiskaltrust.Launcher.Services
 
             builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) =>
                 loggerConfiguration
-                    .AddLoggingConfiguration(_launcherConfiguration, _packageConfiguration.Id.ToString())
+                    .AddLoggingConfiguration(_launcherConfiguration, _packageConfiguration.Id.ToString(), true)
                     .WriteTo.GrpcSink(_packageConfiguration, _processHostService));
 
+            if (_launcherConfiguration.LogLevel == LogLevel.Debug)
+            {
+                builder.Services.AddHttpLogging(options =>
+                options.LoggingFields =
+                    HttpLoggingFields.RequestPath |
+                    HttpLoggingFields.RequestMethod |
+                    HttpLoggingFields.RequestScheme |
+                    HttpLoggingFields.RequestQuery |
+                    HttpLoggingFields.RequestBody |
+                    HttpLoggingFields.ResponseStatusCode |
+                    HttpLoggingFields.ResponseBody);
+            }
             WebApplication app;
 
             switch (hostingType)
@@ -57,7 +69,7 @@ namespace fiskaltrust.Launcher.Services
 
             if (_launcherConfiguration.LogLevel == LogLevel.Debug)
             {
-                app.UseMiddleware<RequestResponseLoggingMiddleware>();
+                app.UseHttpLogging();
             }
 
             await app.StartAsync();
