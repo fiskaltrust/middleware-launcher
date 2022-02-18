@@ -8,7 +8,7 @@ namespace fiskaltrust.Launcher.Extensions
 {
     public static class LoggerConfigurationExtensions
     {
-        public static LoggerConfiguration AddLoggingConfiguration(this LoggerConfiguration loggerConfiguration, LauncherConfiguration launcherConfiguration, string? suffix = null)
+        public static LoggerConfiguration AddLoggingConfiguration(this LoggerConfiguration loggerConfiguration, LauncherConfiguration launcherConfiguration, string? suffix = null, bool aspLogging = false)
         {
             if (suffix != null)
             {
@@ -22,6 +22,7 @@ namespace fiskaltrust.Launcher.Extensions
             return loggerConfiguration.MinimumLevel.Is(Serilog.Extensions.Logging.LevelConvert.ToSerilogLevel(launcherConfiguration.LogLevel!.Value))
             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}{EnrichedPackage}{EnrichedId}{EnrichedContext}] {Message:lj}{NewLine}{Exception}")
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware", aspLogging ? LogEventLevel.Information : LogEventLevel.Warning)
             .MinimumLevel.Override("System", LogEventLevel.Warning)
             .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
             .MinimumLevel.Override("ProtoBuf", LogEventLevel.Warning)

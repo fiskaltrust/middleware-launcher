@@ -99,12 +99,12 @@ namespace fiskaltrust.Launcher.Commands
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
-            foreach (var (message, e) in fatal.Concat(errors))
+            foreach (var (message, e) in fatal.AsEnumerable().Reverse().Concat(errors.AsEnumerable().Reverse()))
             {
                 Log.Error(e, message);
             }
 
-            foreach (var (message, e) in warnings)
+            foreach (var (message, e) in warnings.AsEnumerable().Reverse())
             {
                 Log.Warning(e, message);
             }

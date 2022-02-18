@@ -155,6 +155,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _process.StartInfo.RedirectStandardError = true;
             _process.StartInfo.RedirectStandardOutput = true;
+
             _process.EnableRaisingEvents = true;
             _stopped = new TaskCompletionSource();
             _started = new TaskCompletionSource();
@@ -180,6 +181,9 @@ namespace fiskaltrust.Launcher.ProcessHost
                         try
                         {
                             if (!_process.Start()) { throw new Exception("Could not start ProcessHost process."); }
+
+                            _process.BeginOutputReadLine();
+                            _process.BeginErrorReadLine();
                         }
                         catch
                         {
@@ -203,6 +207,8 @@ namespace fiskaltrust.Launcher.ProcessHost
             try
             {
                 if (!_process.Start()) { throw new Exception("Process.Start() was false."); }
+                _process.BeginOutputReadLine();
+                _process.BeginErrorReadLine();
             }
             catch (Exception e)
             {
@@ -215,6 +221,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 Debug.WriteLine($"ProcessId {_process.Id}");
             }
+
             return _started.Task;
         }
 

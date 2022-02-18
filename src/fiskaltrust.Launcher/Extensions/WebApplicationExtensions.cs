@@ -1,6 +1,8 @@
 ﻿using fiskaltrust.ifPOS.v1;
 using fiskaltrust.ifPOS.v1.de;
 using Microsoft.AspNetCore.Mvc;
+using System.IO.Pipelines;
+using System.Linq;
 
 namespace fiskaltrust.Launcher.Extensions
 {
@@ -10,7 +12,17 @@ namespace fiskaltrust.Launcher.Extensions
         {
             app.MapPost("v2/Echo", async (EchoRequest req) => await pos.EchoAsync(req));
             app.MapPost("v2/Sign", async (ReceiptRequest req) => await pos.SignAsync(req));
-            app.MapGet("v2/Journal", ([FromQuery] long type, [FromQuery] long from, [FromQuery] long to) => pos.JournalAsync(new JournalRequest { ftJournalType = type, From = from, To = to }));
+            app.MapGet("v2/Journal", ([FromQuery] long type, [FromQuery] long? from, [FromQuery] long? to) =>
+            {
+                var pipe = new Pipe();
+                var journal = pos.JournalAsync(new JournalRequest { ftJournalType = type, From = from ?? 0, To = to ?? 0 });
+                var _ = Task.Run(async () =>
+                {
+                    await journal.ForEachAwaitAsync(async b => await pipe.Writer.WriteAsync(new ReadOnlyMemory<byte>(b.Chunk.ToArray())));
+                    await pipe.Writer.CompleteAsync();
+                });
+                return Results.Stream(pipe.Reader.AsStream());
+            });
 
             return app;
         }
