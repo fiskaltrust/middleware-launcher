@@ -49,7 +49,7 @@ namespace fiskaltrust.Launcher.Commands
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
-            if(Debugging)
+            if (Debugging)
             {
                 while (!Debugger.IsAttached)
                 {

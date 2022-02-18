@@ -52,9 +52,9 @@ namespace fiskaltrust.Launcher.ProcessHost
                     await StartProcessHostMonarch(helper, PackageType.Helper, cancellationToken);
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                if(e is not AlreadyLoggedException) { _logger.LogError(e, "Error Starting Monarchs"); }
+                if (e is not AlreadyLoggedException) { _logger.LogError(e, "Error Starting Monarchs"); }
                 _lifetime.StopApplication();
                 return;
             }
@@ -139,7 +139,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _process = new Process();
             _process.StartInfo.UseShellExecute = false;
-            _process.StartInfo.FileName =  Environment.ProcessPath ?? throw new Exception("Could not find launcher executable");
+            _process.StartInfo.FileName = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable");
             _process.StartInfo.CreateNoWindow = false;
 
             _process.StartInfo.Arguments = string.Join(" ", new string[] {
@@ -217,7 +217,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 return Task.CompletedTask;
             }
             _logger.LogDebug("ProcessId {id}", _process.Id);
-            if(Debugger.IsAttached)
+            if (Debugger.IsAttached)
             {
                 Debug.WriteLine($"ProcessId {_process.Id}");
             }

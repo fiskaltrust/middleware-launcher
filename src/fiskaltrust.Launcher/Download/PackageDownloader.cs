@@ -88,7 +88,7 @@ namespace fiskaltrust.Launcher.Download
                     _logger?.LogDebug("Found Package in cache.");
                 }
 
-                if(!await CheckHashAsync(sourcePath))
+                if (!await CheckHashAsync(sourcePath))
                 {
                     File.Delete(sourcePath);
                     continue;

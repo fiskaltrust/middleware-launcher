@@ -26,8 +26,8 @@ namespace fiskaltrust.Launcher.ServceInstallation
             }
             else
             {
-              Log.Error("Wrong Operating system");
-              return 1;
+                Log.Error("Wrong Operating system");
+                return 1;
             }
 
             var processPath = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable");
@@ -78,8 +78,8 @@ namespace fiskaltrust.Launcher.ServceInstallation
             }
             else
             {
-              Log.Error("Wrong Operating system");
-              return 1;
+                Log.Error("Wrong Operating system");
+                return 1;
             }
 
             Log.Information("Stopping service.");

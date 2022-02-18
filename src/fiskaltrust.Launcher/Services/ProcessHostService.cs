@@ -3,6 +3,7 @@ using System.ServiceModel;
 using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.ProcessHost;
 using Serilog.Context;
+using Serilog.Events;
 using Serilog.Formatting.Compact.Reader;
 
 namespace fiskaltrust.Launcher.Services
@@ -47,7 +48,13 @@ namespace fiskaltrust.Launcher.Services
                 {
                     var properties = payload.Enrichment.Select(e => LogContext.PushProperty(e.Key, " " + e.Value)).ToArray();
 
-                    _logger.Write(logEvent);
+                    _logger.Write(new LogEvent(
+                        logEvent.Timestamp.ToLocalTime(),
+                        logEvent.Level,
+                        logEvent.Exception,
+                        logEvent.MessageTemplate,
+                        logEvent.Properties.Select(kv => new LogEventProperty(kv.Key, kv.Value))
+                    ));
 
                     foreach (var p in properties) { p.Dispose(); }
                 }

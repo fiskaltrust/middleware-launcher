@@ -20,7 +20,7 @@ namespace fiskaltrust.Launcher.ServceInstallation
             }
             Log.Information("Installing service via systemd.");
             var serviceFileContent = GetServiceFileContent(serviceDescription ?? "Service installation of fiskaltrust launcher.", commandArgs);
-            var serviceFilePath = Path.Combine(_servicePath, _serviceName+ ".service");
+            var serviceFilePath = Path.Combine(_servicePath, _serviceName + ".service");
             await File.AppendAllLinesAsync(serviceFilePath, serviceFileContent).ConfigureAwait(false);
             RunProcess("systemctl", "daemon-reload");
             Log.Information("Starting service.");
@@ -62,7 +62,7 @@ namespace fiskaltrust.Launcher.ServceInstallation
             using (Process process = new())
             {
                 process.StartInfo.FileName = fileName;
-                process.StartInfo.Arguments = arguments;   
+                process.StartInfo.Arguments = arguments;
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.Start();
@@ -82,10 +82,10 @@ namespace fiskaltrust.Launcher.ServceInstallation
         {
             return output.Contains(expectedOutput) ? 0 : 1;
         }
-        private static string [] GetServiceFileContent(string serviceDescription, string commandArgs)
+        private static string[] GetServiceFileContent(string serviceDescription, string commandArgs)
         {
             var processPath = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable");
-            
+
             var command = $"{processPath} {commandArgs}";
             return new string[] { "[Unit]",
                                   "Description="+ serviceDescription ,

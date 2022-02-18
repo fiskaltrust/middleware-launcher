@@ -10,7 +10,8 @@ namespace fiskaltrust.Launcher.Commands
 {
     public class RunCommand : CommonCommand
     {
-        public RunCommand() : base("run") {
+        public RunCommand() : base("run")
+        {
             AddOption(new Option<int?>("--launcher-port"));
             AddOption(new Option<bool>("--use-offline"));
             AddOption(new Option<string?>("--service-folder"));
@@ -36,7 +37,7 @@ namespace fiskaltrust.Launcher.Commands
 
         public new async Task<int> InvokeAsync(InvocationContext context)
         {
-            if(await base.InvokeAsync(context) != 0)
+            if (await base.InvokeAsync(context) != 0)
             {
                 return 1;
             }
@@ -68,7 +69,7 @@ namespace fiskaltrust.Launcher.Commands
             {
                 await app.RunAsync(_cancellationToken);
             }
-            catch(TaskCanceledException)
+            catch (TaskCanceledException)
             {
                 return 1;
             }

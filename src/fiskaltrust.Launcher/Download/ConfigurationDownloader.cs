@@ -20,16 +20,16 @@ namespace fiskaltrust.Launcher.Download
         public async Task DownloadConfigurationAsync(ECDiffieHellman clientEcdh)
         {
             var clientPublicKey = Convert.ToBase64String(clientEcdh.PublicKey.ExportSubjectPublicKeyInfo());
-            
+
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.ConfigurationUrl}api/configuration/{_configuration.CashboxId}"));
             request.Headers.Add("accesstoken", _configuration.AccessToken);
             request.Content = new StringContent($"{{ \"publicKeyX509\": \"{clientPublicKey}\" }}", Encoding.UTF8, "application/json");
 
             var response = await _httpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
-                        
+
             var cashboxConfiguration = await response.Content.ReadFromJsonAsync<ftCashBoxConfiguration>();
-            
+
             await File.WriteAllTextAsync(_configuration.CashboxConfigurationFile!, JsonSerializer.Serialize(cashboxConfiguration));
         }
 
