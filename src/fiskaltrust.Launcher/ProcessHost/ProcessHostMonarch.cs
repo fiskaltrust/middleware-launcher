@@ -155,7 +155,6 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _process.StartInfo.RedirectStandardError = true;
             _process.StartInfo.RedirectStandardOutput = true;
-            // _process.OutputDataReceived += (sender, data) => {};
 
             _process.EnableRaisingEvents = true;
             _stopped = new TaskCompletionSource();
