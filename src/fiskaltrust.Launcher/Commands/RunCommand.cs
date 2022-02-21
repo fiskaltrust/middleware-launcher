@@ -64,7 +64,6 @@ namespace fiskaltrust.Launcher.Commands
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 
-
             try
             {
                 await app.RunAsync(_cancellationToken);

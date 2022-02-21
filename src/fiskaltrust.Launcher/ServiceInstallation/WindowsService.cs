@@ -72,7 +72,7 @@ namespace fiskaltrust.Launcher.ServceInstallation
                 var principal = new System.Security.Principal.WindowsPrincipal(identity);
                 if (!principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator))
                 {
-                    Log.Error("Run as admin to install service {link}", ""); // TODO
+                    Log.Error("Run as admin to uninstall service {link}", ""); // TODO
                     return 1;
                 }
             }

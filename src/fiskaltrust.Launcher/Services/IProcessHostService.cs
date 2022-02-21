@@ -26,6 +26,5 @@ namespace fiskaltrust.Launcher.Interfaces
 
         [OperationContract]
         Task Log(LogEventDto payload);
-
     }
 }

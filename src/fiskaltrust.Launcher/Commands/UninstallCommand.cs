@@ -38,7 +38,7 @@ namespace fiskaltrust.Launcher.Commands
                 return await windowsService.UninstallService().ConfigureAwait(false);
             }
 
-            Log.Error("For non windows or linux(systemd) service installation see: {link}", ""); // TODO
+            Log.Error("For non windows or linux(systemd) service uninstallation see: {link}", ""); // TODO
             return 1;
         }
     }

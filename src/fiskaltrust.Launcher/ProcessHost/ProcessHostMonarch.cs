@@ -187,20 +187,20 @@ namespace fiskaltrust.Launcher.ProcessHost
                         }
                         catch
                         {
-                            _stopped.SetCanceled(cancellationToken);
                             _started.TrySetResult();
+                            _stopped.SetCanceled(cancellationToken);
                         }
                     }
                     else
                     {
-                        _stopped.SetResult();
                         _started.TrySetCanceled();
+                        _stopped.SetResult();
                     }
                 }
                 else
                 {
-                    _stopped.SetResult();
                     _started.TrySetResult();
+                    _stopped.SetResult();
                 }
             };
 
