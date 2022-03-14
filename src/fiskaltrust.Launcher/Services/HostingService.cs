@@ -34,7 +34,7 @@ namespace fiskaltrust.Launcher.Services
 
             builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) =>
                 loggerConfiguration
-                    .AddLoggingConfiguration(_launcherConfiguration, _packageConfiguration.Id.ToString(), true)
+                    .AddLoggingConfiguration(_launcherConfiguration, new[] { _packageConfiguration.Package, _packageConfiguration.Id.ToString() }, true)
                     .WriteTo.GrpcSink(_packageConfiguration, _processHostService));
 
             if (_launcherConfiguration.LogLevel == LogLevel.Debug)
@@ -54,7 +54,7 @@ namespace fiskaltrust.Launcher.Services
             switch (hostingType)
             {
                 case HostingType.REST:
-                    if (addEndpoints == null)
+                    if (addEndpoints is null)
                     {
                         throw new ArgumentNullException(nameof(addEndpoints));
                     }
@@ -74,10 +74,7 @@ namespace fiskaltrust.Launcher.Services
 
             await app.StartAsync();
 
-            foreach (var url in app.Urls)
-            {
-                _logger.LogInformation("Started {hostingType} hosting on {url}", hostingType.ToString(), url);
-            }
+            _logger.LogInformation("Started {hostingType} hosting on {url}", hostingType.ToString(), uri.ToString().Replace("rest://", "http://"));
             return app;
         }
 
@@ -91,7 +88,8 @@ namespace fiskaltrust.Launcher.Services
             var url = new Uri(uri.ToString().Replace("rest://", "http://"));
             app.UsePathBase(url.AbsolutePath);
             app.Urls.Add(url.GetLeftPart(UriPartial.Authority));
-
+            
+            app.UseRouting();
             addEndpoints(app);
 
             return app;

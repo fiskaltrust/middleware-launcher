@@ -14,7 +14,7 @@ namespace fiskaltrust.Launcher.Clients
 
         public IDESSCD CreateClient(ClientConfiguration configuration)
         {
-            if (configuration == null)
+            if (configuration is null)
             {
                 throw new ArgumentNullException(nameof(configuration));
             }

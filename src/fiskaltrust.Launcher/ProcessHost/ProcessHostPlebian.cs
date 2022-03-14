@@ -59,7 +59,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 promise.SetResult();
             });
 
-            if (_processHostService != null)
+            if (_processHostService is not null)
             {
                 _ = Task.Run(async () =>
                 {

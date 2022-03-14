@@ -8,17 +8,8 @@ namespace fiskaltrust.Launcher.Extensions
 {
     public static class LoggerConfigurationExtensions
     {
-        public static LoggerConfiguration AddLoggingConfiguration(this LoggerConfiguration loggerConfiguration, LauncherConfiguration launcherConfiguration, string? suffix = null, bool aspLogging = false)
+        public static LoggerConfiguration AddLoggingConfiguration(this LoggerConfiguration loggerConfiguration, LauncherConfiguration launcherConfiguration, string[]? suffix = null, bool aspLogging = false)
         {
-            if (suffix != null)
-            {
-                suffix = $"-{suffix}";
-            }
-            else
-            {
-                suffix = "";
-            }
-
             return loggerConfiguration.MinimumLevel.Is(Serilog.Extensions.Logging.LevelConvert.ToSerilogLevel(launcherConfiguration.LogLevel!.Value))
             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}{EnrichedPackage}{EnrichedId}{EnrichedContext}] {Message:lj}{NewLine}{Exception}")
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -30,7 +21,7 @@ namespace fiskaltrust.Launcher.Extensions
                 configuration
                     .Filter.ByExcluding(Matching.WithProperty("EnrichedId"))
                     .WriteTo.File(
-                        Path.Join(launcherConfiguration.LogFolder, $"log{suffix}-.txt"),
+                        Path.Join(launcherConfiguration.LogFolder, $"log{(suffix is null ? null : "_" + string.Join("_", suffix))}_.txt"),
                         rollingInterval: RollingInterval.Day,
                         shared: true,
                         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}{EnrichedContext}] {Message:lj}{NewLine}{Exception}"));

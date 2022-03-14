@@ -6,7 +6,7 @@ namespace fiskaltrust.Launcher.Download
     {
         public static WebProxy? CreateProxy(string? proxyString)
         {
-            if (proxyString != null)
+            if (proxyString is not null)
             {
                 string address = string.Empty;
                 bool bypasslocalhost = true;

@@ -54,7 +54,7 @@ namespace fiskaltrust.Launcher.Configuration
 
         private int? _launcherPort;
         [JsonPropertyName("launcherPort")]
-        public int? LauncherPort { get => WithDefault(_launcherPort, 3000); set => _launcherPort = value; }
+        public int? LauncherPort { get => WithDefault(_launcherPort, 5050); set => _launcherPort = value; }
 
         private string? _serviceFolder;
         [JsonPropertyName("serviceFolder")]
@@ -89,7 +89,7 @@ namespace fiskaltrust.Launcher.Configuration
         public Uri? ConfigurationUrl { get => WithDefault(_configurationUrl, () => new Uri(Sandbox!.Value ? "https://configuration-sandbox.fiskaltrust.cloud" : "https://configuration.fiskaltrust.cloud")); set => _configurationUrl = value; }
 
         private int? _downloadTimeoutSec;
-        [JsonPropertyName("downloadTimeout")]
+        [JsonPropertyName("downloadTimeoutSec")]
         public int? DownloadTimeoutSec { get => WithDefault(_downloadTimeoutSec, 15); set => _downloadTimeoutSec = value; } // TODO implement
 
         private int? _downloadRetry;
@@ -110,21 +110,30 @@ namespace fiskaltrust.Launcher.Configuration
 
         private string? _cashboxConfiguration;
         [JsonPropertyName("cashboxConfigurationFile")]
-        public string? CashboxConfigurationFile { get => WithDefault(_cashboxConfiguration, () => Path.Join(ServiceFolder, "service", CashboxId!.ToString(), "configuration.json")); set => _cashboxConfiguration = value; }
+        public string? CashboxConfigurationFile { get => WithDefault(_cashboxConfiguration, () => Path.Join(ServiceFolder, "service", $"configuration-{CashboxId}.json")); set => _cashboxConfiguration = value; }
 
         public void OverwriteWith(LauncherConfiguration? source)
         {
-            if (source == null) { return; }
+            if (source is null) { return; }
 
             foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
             {
                 var value = field.GetValue(source);
 
-                if (value != null)
+                if (value is not null)
                 {
                     field.SetValue(this, value);
                 }
             }
+        }
+
+        public LauncherConfiguration Redacted()
+        {
+            var redacted = (LauncherConfiguration)MemberwiseClone();
+
+            redacted.AccessToken = "<redacted>";
+
+            return redacted;
         }
     }
 

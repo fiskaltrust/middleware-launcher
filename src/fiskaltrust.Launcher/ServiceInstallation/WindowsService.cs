@@ -40,7 +40,7 @@ namespace fiskaltrust.Launcher.ServceInstallation
                 // $"depend=" // TODO
             };
 
-            if (displayName != null)
+            if (displayName is not null)
             {
                 arguments.Add($"DisplayName=\"{displayName}\"");
             }

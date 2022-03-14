@@ -32,7 +32,7 @@ namespace fiskaltrust.Launcher.Logging
 
         public void Emit(LogEvent logEvent)
         {
-            if (_processHostService != null)
+            if (_processHostService is not null)
             {
                 var writer = new StringWriter();
                 _formatter.Format(logEvent, writer);

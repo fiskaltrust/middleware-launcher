@@ -40,9 +40,7 @@ namespace fiskaltrust.Launcher.Commands
 
             _launcherConfiguration = new LauncherConfiguration();
 
-            List<(string message, Exception? e)> fatal = new();
-            List<(string message, Exception? e)> errors = new();
-            List<(string message, Exception? e)> warnings = new();
+            List<(LogLevel logLevel, string message, Exception? e)> errors = new();
 
             try
             {
@@ -50,7 +48,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch
             {
-                warnings.Add(("Could not read launcher configuration file, using command line parameters only.", null));
+                errors.Add((LogLevel.Warning, "Could not read launcher configuration file, using command line parameters only.", null));
             }
 
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
@@ -62,7 +60,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                errors.Add(("Could not create Cashbox directory.", e));
+                errors.Add((LogLevel.Error, "Could not create Cashbox directory.", e));
             }
 
             try
@@ -72,7 +70,14 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                errors.Add(("Could not update Cashbox configuration.", e));
+                var message = "Could not download Cashbox configuration. ";
+                message += $"(Launcher is running in {(_launcherConfiguration.Sandbox!.Value ? "sandbox" : "production")} mode.";
+                if (!_launcherConfiguration.Sandbox!.Value)
+                {
+                    message += " Did you forget the --sandbox flag?";
+                }
+                message += ")";
+                errors.Add((LogLevel.Error, message, e));
             }
 
             try
@@ -81,7 +86,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                fatal.Add(("Could not read Cashbox configuration file.", e));
+                errors.Add((LogLevel.Critical, "Could not read Cashbox configuration file.", e));
             }
 
             try
@@ -91,32 +96,34 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                fatal.Add(("Could not parse Cashbox configuration.", e));
+                errors.Add((LogLevel.Critical, "Could not parse Cashbox configuration.", e));
             }
 
             Log.Logger = new LoggerConfiguration()
-                .AddLoggingConfiguration(_launcherConfiguration, _launcherConfiguration.CashboxId.ToString())
+                .AddLoggingConfiguration(_launcherConfiguration, _launcherConfiguration.CashboxId.HasValue ? new[] {_launcherConfiguration.CashboxId.Value.ToString()} : null)
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
-            foreach (var (message, e) in fatal.AsEnumerable().Reverse().Concat(errors.AsEnumerable().Reverse()))
+            foreach (var (logLevel, message, e) in errors.AsEnumerable())
             {
-                Log.Error(e, message);
+                if (logLevel == LogLevel.Warning)
+                {
+                    Log.Warning(e, message);
+                }
+                else
+                {
+                    Log.Error(e, message);
+                }
             }
 
-            foreach (var (message, e) in warnings.AsEnumerable().Reverse())
-            {
-                Log.Warning(e, message);
-            }
-
-            if (fatal.Count > 0)
+            if (errors.Where(e => e.logLevel == LogLevel.Critical).Any())
             {
                 return 1;
             }
 
             Log.Debug("Launcher Configuration File: {LauncherConfigurationFile}", LauncherConfigurationFile);
             Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", _launcherConfiguration.CashboxConfigurationFile);
-            Log.Debug("Launcher Configuration: {@LauncherConfiguration}", _launcherConfiguration);
+            Log.Debug("Launcher Configuration: {@LauncherConfiguration}", _launcherConfiguration.Redacted());
 
             return 0;
         }

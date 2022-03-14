@@ -13,7 +13,7 @@ namespace fiskaltrust.Launcher.Clients
     {
         public IPOS CreateClient(ClientConfiguration configuration)
         {
-            if (configuration == null)
+            if (configuration is null)
             {
                 throw new ArgumentNullException(nameof(configuration));
             }

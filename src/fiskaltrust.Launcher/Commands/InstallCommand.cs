@@ -70,7 +70,7 @@ namespace fiskaltrust.Launcher.Commands
 
         private static string? MakeAbsolutePath(string? path)
         {
-            if (path != null)
+            if (path is not null)
             {
                 return Path.GetFullPath(path);
             }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.Text.Json;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
@@ -59,6 +60,8 @@ namespace fiskaltrust.Launcher.ProcessHost
                 return;
             }
 
+            _logger.LogInformation("Started all packages.");
+
             try
             {
                 await Task.WhenAll(_hosts.Select(h => h.Value.Stopped()));
@@ -114,15 +117,16 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private void StartupLogging()
         {
-            _logger.LogInformation("OS:         {OS}, {Bit}", Environment.OSVersion.VersionString, Environment.Is64BitOperatingSystem ? "64Bit" : "32Bit");
+            _logger.LogInformation("fiskaltrust.Launcher: {version}", Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
+            _logger.LogInformation("OS:                   {OS}, {Bit}", Environment.OSVersion.VersionString, Environment.Is64BitOperatingSystem ? "64Bit" : "32Bit");
             if (OperatingSystem.IsWindows())
             {
                 using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
                 var principal = new System.Security.Principal.WindowsPrincipal(identity);
-                _logger.LogInformation("Admin User: {admin}", principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator));
+                _logger.LogInformation("Admin User:           {admin}", principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator));
             }
-            _logger.LogInformation("CWD:        {CWD}", Path.GetFullPath("./"));
-            _logger.LogInformation("CashBoxId:  {CashBoxId}", _launcherConfiguration.CashboxId);
+            _logger.LogInformation("CWD:                  {CWD}", Path.GetFullPath("./"));
+            _logger.LogInformation("CashBoxId:            {CashBoxId}", _launcherConfiguration.CashboxId);
         }
     }
 

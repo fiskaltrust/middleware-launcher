@@ -77,7 +77,7 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             Log.Logger = new LoggerConfiguration()
-                .AddLoggingConfiguration(launcherConfiguration, packageConfiguration.Id.ToString())
+                .AddLoggingConfiguration(launcherConfiguration, new[] { packageConfiguration.Package, packageConfiguration.Id.ToString() })
                 .WriteTo.GrpcSink(packageConfiguration, processHostService)
                 .CreateLogger();
 
@@ -92,7 +92,7 @@ namespace fiskaltrust.Launcher.Commands
                     var pluginLoader = new PluginLoader();
                     services.AddSingleton(_ => pluginLoader);
 
-                    if (processHostService != null)
+                    if (processHostService is not null)
                     {
                         services.AddSingleton(_ => processHostService);
                     }
@@ -167,7 +167,7 @@ namespace fiskaltrust.Launcher.Commands
                 { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder!, "service") }, // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
             };
 
-            if (launcherConfiguration.Proxy != null)
+            if (launcherConfiguration.Proxy is not null)
             {
                 config.Add("proxy", launcherConfiguration.Proxy!);
             }
