@@ -161,7 +161,7 @@ namespace fiskaltrust.Launcher.Commands
             {
                 { "cashboxid", launcherConfiguration.CashboxId! },
                 { "accesstoken", launcherConfiguration.AccessToken! },
-                { "useoffline", true },
+                { "useoffline", launcherConfiguration.UseOffline!.Value },
                 { "sandbox", launcherConfiguration.Sandbox! },
                 { "configuration", JsonSerializer.Serialize(cashBoxConfiguration) },
                 { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder!, "service") }, // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
