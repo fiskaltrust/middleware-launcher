@@ -19,6 +19,7 @@ using ProtoBuf.Grpc.Client;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Constants;
 using System.Diagnostics;
+using System.Text.Encodings.Web;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -80,6 +81,10 @@ namespace fiskaltrust.Launcher.Commands
                 .AddLoggingConfiguration(launcherConfiguration, new[] { packageConfiguration.Package, packageConfiguration.Id.ToString() })
                 .WriteTo.GrpcSink(packageConfiguration, processHostService)
                 .CreateLogger();
+
+
+            Log.Error("Newtonsoft {ns}", Newtonsoft.Json.JsonConvert.SerializeObject(cashboxConfiguration));
+            Log.Error("System.Text.Json: {js}", JsonSerializer.Serialize(cashboxConfiguration, new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
 
             var builder = Host.CreateDefaultBuilder()
                 .UseSerilog()
@@ -155,15 +160,15 @@ namespace fiskaltrust.Launcher.Commands
         }
 
 
-        private static Dictionary<string, object> DefaultPackageConfig(LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration)
+        private static Dictionary<string, object> DefaultPackageConfig(LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashboxConfiguration)
         {
             var config = new Dictionary<string, object>
             {
                 { "cashboxid", launcherConfiguration.CashboxId! },
                 { "accesstoken", launcherConfiguration.AccessToken! },
-                { "useoffline", launcherConfiguration.UseOffline!.Value },
+                { "useoffline", false }, //launcherConfiguration.UseOffline!.Value },
                 { "sandbox", launcherConfiguration.Sandbox! },
-                { "configuration", JsonSerializer.Serialize(cashBoxConfiguration) },
+                { "configuration", JsonSerializer.Serialize(cashboxConfiguration, new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) },
                 { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder!, "service") }, // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
             };
 
