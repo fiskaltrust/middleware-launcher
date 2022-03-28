@@ -82,10 +82,6 @@ namespace fiskaltrust.Launcher.Commands
                 .WriteTo.GrpcSink(packageConfiguration, processHostService)
                 .CreateLogger();
 
-
-            Log.Error("Newtonsoft {ns}", Newtonsoft.Json.JsonConvert.SerializeObject(cashboxConfiguration));
-            Log.Error("System.Text.Json: {js}", JsonSerializer.Serialize(cashboxConfiguration, new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
-
             var builder = Host.CreateDefaultBuilder()
                 .UseSerilog()
                 .ConfigureServices(services =>
@@ -117,9 +113,11 @@ namespace fiskaltrust.Launcher.Commands
                                 new[] {
                                     typeof(IMiddlewareBootstrapper),
                                     typeof(IPOS),
+                                    typeof(IDESSCD),
+                                    typeof(IClientFactory<IPOS>),
+                                    typeof(IClientFactory<IDESSCD>),
                                     typeof(JournalRequest),
                                     typeof(JournalResponse),
-                                    typeof(IDESSCD),
                                     typeof(IHelper),
                                     typeof(IServiceCollection),
                                     typeof(Microsoft.Extensions.Logging.ILogger),
@@ -166,9 +164,9 @@ namespace fiskaltrust.Launcher.Commands
             {
                 { "cashboxid", launcherConfiguration.CashboxId! },
                 { "accesstoken", launcherConfiguration.AccessToken! },
-                { "useoffline", false }, //launcherConfiguration.UseOffline!.Value },
+                { "useoffline", launcherConfiguration.UseOffline!.Value },
                 { "sandbox", launcherConfiguration.Sandbox! },
-                { "configuration", JsonSerializer.Serialize(cashboxConfiguration, new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) },
+                { "configuration", JsonSerializer.Serialize(cashboxConfiguration) },
                 { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder!, "service") }, // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
             };
 
