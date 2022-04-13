@@ -5,6 +5,7 @@ using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.storage.serialization.V0;
+using Microsoft.Extensions.Hosting.WindowsServices;
 
 namespace fiskaltrust.Launcher.ProcessHost
 {
@@ -61,6 +62,10 @@ namespace fiskaltrust.Launcher.ProcessHost
             }
 
             _logger.LogInformation("Started all packages.");
+            if(WindowsServiceHelpers.IsWindowsService())
+            {
+                _logger.LogInformation("Press CTRL+C to exit.");
+            }
 
             try
             {
@@ -184,15 +189,16 @@ namespace fiskaltrust.Launcher.ProcessHost
                     {
                         try
                         {
-                            if (!_process.Start()) { throw new Exception("Could not start ProcessHost process."); }
+                            if (!_process.Start()) { throw new Exception("Process.Start() was false."); }
 
                             _process.BeginOutputReadLine();
                             _process.BeginErrorReadLine();
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            _logger.LogError(ex, "Could not start ProcessHost process.");
                             _started.TrySetResult();
-                            _stopped.SetCanceled(cancellationToken);
+                            _stopped.TrySetCanceled(cancellationToken);
                         }
                     }
                     else
