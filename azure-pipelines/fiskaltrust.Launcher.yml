@@ -1,0 +1,25 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+    - refs/tags/*
+
+variables:
+  branch: $(Build.SourceBranch)
+
+stages:
+  - template: templates/stages/test.yml
+    parameters:
+      ${{ if startsWith(variables.branch, 'refs/tags/v')}}:
+        config: release
+      ${{ else }}:
+        config: debug
+
+  - template: templates/stages/deploy.yml
+    parameters:
+      ${{ if startsWith(variables.branch, 'refs/tags/v')}}:
+        config: release
+      ${{ else }}:
+        config: debug
+

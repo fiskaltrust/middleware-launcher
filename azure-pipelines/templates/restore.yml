@@ -1,0 +1,19 @@
+parameters:
+- name: config
+  type: string
+  default: debug
+
+steps:
+- task: yavt@1
+  inputs:
+    pathToVersionJson: version.json
+    semverVersion: v1 # still needed?
+
+- task: UseDotNet@2
+  inputs:
+    version: 6.0.x
+
+- task: NuGetAuthenticate@0
+
+- pwsh: dotnet restore
+  displayName: Restore
