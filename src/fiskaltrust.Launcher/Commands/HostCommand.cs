@@ -19,6 +19,7 @@ using ProtoBuf.Grpc.Client;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Constants;
 using System.Diagnostics;
+using System.Text.Encodings.Web;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -112,9 +113,11 @@ namespace fiskaltrust.Launcher.Commands
                                 new[] {
                                     typeof(IMiddlewareBootstrapper),
                                     typeof(IPOS),
+                                    typeof(IDESSCD),
+                                    typeof(IClientFactory<IPOS>),
+                                    typeof(IClientFactory<IDESSCD>),
                                     typeof(JournalRequest),
                                     typeof(JournalResponse),
-                                    typeof(IDESSCD),
                                     typeof(IHelper),
                                     typeof(IServiceCollection),
                                     typeof(Microsoft.Extensions.Logging.ILogger),
@@ -155,15 +158,15 @@ namespace fiskaltrust.Launcher.Commands
         }
 
 
-        private static Dictionary<string, object> DefaultPackageConfig(LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration)
+        private static Dictionary<string, object> DefaultPackageConfig(LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashboxConfiguration)
         {
             var config = new Dictionary<string, object>
             {
                 { "cashboxid", launcherConfiguration.CashboxId! },
                 { "accesstoken", launcherConfiguration.AccessToken! },
-                { "useoffline", true },
+                { "useoffline", launcherConfiguration.UseOffline!.Value },
                 { "sandbox", launcherConfiguration.Sandbox! },
-                { "configuration", JsonSerializer.Serialize(cashBoxConfiguration) },
+                { "configuration", JsonSerializer.Serialize(cashboxConfiguration) },
                 { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder!, "service") }, // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
             };
 

@@ -8,11 +8,29 @@ namespace fiskaltrust.Launcher.Extensions
 {
     public static class WebApplicationExtensions
     {
+        private static readonly string[] _prefixes = new[] { "", "json/", "v1/", "json/v1/", "v2/" };
+        private static IEnumerable<RouteHandlerBuilder> MapMultiple(this WebApplication app, IEnumerable<string> urls, Func<IEndpointRouteBuilder, string, Delegate, RouteHandlerBuilder> method, Delegate callback) =>
+            urls.Select(url => method(app, url, callback)).ToList();
+
+        private static IEnumerable<RouteHandlerBuilder> MapMultiplePrefixed(this WebApplication app, IEnumerable<string> prefixes, string url, Func<IEndpointRouteBuilder, string, Delegate, RouteHandlerBuilder> method, Delegate callback) =>
+            app.MapMultiple(prefixes.Select(prefix => $"{prefix}{url}"), method, callback);
+
         public static WebApplication AddQueueEndpoints(this WebApplication app, IPOS pos)
         {
-            app.MapPost("v2/Echo", async (EchoRequest req) => await pos.EchoAsync(req));
-            app.MapPost("v2/Sign", async (ReceiptRequest req) => await pos.SignAsync(req));
-            app.MapGet("v2/Journal", ([FromQuery] long type, [FromQuery] long? from, [FromQuery] long? to) =>
+            app.MapMultiplePrefixed(_prefixes, "Echo", EndpointRouteBuilderExtensions.MapPost, async (EchoRequest req) => await pos.EchoAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "Sign", EndpointRouteBuilderExtensions.MapPost, async (ReceiptRequest req) => await pos.SignAsync(req));
+            app.MapMultiplePrefixed(new[] { "", "json/", "v2/" }, "Journal", EndpointRouteBuilderExtensions.MapGet, ([FromQuery] long type, [FromQuery] long? from, [FromQuery] long? to) =>
+            {
+                var pipe = new Pipe();
+                var journal = pos.JournalAsync(new JournalRequest { ftJournalType = type, From = from ?? 0, To = to ?? 0 });
+                var _ = Task.Run(async () =>
+                {
+                    await journal.ForEachAwaitAsync(async b => await pipe.Writer.WriteAsync(new ReadOnlyMemory<byte>(b.Chunk.ToArray())));
+                    await pipe.Writer.CompleteAsync();
+                });
+                return Results.Stream(pipe.Reader.AsStream());
+            });
+            app.MapMultiplePrefixed(new[] { "", "v1/", "json/v1/" }, "Journal", EndpointRouteBuilderExtensions.MapPost, ([FromQuery] long type, [FromQuery] long? from, [FromQuery] long? to) =>
             {
                 var pipe = new Pipe();
                 var journal = pos.JournalAsync(new JournalRequest { ftJournalType = type, From = from ?? 0, To = to ?? 0 });
@@ -29,21 +47,21 @@ namespace fiskaltrust.Launcher.Extensions
 
         public static WebApplication AddScuEndpoints(this WebApplication app, IDESSCD sscd)
         {
-            app.MapPost("v2/StartTransaction", async (StartTransactionRequest req) => await sscd.StartTransactionAsync(req));
-            app.MapPost("v2/UpdateTransaction", async (UpdateTransactionRequest req) => await sscd.UpdateTransactionAsync(req));
-            app.MapPost("v2/FinishTransaction", async (FinishTransactionRequest req) => await sscd.FinishTransactionAsync(req));
-            app.MapPost("v2/GetTseInfo", async () => await sscd.GetTseInfoAsync());
-            app.MapPost("v2/SetTseState", async (TseState req) => await sscd.SetTseStateAsync(req));
-            app.MapPost("v2/RegisterClientId", async (RegisterClientIdRequest req) => await sscd.RegisterClientIdAsync(req));
-            app.MapPost("v2/UnregisterClientId", async (UnregisterClientIdRequest req) => await sscd.UnregisterClientIdAsync(req));
-            app.MapPost("v2/ExecuteSetTseTime", async () => await sscd.ExecuteSetTseTimeAsync());
-            app.MapPost("v2/ExecuteSelfTest", async () => await sscd.ExecuteSelfTestAsync());
-            app.MapPost("v2/StartExportSession", async (StartExportSessionRequest req) => await sscd.StartExportSessionAsync(req));
-            app.MapPost("v2/StartExportSessionByTimeStamp", async (StartExportSessionByTimeStampRequest req) => await sscd.StartExportSessionByTimeStampAsync(req));
-            app.MapPost("v2/StartExportSessionByTransaction", async (StartExportSessionByTransactionRequest req) => await sscd.StartExportSessionByTransactionAsync(req));
-            app.MapPost("v2/ExportData", async (ExportDataRequest req) => await sscd.ExportDataAsync(req));
-            app.MapPost("v2/EndExportSession", async (EndExportSessionRequest req) => await sscd.EndExportSessionAsync(req));
-            app.MapPost("v2/Echo", async (ScuDeEchoRequest req) => await sscd.EchoAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "StartTransaction", EndpointRouteBuilderExtensions.MapPost, async (StartTransactionRequest req) => await sscd.StartTransactionAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "UpdateTransaction", EndpointRouteBuilderExtensions.MapPost, async (UpdateTransactionRequest req) => await sscd.UpdateTransactionAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "FinishTransaction", EndpointRouteBuilderExtensions.MapPost, async (FinishTransactionRequest req) => await sscd.FinishTransactionAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "GetTseInfo", EndpointRouteBuilderExtensions.MapPost, async () => await sscd.GetTseInfoAsync());
+            app.MapMultiplePrefixed(_prefixes, "SetTseState", EndpointRouteBuilderExtensions.MapPost, async (TseState req) => await sscd.SetTseStateAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "RegisterClientId", EndpointRouteBuilderExtensions.MapPost, async (RegisterClientIdRequest req) => await sscd.RegisterClientIdAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "UnregisterClientId", EndpointRouteBuilderExtensions.MapPost, async (UnregisterClientIdRequest req) => await sscd.UnregisterClientIdAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "ExecuteSetTseTime", EndpointRouteBuilderExtensions.MapPost, async () => await sscd.ExecuteSetTseTimeAsync());
+            app.MapMultiplePrefixed(_prefixes, "ExecuteSelfTest", EndpointRouteBuilderExtensions.MapPost, async () => await sscd.ExecuteSelfTestAsync());
+            app.MapMultiplePrefixed(_prefixes, "StartExportSession", EndpointRouteBuilderExtensions.MapPost, async (StartExportSessionRequest req) => await sscd.StartExportSessionAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "StartExportSessionByTimeStamp", EndpointRouteBuilderExtensions.MapPost, async (StartExportSessionByTimeStampRequest req) => await sscd.StartExportSessionByTimeStampAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "StartExportSessionByTransaction", EndpointRouteBuilderExtensions.MapPost, async (StartExportSessionByTransactionRequest req) => await sscd.StartExportSessionByTransactionAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "ExportData", EndpointRouteBuilderExtensions.MapPost, async (ExportDataRequest req) => await sscd.ExportDataAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "EndExportSession", EndpointRouteBuilderExtensions.MapPost, async (EndExportSessionRequest req) => await sscd.EndExportSessionAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "Echo", EndpointRouteBuilderExtensions.MapPost, async (ScuDeEchoRequest req) => await sscd.EchoAsync(req));
 
             return app;
         }

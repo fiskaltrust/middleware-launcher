@@ -9,13 +9,17 @@ namespace fiskaltrust.Launcher.Download
     {
         private readonly LauncherConfiguration _configuration;
         private readonly ILogger<PackageDownloader>? _logger;
-        private readonly HttpClient _httpClient;
+        private readonly HttpClient? _httpClient;
 
         public PackageDownloader(ILogger<PackageDownloader>? logger, LauncherConfiguration configuration)
         {
             _logger = logger;
             _configuration = configuration;
-            _httpClient = new HttpClient(new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) });
+
+            if (!configuration.UseOffline!.Value)
+            {
+                _httpClient = new HttpClient(new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) });
+            }
         }
 
         public string GetPackagePath(PackageConfiguration configuration)
@@ -54,6 +58,12 @@ namespace fiskaltrust.Launcher.Download
             {
                 if (!File.Exists(sourcePath))
                 {
+                    if (_configuration.UseOffline!.Value)
+                    {
+                        _logger?.LogWarning("Package {name} not found in package cache.", name);
+                        break;
+                    }
+
                     _logger?.LogInformation("Downloading package {name}.", name);
                     Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
 
@@ -63,7 +73,7 @@ namespace fiskaltrust.Launcher.Download
                         request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
                         request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-                        var response = await _httpClient.SendAsync(request);
+                        var response = await _httpClient!.SendAsync(request);
 
                         response.EnsureSuccessStatusCode();
 
@@ -90,14 +100,27 @@ namespace fiskaltrust.Launcher.Download
 
                 if (!await CheckHashAsync(sourcePath))
                 {
-                    File.Delete(sourcePath);
-                    continue;
+                    if (_configuration.UseOffline!.Value)
+                    {
+                        _logger?.LogWarning("File hash for {name} incorrect.", name);
+                    }
+                    else
+                    {
+                        File.Delete(sourcePath);
+                        continue;
+                    }
                 }
 
                 ZipFile.ExtractToDirectory(sourcePath, targetPath);
 
                 if (!File.Exists(targetName))
                 {
+                    if (_configuration.UseOffline!.Value)
+                    {
+                        _logger?.LogWarning("Package {name} did not contain the needed dlls.", name);
+                        break;
+                    }
+
                     if (i == 0) { File.Delete(sourcePath); }
                     continue;
                 }
@@ -126,7 +149,7 @@ namespace fiskaltrust.Launcher.Download
 
         public void Dispose()
         {
-            _httpClient.Dispose();
+            _httpClient?.Dispose();
         }
     }
 }
