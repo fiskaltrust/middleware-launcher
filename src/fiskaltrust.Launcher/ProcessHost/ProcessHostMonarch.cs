@@ -62,7 +62,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             }
 
             _logger.LogInformation("Started all packages.");
-            if(WindowsServiceHelpers.IsWindowsService())
+            if(!WindowsServiceHelpers.IsWindowsService())
             {
                 _logger.LogInformation("Press CTRL+C to exit.");
             }
