@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handling of encrypted configuration values.
 - .NET 6 support.
 - Native executables for Windows, Linux and MacOS.
-- Lunix service installation.
+- Linux service installation.
 
 ### Changed
 
