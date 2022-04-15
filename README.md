@@ -1,7 +1,7 @@
 # fiskaltrust Launcher
 The **fiskaltrust Launcher** is an application that hosts the packages of the **fiskaltrust Middleware**, a modular fiscalization and POS platform that can be embedded into POS systems to suffice international fiscalization regulations.
 
-> This all-new fiskaltrust Launcher is currently in development. We plan to release a preview version to interested customers soon - please reach out to us in the [discussion section](https://github.com/fiskaltrust/middleware-launcher/discussions) if you want to participate.
+> :warning: This all-new fiskaltrust Launcher is currently in development. We plan to release a preview version to interested customers soon - please reach out to us in the [discussion section](https://github.com/fiskaltrust/middleware-launcher/discussions) if you want to participate.
 
 **You can track the ongoing development of the first release in the project's [backlog and board](https://github.com/orgs/fiskaltrust/projects/3/).**
 
@@ -50,42 +50,26 @@ The 2.0 Launcher configuration is now read from a json file (`launcher.configura
 This file can be set via the `--launcher-configuration-file` cli argument.
 
 The file can contain the following config keys:
-```json
+```jsonc
 {
-  // string
-  "ftCashBoxId": <ftCashBoxId>,
-  // string
-  "accessToken": <accessToken>,
-   // int (default: 5050)
-  "launcherPort": <launcherPort>,
-   // string (default-windows: "C:/ProgramData/fiskaltrust", default-linux: "/var/lib/fiskaltrust", default-macos: "/Library/Application Support/fiskaltrust")
-  "serviceFolder": <serviceFolder>,
-   // bool (default: false)
-  "sandbox": <sandbox>,
-   // bool (default: false)
-  "useOffline": <useOffline>,
-   // string (default: "<serviceFolder>/logs")
-  "logFolder": <logFolder>,
-   // string (default: "Information")
-  "logLevel": <logLevel>,
-   // string (default: "https://packages-2-0[-sandbox].fiskaltrust.cloud")
-  "packagesUrl": <packagesUrl>,
-   // string (default: "https://helipad[-sandbox].fiskaltrust.cloud")
-  "helipadUrl": <helipadUrl>,
-   // string (default: "https://configuration[-sandbox].fiskaltrust.cloud")
-  "configurationUrl": <configurationUrl>,
-   // int (default: 15)
-  "downloadTimeoutSec": <downloadTimeoutSec>,
-   // int (default: 1)
-  "downloadRetry": <downloadRetry>,
-   // bool (default: false)
-  "sslValidation": <sslValidation>,
-   // string (default: null)
-  "proxy": <proxy>,
-   // int (default: 10)
-  "processHostPingPeriodSec": <processHostPingPeriodSec>,
-   // string (default: "configuration-<ftCashBoxId>.json")
-  "cashboxConfigurationFile": <cashboxConfigurationFile>,
+  
+  "ftCashBoxId": "<ftCashBoxId>",      // string
+  "accessToken": "<accessToken>",      // string
+  "launcherPort": "<launcherPort>",    // int (default: 5050)
+  "serviceFolder": "<serviceFolder>",  // string (default-windows: "C:/ProgramData/fiskaltrust", default-linux: "/var/lib/fiskaltrust", default-macos: "/Library/Application Support/fiskaltrust")
+  "sandbox": "<sandbox>",              // bool (default: false)
+  "useOffline": "<useOffline>",        // bool (default: false)
+  "logFolder": "<logFolder>",          // string (default: "<serviceFolder>/logs")
+  "logLevel": "<logLevel>",            // string (default: "Information")
+  "packagesUrl": "<packagesUrl>",      // string (default: "https://packages-2-0[-sandbox].fiskaltrust.cloud")
+  "helipadUrl": "<helipadUrl>",        // string (default: "https://helipad[-sandbox].fiskaltrust.cloud")
+  "downloadRetry": "<downloadRetry>",  // int (default: 1)
+  "sslValidation": "<sslValidation>",  // bool (default: false)
+  "proxy": "<proxy>",                  // string (default: null)
+  "configurationUrl": "<configurationUrl>",                    // string (default: "https://configuration[-sandbox].fiskaltrust.cloud")
+  "downloadTimeoutSec": "<downloadTimeoutSec>",                // int (default: 15)
+  "processHostPingPeriodSec": "<processHostPingPeriodSec>",    // int (default: 10)
+  "cashboxConfigurationFile": "<cashboxConfigurationFile>",    // string (default: "configuration-<ftCashBoxId>.json")
 }
 ```
 
