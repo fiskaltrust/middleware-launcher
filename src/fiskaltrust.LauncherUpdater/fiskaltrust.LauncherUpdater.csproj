@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../fiskaltrust.Launcher/fiskaltrust.Launcher.csproj" />
+    <ProjectReference Include="../fiskaltrust.Launcher/fiskaltrust.Launcher.csproj" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
