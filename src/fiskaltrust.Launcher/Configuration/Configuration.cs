@@ -112,6 +112,9 @@ namespace fiskaltrust.Launcher.Configuration
         [JsonPropertyName("cashboxConfigurationFile")]
         public string? CashboxConfigurationFile { get => WithDefault(_cashboxConfiguration, () => Path.Join(ServiceFolder, "service", $"configuration-{CashboxId}.json")); set => _cashboxConfiguration = value; }
 
+        [JsonPropertyName("launcherVersion")]
+        public System.Version? LauncherVersion { get; set; }
+
         public void OverwriteWith(LauncherConfiguration? source)
         {
             if (source is null) { return; }

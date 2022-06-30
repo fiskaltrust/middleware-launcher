@@ -151,7 +151,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e, "An unhandled exception occured");
+                Log.Error(e, "An unhandled exception occured.");
                 return 1;
             }
             finally

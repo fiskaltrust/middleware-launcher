@@ -26,7 +26,7 @@ namespace fiskaltrust.Launcher.ServceInstallation
             }
             else
             {
-                Log.Error("Wrong Operating system");
+                Log.Error("Wrong Operating system.");
                 return 1;
             }
 
@@ -48,18 +48,18 @@ namespace fiskaltrust.Launcher.ServceInstallation
             Log.Information("Installing service.");
             if (!await RunProcess(@"C:\WINDOWS\system32\sc.exe", arguments))
             {
-                Log.Information($"Could not install service \"{_serviceName}\"");
+                Log.Information($"Could not install service \"{_serviceName}\".");
                 return 1;
             }
 
             Log.Information("Starting service.");
             if (!await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "start", $"\"{_serviceName}\"" }))
             {
-                Log.Warning($"Could not start service \"{_serviceName}\"");
+                Log.Warning($"Could not start service \"{_serviceName}\".");
             }
             else
             {
-                Log.Information($"successfully installed service \"{_serviceName}\"");
+                Log.Information($"successfully installed service \"{_serviceName}\".");
             }
 
             return 0;
@@ -78,23 +78,23 @@ namespace fiskaltrust.Launcher.ServceInstallation
             }
             else
             {
-                Log.Error("Wrong Operating system");
+                Log.Error("Wrong Operating system.");
                 return 1;
             }
 
             Log.Information("Stopping service.");
             if (!await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "stop", $"\"{_serviceName}\"" }))
             {
-                Log.Warning($"Could not stop service \"{_serviceName}\"");
+                Log.Warning($"Could not stop service \"{_serviceName}\".");
             }
 
             Log.Information("Uninstalling service.");
             if (!await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "delete", $"\"{_serviceName}\"" }))
             {
-                Log.Warning($"Could not uninstall service \"{_serviceName}\"");
+                Log.Warning($"Could not uninstall service \"{_serviceName}\".");
                 return 1;
             }
-            Log.Information($"successfully uninstalled service \"{_serviceName}\"");
+            Log.Information($"successfully uninstalled service \"{_serviceName}\".");
             return 0;
         }
 

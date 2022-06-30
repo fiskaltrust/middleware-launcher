@@ -39,12 +39,30 @@ namespace fiskaltrust.Launcher.Download
 
         public async Task DownloadPackageAsync(PackageConfiguration configuration)
         {
-            var name = $"{configuration.Package}-{configuration.Version}";
             var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
             var targetName = Path.Combine(targetPath, $"{configuration.Package}.dll");
-            var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{name}.zip");
+            await DownloadAsync(configuration.Package, configuration.Version, targetPath, new[] { targetName });
+        }
 
-            if (File.Exists(targetName))
+        private const string LAUNCHER_NAME = "fiskaltrust.Launcher";
+        public async Task DownloadLauncherAsync()
+        {
+            var name = LAUNCHER_NAME;
+            var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, "fiskaltrust.Launcher");
+
+            await DownloadAsync(name, _configuration.LauncherVersion!.ToString(), targetPath, new[]
+            {
+                Path.Combine(targetPath, $"{LAUNCHER_NAME}{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
+                Path.Combine(targetPath, $"{LAUNCHER_NAME}Updater{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
+            });
+        }
+
+        private async Task DownloadAsync(string name, string version, string targetPath, IEnumerable<string> targetNames)
+        {
+            var combinedName = $"{name}-{version}";
+            var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{combinedName}.zip");
+
+            if ( targetNames.Select(t => File.Exists(t)).All(t => t))
             {
                 return;
             }
@@ -60,15 +78,15 @@ namespace fiskaltrust.Launcher.Download
                 {
                     if (_configuration.UseOffline!.Value)
                     {
-                        _logger?.LogWarning("Package {name} not found in package cache.", name);
+                        _logger?.LogWarning("Package {name} not found in download cache.", combinedName);
                         break;
                     }
 
-                    _logger?.LogInformation("Downloading package {name}.", name);
+                    _logger?.LogInformation("Downloading package {name}.", combinedName);
                     Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
 
                     {
-                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{configuration.Package}?version={configuration.Version}"));
+                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}?version={version}"));
 
                         request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
                         request.Headers.Add("accesstoken", _configuration.AccessToken);
@@ -82,7 +100,7 @@ namespace fiskaltrust.Launcher.Download
                     }
 
                     {
-                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{configuration.Package}/hash?version={configuration.Version}"));
+                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}/hash?version={version}"));
 
                         request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
                         request.Headers.Add("accesstoken", _configuration.AccessToken);
@@ -95,14 +113,14 @@ namespace fiskaltrust.Launcher.Download
                 }
                 else
                 {
-                    _logger?.LogDebug("Found Package in cache.");
+                    _logger?.LogDebug("Found package in download cache.");
                 }
 
                 if (!await CheckHashAsync(sourcePath))
                 {
                     if (_configuration.UseOffline!.Value)
                     {
-                        _logger?.LogWarning("File hash for {name} incorrect.", name);
+                        _logger?.LogWarning("File hash for {name} incorrect.", combinedName);
                     }
                     else
                     {
@@ -113,11 +131,11 @@ namespace fiskaltrust.Launcher.Download
 
                 ZipFile.ExtractToDirectory(sourcePath, targetPath);
 
-                if (!File.Exists(targetName))
+                if (targetNames.Select(t => File.Exists(t)).Any(t => !t))
                 {
                     if (_configuration.UseOffline!.Value)
                     {
-                        _logger?.LogWarning("Package {name} did not contain the needed dlls.", name);
+                        _logger?.LogWarning("Package {name} did not contain the needed files.", combinedName);
                         break;
                     }
 
@@ -128,7 +146,7 @@ namespace fiskaltrust.Launcher.Download
                 return;
             }
 
-            throw new Exception("Downloaded Package is invalid");
+            throw new Exception("Downloaded package is invalid");
         }
 
         public async Task<bool> CheckHashAsync(string sourcePath)

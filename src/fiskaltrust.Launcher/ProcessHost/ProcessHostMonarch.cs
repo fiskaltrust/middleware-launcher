@@ -122,7 +122,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private void StartupLogging()
         {
-            _logger.LogInformation("fiskaltrust.Launcher: {version}", Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
+            _logger.LogInformation("fiskaltrust.Launcher: {version}", Constants.Version.CurrentVersion);
             _logger.LogInformation("OS:                   {OS}, {Bit}", Environment.OSVersion.VersionString, Environment.Is64BitOperatingSystem ? "64Bit" : "32Bit");
             if (OperatingSystem.IsWindows())
             {
