@@ -51,6 +51,11 @@ stages:
         $version = Get-Content .\version.json | ConvertFrom-Json | Select-Object -ExpandProperty version
         Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/pakage-$(target)/fiskaltrust.Launcher.$version.zip
 
+        $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/pakage-$(target)/fiskaltrust.Launcher.$version.zip -Algorithm SHA256
+        $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
+        $hashstring = [System.Convert]::ToBase64String($hashbytes)
+        $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/pakage-$(target)/fiskaltrust.Launcher.$version.zip.hash
+
     - publish: $(Build.ArtifactStagingDirectory)/pakage-$(target)
       artifact: drop-$(target)
       # Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw/$packageName/* -DestinationPath $(Build.ArtifactStagingDirectory)/packages/$packageName.$version.zip
