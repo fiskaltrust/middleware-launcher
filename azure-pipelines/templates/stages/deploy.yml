@@ -44,21 +44,26 @@ stages:
     - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
       artifact: drop-$(target)
 
-    - pwsh: New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/
+    - pwsh: |
+        New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/
+        New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/pakage-$(target)/
+      displayName: Create Directories
 
     - ${{ each project in parameters.projects }}:
       - pwsh: |
           Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
+        displayName: Copy ececutables
 
     - pwsh: |
         $version = Get-Content .\version.json | ConvertFrom-Json | Select-Object -ExpandProperty version
+
         Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/pakage-$(target)/fiskaltrust.Launcher.$version.zip
 
         $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/pakage-$(target)/fiskaltrust.Launcher.$version.zip -Algorithm SHA256
         $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
         $hashstring = [System.Convert]::ToBase64String($hashbytes)
         $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/pakage-$(target)/fiskaltrust.Launcher.$version.zip.hash
+      displayName: Pagkage executables
 
     - publish: $(Build.ArtifactStagingDirectory)/pakage-$(target)
       artifact: drop-$(target)
-      # Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw/$packageName/* -DestinationPath $(Build.ArtifactStagingDirectory)/packages/$packageName.$version.zip
