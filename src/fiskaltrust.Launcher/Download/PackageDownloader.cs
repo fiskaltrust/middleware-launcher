@@ -167,6 +167,12 @@ namespace fiskaltrust.Launcher.Download
 
         public async Task<bool> CheckHashAsync(string sourcePath)
         {
+            if(!File.Exists($"{sourcePath}.hash"))
+            {
+                _logger?.LogWarning("Hash file not found");
+                return false;
+            }
+
             using FileStream stream = File.OpenRead(sourcePath);
             var computedHash = SHA256.Create().ComputeHash(stream);
 
