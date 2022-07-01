@@ -66,4 +66,4 @@ stages:
       displayName: Pagkage executables
 
     - publish: $(Build.ArtifactStagingDirectory)/pakage-$(target)
-      artifact: drop-$(target)
+      artifact: pakage-$(target)
