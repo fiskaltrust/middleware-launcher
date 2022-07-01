@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.storage.serialization.V0;
@@ -47,10 +48,25 @@ namespace fiskaltrust.Launcher.Download
         private const string LAUNCHER_NAME = "fiskaltrust.Launcher";
         public async Task DownloadLauncherAsync()
         {
-            var name = LAUNCHER_NAME;
-            var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, "fiskaltrust.Launcher");
+            string runtimeIdentifier = Environment.Is64BitProcess ? "x64" : "x86";
+            if (OperatingSystem.IsWindows())
+            {
+                runtimeIdentifier = $"win-{runtimeIdentifier}";
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                runtimeIdentifier = $"linux-{runtimeIdentifier}";
+            }
+            else if (OperatingSystem.IsMacOS())
+            {
+                runtimeIdentifier = $"osx-{runtimeIdentifier}";
+            } else {
+                runtimeIdentifier = RuntimeInformation.RuntimeIdentifier;
+            }
 
-            await DownloadAsync(name, _configuration.LauncherVersion!.ToString(), targetPath, new[]
+            var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, LAUNCHER_NAME);
+
+            await DownloadAsync($"{LAUNCHER_NAME}.{runtimeIdentifier}", _configuration.LauncherVersion!.ToString(), targetPath, new[]
             {
                 Path.Combine(targetPath, $"{LAUNCHER_NAME}{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
                 Path.Combine(targetPath, $"{LAUNCHER_NAME}Updater{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
@@ -62,7 +78,7 @@ namespace fiskaltrust.Launcher.Download
             var combinedName = $"{name}-{version}";
             var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{combinedName}.zip");
 
-            if ( targetNames.Select(t => File.Exists(t)).All(t => t))
+            if (targetNames.Select(t => File.Exists(t)).All(t => t))
             {
                 return;
             }

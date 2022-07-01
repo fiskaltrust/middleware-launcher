@@ -69,9 +69,9 @@ namespace fiskaltrust.Launcher.Commands
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 
-            if (_launcherConfiguration.LauncherVersion is not null && Constants.Version.CurrentVersion is not null && Constants.Version.CurrentVersion < _launcherConfiguration.LauncherVersion)
+            if (_launcherConfiguration.LauncherVersion is not null && Constants.Version.CurrentVersion is not null && Constants.Version.CurrentVersion.ComparePrecedenceTo(_launcherConfiguration.LauncherVersion) < 0)
             {
-                Log.Information("Launcher version {old} is outdated. Downloading new version {new}.", Constants.Version.CurrentVersion, _launcherConfiguration.LauncherVersion);
+                Log.Information("A new Launcher version is configured. Downloading new version {new}.", Constants.Version.CurrentVersion, _launcherConfiguration.LauncherVersion);
 
                 try
                 {
@@ -92,7 +92,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (_updatePending)
                 {
-                    StartUpdate();
+                    await StartLauncherUpdate();
                 }
             }
             catch (TaskCanceledException)
@@ -112,7 +112,7 @@ namespace fiskaltrust.Launcher.Commands
             return 0;
         }
 
-        private void StartUpdate()
+        private async Task StartLauncherUpdate()
         {
             var executablePath = Path.Combine(_launcherConfiguration.ServiceFolder!, "service", _launcherConfiguration.CashboxId?.ToString()!, "fiskaltrust.Launcher");
             var process = new Process();
@@ -127,13 +127,27 @@ namespace fiskaltrust.Launcher.Commands
                 "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_launcherConfiguration)))}\"",
             });
 
+            process.StartInfo.RedirectStandardError = true;
+            process.StartInfo.RedirectStandardOutput = true;
+
             process.Start();
 
             Log.Information("Launcher update started in the background.");
 
-            if(process.HasExited)
+            Thread.Sleep(5000);
+
+            if (process.HasExited)
             {
-                Log.Error("Launcher Update failed. See {} for the update log.", _launcherConfiguration.LogFolder);
+                Log.Error("Launcher Update failed. See {LogFolder} for the update log.", _launcherConfiguration.LogFolder);
+                var withEnrichedContext = async (Func<Task> log) =>
+                {
+                    var enrichedContext = LogContext.PushProperty("EnrichedContext", " LauncherUpdater");
+                    await log();
+                    enrichedContext.Dispose();
+                };
+
+                await withEnrichedContext(async () => Log.Information(await process.StandardOutput.ReadToEndAsync()));
+                await withEnrichedContext(async () => Log.Error(await process.StandardError.ReadToEndAsync()));
             }
         }
     }

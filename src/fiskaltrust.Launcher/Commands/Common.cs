@@ -46,9 +46,13 @@ namespace fiskaltrust.Launcher.Commands
             {
                 _launcherConfiguration.OverwriteWith(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration());
             }
-            catch
+            catch (DirectoryNotFoundException e)
             {
-                errors.Add((LogLevel.Warning, "Could not read launcher configuration file, using command line parameters only.", null));
+                errors.Add((LogLevel.Warning, $"Launcher configuration file \"{LauncherConfigurationFile}\" does not exist, using command line parameters only.", e));
+            }
+            catch (Exception e)
+            {
+                errors.Add((LogLevel.Critical, $"Could not read launcher configuration file \"{LauncherConfigurationFile}\"", e));
             }
 
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);

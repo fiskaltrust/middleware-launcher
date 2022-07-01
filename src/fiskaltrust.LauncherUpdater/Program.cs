@@ -14,7 +14,8 @@ var rootCommand = new RootCommand("Updater for the fiskaltrust.Launcher")
 {
   processIdOption,
   fromOption,
-  toOption
+  toOption,
+  launcherConfiguration
 };
 
 rootCommand.SetHandler(RootCommandHandler, processIdOption, fromOption, toOption, launcherConfiguration);

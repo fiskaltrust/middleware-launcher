@@ -53,6 +53,7 @@ stages:
       - pwsh: |
           Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
         displayName: Copy ececutables
+        
 
     - pwsh: |
         $version = Get-Content .\version.json | ConvertFrom-Json | Select-Object -ExpandProperty version
