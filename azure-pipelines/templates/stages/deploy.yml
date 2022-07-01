@@ -38,7 +38,7 @@ stages:
         config: ${{ parameters.config }}
 
     - ${{ each project in parameters.projects }}:
-      - pwsh: dotnet publish ./src/${{ project }}${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false
+      - pwsh: dotnet publish ./src/${{ project }}/${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false
         displayName: Publish
 
     - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
