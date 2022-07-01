@@ -19,8 +19,8 @@ stages:
   - template: templates/stages/deploy.yml
     parameters:
       projects:
-        - ./src/fiskaltrust.Launcher/fiskaltrust.Launcher.csproj
-        - ./src/fiskaltrust.LauncherUpdater/fiskaltrust.LauncherUpdater.csproj
+        - fiskaltrust.Launcher
+        - fiskaltrust.LauncherUpdater
       ${{ if startsWith(variables.branch, 'refs/tags/v')}}:
         config: release
       ${{ else }}:

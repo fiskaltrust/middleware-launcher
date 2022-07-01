@@ -38,8 +38,19 @@ stages:
         config: ${{ parameters.config }}
 
     - ${{ each project in parameters.projects }}:
-      - pwsh: dotnet publish ${{ project }} -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true -p:EnableCompressionInSingleFile=true
+      - pwsh: dotnet publish ./src/${{ project }}${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false
         displayName: Publish
 
     - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
       artifact: drop-$(target)
+
+    - ${{ each project in parameters.projects }}:
+      - pwsh: Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
+
+    - pwsh: |
+        $version = Get-Content .\version.json | ConvertFrom-Json | Select-Object -ExpandProperty version
+        Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/pakage-$(target)/fiskaltrust.Launcher.$version.zip
+
+    - publish: $(Build.ArtifactStagingDirectory)/pakage-$(target)
+      artifact: drop-$(target)
+      # Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw/$packageName/* -DestinationPath $(Build.ArtifactStagingDirectory)/packages/$packageName.$version.zip
