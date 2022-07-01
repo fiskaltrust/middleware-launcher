@@ -18,5 +18,5 @@ stages:
     - pwsh: dotnet build -c ${{ parameters.config }} --self-contained false
       displayName: Build
   
-    - pwsh: dotnet test -c ${{ parameters.config }} --self-contained false
+    - pwsh: dotnet test -c ${{ parameters.config }}
       displayName: Test
