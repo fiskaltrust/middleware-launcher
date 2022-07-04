@@ -56,7 +56,7 @@ stages:
         
 
     - pwsh: |
-        $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
+        $version = (Select-Xml -Path ./Directory.build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
 
         Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/pakage-$(target)/fiskaltrust.Launcher.$version.zip
 
