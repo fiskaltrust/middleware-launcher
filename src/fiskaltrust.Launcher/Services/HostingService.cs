@@ -88,7 +88,7 @@ namespace fiskaltrust.Launcher.Services
             var url = new Uri(uri.ToString().Replace("rest://", "http://"));
             app.UsePathBase(url.AbsolutePath);
             app.Urls.Add(url.GetLeftPart(UriPartial.Authority));
-            
+
             app.UseRouting();
             addEndpoints(app);
 

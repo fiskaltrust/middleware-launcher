@@ -62,9 +62,9 @@ namespace fiskaltrust.Launcher.Commands
             launcherConfiguration.EnableDefaults();
 
             var plebianConfiguration = JsonSerializer.Deserialize<PlebianConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration))) ?? throw new Exception($"Could not deserialize {nameof(PlebianConfiguration)}");
-            
+
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!)) ?? throw new Exception($"Could not deserialize {nameof(ftCashBoxConfiguration)}");
-            
+
             var packageConfiguration = (plebianConfiguration.PackageType switch
             {
                 PackageType.Queue => cashboxConfiguration.ftQueues,
@@ -91,6 +91,7 @@ namespace fiskaltrust.Launcher.Commands
                 .UseSerilog()
                 .ConfigureServices(services =>
                 {
+                    services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => packageConfiguration);
                     services.AddSingleton(_ => plebianConfiguration);

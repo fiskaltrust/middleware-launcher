@@ -18,24 +18,21 @@ var rootCommand = new RootCommand("Updater for the fiskaltrust.Launcher")
   launcherConfiguration
 };
 
-rootCommand.SetHandler(RootCommandHandler, processIdOption, fromOption, toOption, launcherConfiguration);
+rootCommand.SetHandler(async (context) =>
+{
+    var token = context.GetCancellationToken();
+    context.ExitCode = await RootCommandHandler(
+        context.ParseResult.GetValueForOption(processIdOption),
+        context.ParseResult.GetValueForOption(fromOption)!,
+        context.ParseResult.GetValueForOption(toOption)!,
+        context.ParseResult.GetValueForOption(launcherConfiguration)!,
+        context.GetCancellationToken());
+});
 
-try
-{
-    await rootCommand.InvokeAsync(args);
-    return 0;
-}
-catch (Exception e)
-{
-    Log.Error(e, "An unhandled exception occured.");
-    return 1;
-}
-finally
-{
-    Log.CloseAndFlush();
-}
+return await rootCommand.InvokeAsync(args);
 
-async static Task RootCommandHandler(int processId, string from, string to, string launcherConfigurationBase64)
+
+async static Task<int> RootCommandHandler(int processId, string from, string to, string launcherConfigurationBase64, CancellationToken cancellationToken)
 {
     var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(launcherConfigurationBase64))) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
     launcherConfiguration.EnableDefaults();
@@ -45,6 +42,26 @@ async static Task RootCommandHandler(int processId, string from, string to, stri
         .Enrich.FromLogContext()
         .CreateLogger();
 
+    cancellationToken.Register(() => Log.Warning("Shutdown requested."));
+
+    try
+    {
+        await RunSelfUpdate(processId, from, to);
+        return 0;
+    }
+    catch (Exception e)
+    {
+        Log.Error(e, "An exception occured.");
+        return 1;
+    }
+    finally
+    {
+        Log.CloseAndFlush();
+    }
+}
+
+async static Task RunSelfUpdate(int processId, string from, string to)
+{
     var launcherProcess = Process.GetProcessById(processId);
 
     if (launcherProcess is not null)
@@ -54,7 +71,7 @@ async static Task RootCommandHandler(int processId, string from, string to, stri
     }
 
     Log.Information("Copying launcher executable from \"{from}\" to \"{to}\".", from, to);
-    File.Copy(from, to);
+    File.Copy(from, to, true);
 
     Log.Information("Launcher update successful");
 }

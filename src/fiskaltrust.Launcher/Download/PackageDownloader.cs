@@ -42,7 +42,7 @@ namespace fiskaltrust.Launcher.Download
         {
             var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
             var targetName = Path.Combine(targetPath, $"{configuration.Package}.dll");
-            await DownloadAsync(configuration.Package, configuration.Version, targetPath, new[] { targetName });
+            await DownloadAsync(configuration.Package, configuration.Version, "undefined", targetPath, new[] { targetName });
         }
 
         private const string LAUNCHER_NAME = "fiskaltrust.Launcher";
@@ -60,20 +60,22 @@ namespace fiskaltrust.Launcher.Download
             else if (OperatingSystem.IsMacOS())
             {
                 runtimeIdentifier = $"osx-{runtimeIdentifier}";
-            } else {
+            }
+            else
+            {
                 runtimeIdentifier = RuntimeInformation.RuntimeIdentifier;
             }
 
             var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, LAUNCHER_NAME);
 
-            await DownloadAsync($"{LAUNCHER_NAME}.{runtimeIdentifier}", _configuration.LauncherVersion!.ToString(), targetPath, new[]
+            await DownloadAsync(LAUNCHER_NAME, _configuration.LauncherVersion!.ToString(), runtimeIdentifier, targetPath, new[]
             {
                 Path.Combine(targetPath, $"{LAUNCHER_NAME}{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
                 Path.Combine(targetPath, $"{LAUNCHER_NAME}Updater{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
             });
         }
 
-        private async Task DownloadAsync(string name, string version, string targetPath, IEnumerable<string> targetNames)
+        private async Task DownloadAsync(string name, string version, string platform, string targetPath, IEnumerable<string> targetNames)
         {
             var combinedName = $"{name}-{version}";
             var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{combinedName}.zip");
@@ -102,7 +104,7 @@ namespace fiskaltrust.Launcher.Download
                     Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
 
                     {
-                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}?version={version}"));
+                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}?version={version}&platform={platform}"));
 
                         request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
                         request.Headers.Add("accesstoken", _configuration.AccessToken);
@@ -116,7 +118,7 @@ namespace fiskaltrust.Launcher.Download
                     }
 
                     {
-                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}/hash?version={version}"));
+                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}/hash?version={version}&platform={platform}"));
 
                         request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
                         request.Headers.Add("accesstoken", _configuration.AccessToken);
@@ -167,7 +169,7 @@ namespace fiskaltrust.Launcher.Download
 
         public async Task<bool> CheckHashAsync(string sourcePath)
         {
-            if(!File.Exists($"{sourcePath}.hash"))
+            if (!File.Exists($"{sourcePath}.hash"))
             {
                 _logger?.LogWarning("Hash file not found");
                 return false;

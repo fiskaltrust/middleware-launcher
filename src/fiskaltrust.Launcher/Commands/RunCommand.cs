@@ -52,6 +52,7 @@ namespace fiskaltrust.Launcher.Commands
                 .UseSerilog()
                 .ConfigureServices((hostContext, services) =>
                 {
+                    services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => _launcherConfiguration);
                     services.AddSingleton(_ => _cashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
@@ -132,9 +133,9 @@ namespace fiskaltrust.Launcher.Commands
 
             process.Start();
 
-            Log.Information("Launcher update started in the background.");
+            Log.Information("Launcher update starting in the background.");
 
-            Thread.Sleep(5000);
+            Thread.Sleep(10_000);
 
             if (process.HasExited)
             {
