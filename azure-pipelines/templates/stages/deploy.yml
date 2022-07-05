@@ -46,7 +46,7 @@ stages:
 
     - pwsh: |
         New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/
-        New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/pakage-$(target)/
+        New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/package-$(target)/
       displayName: Create Directories
 
     - ${{ each project in parameters.projects }}:
@@ -58,13 +58,13 @@ stages:
     - pwsh: |
         $version = (Select-Xml -Path ./Directory.build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
 
-        Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/pakage-$(target)/fiskaltrust.Launcher.$version.zip
+        Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher.$version.zip
 
-        $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/pakage-$(target)/fiskaltrust.Launcher.$version.zip -Algorithm SHA256
+        $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher.$version.zip -Algorithm SHA256
         $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
         $hashstring = [System.Convert]::ToBase64String($hashbytes)
-        $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/pakage-$(target)/fiskaltrust.Launcher.$version.zip.hash
+        $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher.$version.zip.hash
       displayName: Pagkage executables
 
-    - publish: $(Build.ArtifactStagingDirectory)/pakage-$(target)
-      artifact: pakage-$(target)
+    - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
+      artifact: package-$(target)
