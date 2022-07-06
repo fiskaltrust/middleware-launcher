@@ -70,7 +70,7 @@ namespace fiskaltrust.Launcher.Commands
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 
-            if (_launcherConfiguration.LauncherVersion is not null && Constants.Version.CurrentVersion is not null && Constants.Version.CurrentVersion.ComparePrecedenceTo(_launcherConfiguration.LauncherVersion) < 0)
+            if (_launcherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null && Common.Constants.Version.CurrentVersion.ComparePrecedenceTo(_launcherConfiguration.LauncherVersion) < 0)
             {
                 Log.Information("A new Launcher version is configured. Downloading new version {new}.", _launcherConfiguration.LauncherVersion);
 

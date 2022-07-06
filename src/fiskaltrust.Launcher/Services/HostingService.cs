@@ -1,5 +1,5 @@
 ﻿using fiskaltrust.Launcher.Constants;
-using fiskaltrust.Launcher.Extensions;
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -7,7 +7,7 @@ using ProtoBuf.Grpc.Server;
 using Serilog;
 using System.Net;
 using System.Reflection;
-using fiskaltrust.Launcher.Configuration;
+using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Interfaces;
 using Microsoft.AspNetCore.HttpLogging;
 

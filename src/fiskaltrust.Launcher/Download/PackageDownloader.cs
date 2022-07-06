@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using fiskaltrust.Launcher.Configuration;
+using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.Download

@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{07DBDA43-B1C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fiskaltrust.LauncherUpdater", "src\fiskaltrust.LauncherUpdater\fiskaltrust.LauncherUpdater.csproj", "{9250B3D3-AB87-4CFA-9454-48E264C413DB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fiskaltrust.Launcher.Common", "src\fiskaltrust.Launcher.Common\fiskaltrust.Launcher.Common.csproj", "{341FBE24-AE72-47BA-ACB6-FC3CA85544E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,8 +28,13 @@ Global
 		{9250B3D3-AB87-4CFA-9454-48E264C413DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9250B3D3-AB87-4CFA-9454-48E264C413DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9250B3D3-AB87-4CFA-9454-48E264C413DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{341FBE24-AE72-47BA-ACB6-FC3CA85544E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{341FBE24-AE72-47BA-ACB6-FC3CA85544E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{341FBE24-AE72-47BA-ACB6-FC3CA85544E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{341FBE24-AE72-47BA-ACB6-FC3CA85544E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{9250B3D3-AB87-4CFA-9454-48E264C413DB} = {07DBDA43-B1C9-4A50-8721-8A2D3CC3506F}
+		{341FBE24-AE72-47BA-ACB6-FC3CA85544E9} = {07DBDA43-B1C9-4A50-8721-8A2D3CC3506F}
 	EndGlobalSection
 EndGlobal

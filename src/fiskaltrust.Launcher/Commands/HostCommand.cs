@@ -2,7 +2,6 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Text.Json;
 using fiskaltrust.Launcher.Configuration;
-using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.ProcessHost;
 using fiskaltrust.Launcher.Services;
 using fiskaltrust.storage.serialization.V0;
@@ -19,7 +18,8 @@ using ProtoBuf.Grpc.Client;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Constants;
 using System.Diagnostics;
-using System.Text.Encodings.Web;
+using fiskaltrust.Launcher.Common.Extensions;
+using fiskaltrust.Launcher.Common.Configuration;
 
 namespace fiskaltrust.Launcher.Commands
 {

@@ -1,5 +1,6 @@
 using fiskaltrust.ifPOS.v1;
 using fiskaltrust.ifPOS.v1.de;
+using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Extensions;

@@ -1,7 +1,7 @@
 using System.Reflection;
 using Semver;
 
-namespace fiskaltrust.Launcher.Constants
+namespace fiskaltrust.Launcher.Common.Constants
 {
     public static class Version
     {

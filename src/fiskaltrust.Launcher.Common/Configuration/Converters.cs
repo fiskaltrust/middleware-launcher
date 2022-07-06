@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Semver;
 
-namespace fiskaltrust.Launcher.Configuration
+namespace fiskaltrust.Launcher.Common.Configuration
 {
     public class SemVersionConverter : JsonConverter<SemVersion>
     {

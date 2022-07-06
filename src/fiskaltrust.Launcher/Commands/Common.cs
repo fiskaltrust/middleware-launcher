@@ -2,9 +2,10 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Security.Cryptography;
 using System.Text.Json;
+using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
-using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
 

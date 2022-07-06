@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
+using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Download;
@@ -136,7 +137,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private void StartupLogging()
         {
-            _logger.LogInformation("fiskaltrust.Launcher: {version}", Constants.Version.CurrentVersion);
+            _logger.LogInformation("fiskaltrust.Launcher: {version}", Common.Constants.Version.CurrentVersion);
             _logger.LogInformation("OS:                   {OS}, {Bit}", Environment.OSVersion.VersionString, Environment.Is64BitOperatingSystem ? "64Bit" : "32Bit");
             if (OperatingSystem.IsWindows())
             {

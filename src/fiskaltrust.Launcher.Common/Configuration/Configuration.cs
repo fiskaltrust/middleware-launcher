@@ -1,9 +1,10 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
-using fiskaltrust.Launcher.Constants;
+using fiskaltrust.Launcher.Common.Constants;
+using Microsoft.Extensions.Logging;
 using Semver;
 
-namespace fiskaltrust.Launcher.Configuration
+namespace fiskaltrust.Launcher.Common.Configuration
 {
     public record LauncherConfiguration
     {
