@@ -1,7 +1,7 @@
 ﻿using Serilog;
 using System.Diagnostics;
 
-namespace fiskaltrust.Launcher.ServceInstallation
+namespace fiskaltrust.Launcher.ServiceInstallation
 {
     public class LinuxSystemD
     {
@@ -87,12 +87,12 @@ namespace fiskaltrust.Launcher.ServceInstallation
             var processPath = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable");
 
             var command = $"{processPath} {commandArgs}";
-            return new string[] { "[Unit]",
+            return new[] { "[Unit]",
                                   "Description="+ serviceDescription ,
                                   "",
                                   "[Service]",
                                   "Type=simple",
-                                  string.Format("ExecStart={0}", command),
+                                  $"ExecStart={command}",
                                   "",
                                   "[Install]",
                                   "WantedBy = multi-user.target"

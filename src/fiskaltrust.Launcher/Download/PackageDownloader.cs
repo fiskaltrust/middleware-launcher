@@ -149,7 +149,7 @@ namespace fiskaltrust.Launcher.Download
 
                 ZipFile.ExtractToDirectory(sourcePath, targetPath);
 
-                if (targetNames.Select(t => File.Exists(t)).Any(t => !t))
+                if (targetNames.Any(t => !File.Exists(t)))
                 {
                     if (_configuration.UseOffline!.Value)
                     {

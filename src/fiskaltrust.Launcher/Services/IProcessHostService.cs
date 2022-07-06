@@ -2,7 +2,7 @@
 using System.Runtime.Serialization;
 using System.ServiceModel;
 
-namespace fiskaltrust.Launcher.Interfaces
+namespace fiskaltrust.Launcher.Services.Interfaces
 {
     [DataContract]
     public class LogEventDto

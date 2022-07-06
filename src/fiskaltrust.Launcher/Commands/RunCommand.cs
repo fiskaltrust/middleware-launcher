@@ -5,7 +5,6 @@ using fiskaltrust.Launcher.Services;
 using Serilog;
 using ProtoBuf.Grpc.Server;
 using fiskaltrust.Launcher.Download;
-using System.Reflection;
 using System.Diagnostics;
 using Serilog.Context;
 using System.Text.Json;
@@ -50,7 +49,7 @@ namespace fiskaltrust.Launcher.Commands
             var builder = WebApplication.CreateBuilder();
             builder.Host
                 .UseSerilog()
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((_, services) =>
                 {
                     services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => _launcherConfiguration);

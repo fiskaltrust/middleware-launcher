@@ -11,7 +11,6 @@ using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.ifPOS.v1;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.Launcher.Clients;
-using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.Logging;
 using Grpc.Net.Client;
 using ProtoBuf.Grpc.Client;
@@ -20,6 +19,7 @@ using fiskaltrust.Launcher.Constants;
 using System.Diagnostics;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Services.Interfaces;
 
 namespace fiskaltrust.Launcher.Commands
 {

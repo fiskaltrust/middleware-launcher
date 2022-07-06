@@ -2,7 +2,7 @@ using Serilog;
 using Serilog.Context;
 using System.Diagnostics;
 
-namespace fiskaltrust.Launcher.ServceInstallation
+namespace fiskaltrust.Launcher.ServiceInstallation
 {
     public class WindowsService
     {
@@ -122,8 +122,8 @@ namespace fiskaltrust.Launcher.ServceInstallation
                 enrichedContext.Dispose();
             };
 
-            process.OutputDataReceived += (data, e) => withEnrichedContext(() => Log.Information(e.Data));
-            process.ErrorDataReceived += (data, e) => withEnrichedContext(() => Log.Error(e.Data));
+            process.OutputDataReceived += (_, e) => withEnrichedContext(() => Log.Information(e.Data));
+            process.ErrorDataReceived += (_, e) => withEnrichedContext(() => Log.Error(e.Data));
 
             await process.WaitForExitAsync();
 

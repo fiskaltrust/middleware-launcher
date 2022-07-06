@@ -8,14 +8,13 @@ using Serilog;
 using System.Net;
 using System.Reflection;
 using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.Launcher.Interfaces;
 using Microsoft.AspNetCore.HttpLogging;
+using fiskaltrust.Launcher.Services.Interfaces;
 
 namespace fiskaltrust.Launcher.Services
 {
-    public class HostingService : IAsyncDisposable
+    public class HostingService
     {
-        private readonly List<WebApplication> _hosts = new();
         private readonly PackageConfiguration _packageConfiguration;
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly IProcessHostService? _processHostService;
@@ -32,7 +31,7 @@ namespace fiskaltrust.Launcher.Services
         {
             var builder = WebApplication.CreateBuilder();
 
-            builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) =>
+            builder.Host.UseSerilog((_, __, loggerConfiguration) =>
                 loggerConfiguration
                     .AddLoggingConfiguration(_launcherConfiguration, new[] { _packageConfiguration.Package, _packageConfiguration.Id.ToString() }, true)
                     .WriteTo.GrpcSink(_packageConfiguration, _processHostService));
@@ -133,15 +132,5 @@ namespace fiskaltrust.Launcher.Services
                 });
             }
         }
-
-#pragma warning disable CA1816
-        public async ValueTask DisposeAsync()
-        {
-            foreach (var host in _hosts)
-            {
-                await host.StopAsync();
-            }
-        }
-#pragma warning restore CA1816
     }
 }

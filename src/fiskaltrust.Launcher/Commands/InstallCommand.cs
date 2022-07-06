@@ -1,7 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using Serilog;
-using fiskaltrust.Launcher.ServceInstallation;
+using fiskaltrust.Launcher.ServiceInstallation;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -46,7 +46,7 @@ namespace fiskaltrust.Launcher.Commands
             _launcherConfiguration.EnableDefaults();
 
             var commandArgs = "run ";
-            commandArgs += string.Join(" ", new string[] {
+            commandArgs += string.Join(" ", new[] {
                 "--cashbox-id", _launcherConfiguration.CashboxId!.Value.ToString(),
                 "--access-token", _launcherConfiguration.AccessToken!,
                 "--sandbox", _launcherConfiguration.Sandbox!.Value.ToString(),

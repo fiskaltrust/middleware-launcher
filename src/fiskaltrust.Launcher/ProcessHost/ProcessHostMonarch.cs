@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Reflection;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Configuration;
@@ -202,7 +201,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 catch { }
             });
 
-            _process.Exited += async (sender, e) =>
+            _process.Exited += async (_, __) =>
             {
                 _logger.LogInformation("Host {package} {id} has shutdown.", _packageConfiguration.Package, _packageConfiguration.Id);
 

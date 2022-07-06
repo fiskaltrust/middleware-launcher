@@ -1,9 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using Serilog;
-using System.Diagnostics;
-using Serilog.Context;
-using fiskaltrust.Launcher.ServceInstallation;
+using fiskaltrust.Launcher.ServiceInstallation;
 
 namespace fiskaltrust.Launcher.Commands
 {

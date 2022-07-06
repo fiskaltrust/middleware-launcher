@@ -1,5 +1,5 @@
 
-using fiskaltrust.Launcher.Interfaces;
+using fiskaltrust.Launcher.Services.Interfaces;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
 using Serilog.Configuration;
