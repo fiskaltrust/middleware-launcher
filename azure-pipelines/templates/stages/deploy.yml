@@ -7,6 +7,8 @@ parameters:
 
 stages:
 - stage: Deploy
+  pool:
+    vmImage: ubuntu-latest
 
   jobs:
   - job: Deploy
