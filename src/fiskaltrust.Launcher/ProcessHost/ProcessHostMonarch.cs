@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Download;
@@ -169,8 +170,8 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _process.StartInfo.Arguments = string.Join(" ", new string[] {
                 "host",
-                "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new PlebianConfiguration { PackageType = packageType, PackageId = packageConfiguration.Id })))}\"",
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\"",
+                "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(new PlebianConfiguration { PackageType = packageType, PackageId = packageConfiguration.Id }, Helpers.Serialization.SerializerContext.Default)))}\"",
+                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(launcherConfiguration, SerializerContext.Default)))}\"",
             });
 
             // if(Debugger.IsAttached)

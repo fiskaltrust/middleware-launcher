@@ -8,6 +8,8 @@ using fiskaltrust.Launcher.Download;
 using System.Diagnostics;
 using Serilog.Context;
 using System.Text.Json;
+using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Helpers.Serialization;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -82,7 +84,7 @@ namespace fiskaltrust.Launcher.Commands
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "Cloud not download new Launcher version.");
+                    Log.Error(e, "Could not download new Launcher version.");
                 }
             }
 
@@ -124,7 +126,7 @@ namespace fiskaltrust.Launcher.Commands
                 "--launcher-process-id", Environment.ProcessId.ToString(),
                 "--from", $"\"{Path.Combine(executablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
                 "--to", $"\"{Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")}\"",
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_launcherConfiguration)))}\"",
+                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(_launcherConfiguration, SerializerContext.Default)))}\"",
             });
 
             process.StartInfo.RedirectStandardError = true;

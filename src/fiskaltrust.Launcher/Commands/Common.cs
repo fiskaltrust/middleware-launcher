@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Extensions;
+using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.storage.serialization.V0;
@@ -45,7 +46,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                _launcherConfiguration.OverwriteWith(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration());
+                _launcherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default) ?? new LauncherConfiguration());
             }
             catch (DirectoryNotFoundException e)
             {
@@ -87,7 +88,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                _launcherConfiguration.OverwriteWith(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!))?.LauncherConfiguration);
+                _launcherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!), SerializerContext.Default)?.LauncherConfiguration);
             }
             catch (Exception e)
             {

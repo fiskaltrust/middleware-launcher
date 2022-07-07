@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Extensions;
+using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Serilog;
 
 var processIdOption = new Option<int>(name: "--launcher-process-id");
@@ -34,7 +35,7 @@ return await rootCommand.InvokeAsync(args);
 
 async static Task<int> RootCommandHandler(int processId, string from, string to, string launcherConfigurationBase64, CancellationToken cancellationToken)
 {
-    var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(launcherConfigurationBase64))) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
+    var launcherConfiguration = Serializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(launcherConfigurationBase64)), SerializerContext.Default) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
     launcherConfiguration.EnableDefaults();
 
     Log.Logger = new LoggerConfiguration()
