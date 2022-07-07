@@ -69,7 +69,7 @@ The file can contain the following config keys:
   "configurationUrl": "<configurationUrl>",                    // string (default: "https://configuration[-sandbox].fiskaltrust.cloud")
   "downloadTimeoutSec": "<downloadTimeoutSec>",                // int (default: 15)
   "processHostPingPeriodSec": "<processHostPingPeriodSec>",    // int (default: 10)
-  "cashboxConfigurationFile": "<cashboxConfigurationFile>",    // string (default: "configuration-<ftCashBoxId>.json")
+  "cashboxConfigurationFile": "<cashboxConfigurationFile>",    // string (default: "Configuration-<ftCashBoxId>.json")
 }
 ```
 
