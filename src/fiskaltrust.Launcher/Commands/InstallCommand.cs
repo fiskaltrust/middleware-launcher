@@ -53,15 +53,19 @@ namespace fiskaltrust.Launcher.Commands
                 "--launcher-configuration-file", LauncherConfigurationFile,
             }.Concat(_subArguments.Args));
 
+            ServiceInstaller? installer = null;
             if (OperatingSystem.IsLinux())
             {
-                var linuxSystemd = new LinuxSystemD(ServiceName);
-                return await linuxSystemd.InstallSystemD(commandArgs, ServiceDescription).ConfigureAwait(false);
+                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
             }
             if (OperatingSystem.IsWindows())
             {
-                var windowsService = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
-                return await windowsService.InstallService(commandArgs, ServiceDisplayName, DelayedStart).ConfigureAwait(false);
+                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
+            }
+
+            if(installer is not null)
+            {
+                return await installer.InstallService(commandArgs, ServiceDisplayName, DelayedStart).ConfigureAwait(false);
             }
 
             Log.Error("For non windows or linux(systemd) service installation see: {link}", ""); // TODO

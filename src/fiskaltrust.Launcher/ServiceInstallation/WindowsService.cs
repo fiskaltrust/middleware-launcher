@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
 {
-    public class WindowsService
+    public class WindowsService : ServiceInstaller
     {
         private readonly string _serviceName;
 
@@ -12,7 +12,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         {
             _serviceName = serviceName;
         }
-        public async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart)
+        public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
         {
             if (OperatingSystem.IsWindows())
             {
@@ -46,14 +46,14 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             }
 
             Log.Information("Installing service.");
-            if (!await RunProcess(@"C:\WINDOWS\system32\sc.exe", arguments))
+            if ((await RunProcess(@"C:\WINDOWS\system32\sc.exe", arguments)).exitCode != 0)
             {
                 Log.Information($"Could not install service \"{_serviceName}\".");
                 return 1;
             }
 
             Log.Information("Starting service.");
-            if (!await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "start", $"\"{_serviceName}\"" }))
+            if ((await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "start", $"\"{_serviceName}\"" })).exitCode != 0)
             {
                 Log.Warning($"Could not start service \"{_serviceName}\".");
             }
@@ -64,7 +64,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
             return 0;
         }
-        public async Task<int> UninstallService()
+        public override async Task<int> UninstallService()
         {
             if (OperatingSystem.IsWindows())
             {
@@ -83,51 +83,19 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             }
 
             Log.Information("Stopping service.");
-            if (!await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "stop", $"\"{_serviceName}\"" }))
+            if ((await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "stop", $"\"{_serviceName}\"" })).exitCode != 0)
             {
                 Log.Warning($"Could not stop service \"{_serviceName}\".");
             }
 
             Log.Information("Uninstalling service.");
-            if (!await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "delete", $"\"{_serviceName}\"" }))
+            if ((await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "delete", $"\"{_serviceName}\"" })).exitCode != 0)
             {
                 Log.Warning($"Could not uninstall service \"{_serviceName}\".");
                 return 1;
             }
             Log.Information($"successfully uninstalled service \"{_serviceName}\".");
             return 0;
-        }
-
-        private static async Task<bool> RunProcess(string fileName, IEnumerable<string> arguments)
-        {
-            var process = new Process();
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.FileName = fileName;
-            process.StartInfo.CreateNoWindow = false;
-
-            process.StartInfo.Arguments = string.Join(" ", arguments);
-            process.StartInfo.RedirectStandardError = true;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.EnableRaisingEvents = true;
-
-            process.Start();
-
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-
-            var withEnrichedContext = (Action log) =>
-            {
-                var enrichedContext = LogContext.PushProperty("EnrichedContext", " sc.exe");
-                log();
-                enrichedContext.Dispose();
-            };
-
-            process.OutputDataReceived += (_, e) => withEnrichedContext(() => Log.Information(e.Data));
-            process.ErrorDataReceived += (_, e) => withEnrichedContext(() => Log.Error(e.Data));
-
-            await process.WaitForExitAsync();
-
-            return process.ExitCode == 0;
         }
     }
 }

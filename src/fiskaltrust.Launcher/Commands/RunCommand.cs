@@ -141,15 +141,23 @@ namespace fiskaltrust.Launcher.Commands
             if (process.HasExited)
             {
                 Log.Error("Launcher Update failed. See {LogFolder} for the update log.", _launcherConfiguration.LogFolder);
-                var withEnrichedContext = async (Func<Task> log) =>
+                var withEnrichedContext = (Action log) =>
                 {
                     var enrichedContext = LogContext.PushProperty("EnrichedContext", " LauncherUpdater");
-                    await log();
+                    log();
                     enrichedContext.Dispose();
                 };
 
-                await withEnrichedContext(async () => Log.Information(await process.StandardOutput.ReadToEndAsync()));
-                await withEnrichedContext(async () => Log.Error(await process.StandardError.ReadToEndAsync()));
+                var stdOut = await process.StandardOutput.ReadToEndAsync();
+                if (!string.IsNullOrEmpty(stdOut))
+                {
+                    withEnrichedContext(() => Log.Information(stdOut));
+                }
+                var stdErr = await process.StandardError.ReadToEndAsync();
+                if (!string.IsNullOrEmpty(stdErr))
+                {
+                    withEnrichedContext(() => Log.Error(stdErr));
+                }
             }
         }
     }
