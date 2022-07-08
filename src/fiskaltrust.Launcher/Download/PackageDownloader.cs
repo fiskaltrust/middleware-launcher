@@ -136,11 +136,8 @@ namespace fiskaltrust.Launcher.Download
 
                 if (!await CheckHashAsync(sourcePath))
                 {
-                    if (_configuration.UseOffline!.Value)
-                    {
-                        _logger?.LogWarning("File hash for {name} incorrect.", combinedName);
-                    }
-                    else
+                    _logger?.LogWarning("File hash for {name} incorrect.", combinedName);
+                    if (!_configuration.UseOffline!.Value)
                     {
                         File.Delete(sourcePath);
                         continue;
@@ -151,9 +148,9 @@ namespace fiskaltrust.Launcher.Download
 
                 if (targetNames.Any(t => !File.Exists(t)))
                 {
+                    _logger?.LogWarning("Package {name} did not contain the needed files.", combinedName);
                     if (_configuration.UseOffline!.Value)
                     {
-                        _logger?.LogWarning("Package {name} did not contain the needed files.", combinedName);
                         break;
                     }
 
@@ -171,7 +168,7 @@ namespace fiskaltrust.Launcher.Download
         {
             if (!File.Exists($"{sourcePath}.hash"))
             {
-                _logger?.LogWarning("Hash file not found");
+                _logger?.LogWarning("Hash file not found.");
                 return false;
             }
 
@@ -182,7 +179,7 @@ namespace fiskaltrust.Launcher.Download
 
             if (!computedHash.SequenceEqual(hash))
             {
-                _logger?.LogWarning("Incorrect Hash");
+                _logger?.LogWarning("Incorrect Hash.");
                 return false;
             }
 

@@ -63,7 +63,7 @@ stages:
         if("$(vmImage)" -eq "windows-latest") {
           Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher.$version.zip
         } else {
-          bash -c "zip -r $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher.$version.zip $(Build.ArtifactStagingDirectory)/raw-$(target)/"
+          bash -c "cd $(Build.ArtifactStagingDirectory)/raw-$(target)/`nzip -r $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher.$version.zip ./"
         }
 
         $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher.$version.zip -Algorithm SHA256
