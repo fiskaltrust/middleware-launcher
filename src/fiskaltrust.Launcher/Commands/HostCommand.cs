@@ -1,8 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Text.Json;
-using fiskaltrust.Launcher.Configuration;
-using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.ProcessHost;
 using fiskaltrust.Launcher.Services;
 using fiskaltrust.storage.serialization.V0;
@@ -12,14 +10,17 @@ using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.ifPOS.v1;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.Launcher.Clients;
-using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.Logging;
 using Grpc.Net.Client;
 using ProtoBuf.Grpc.Client;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Constants;
 using System.Diagnostics;
-using System.Text.Encodings.Web;
+using fiskaltrust.Launcher.Common.Extensions;
+using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Services.Interfaces;
+using fiskaltrust.Launcher.Common.Helpers.Serialization;
+using fiskaltrust.Launcher.Configuration;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -58,13 +59,13 @@ namespace fiskaltrust.Launcher.Commands
                 }
             }
 
-            var launcherConfiguration = JsonSerializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration))) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
+            var launcherConfiguration = Serializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration)), SerializerContext.Default) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
             launcherConfiguration.EnableDefaults();
 
-            var plebianConfiguration = JsonSerializer.Deserialize<PlebianConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration))) ?? throw new Exception($"Could not deserialize {nameof(PlebianConfiguration)}");
-            
+            var plebianConfiguration = Serializer.Deserialize<PlebianConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration)), Helpers.Serialization.SerializerContext.Default) ?? throw new Exception($"Could not deserialize {nameof(PlebianConfiguration)}");
+
             var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!)) ?? throw new Exception($"Could not deserialize {nameof(ftCashBoxConfiguration)}");
-            
+
             var packageConfiguration = (plebianConfiguration.PackageType switch
             {
                 PackageType.Queue => cashboxConfiguration.ftQueues,
@@ -91,6 +92,7 @@ namespace fiskaltrust.Launcher.Commands
                 .UseSerilog()
                 .ConfigureServices(services =>
                 {
+                    services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => packageConfiguration);
                     services.AddSingleton(_ => plebianConfiguration);
@@ -151,7 +153,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e, "An unhandled exception occured");
+                Log.Error(e, "An unhandled exception occured.");
                 return 1;
             }
             finally
@@ -172,7 +174,7 @@ namespace fiskaltrust.Launcher.Commands
                 { "useoffline", launcherConfiguration.UseOffline!.Value },
                 { "sandbox", launcherConfiguration.Sandbox! },
                 { "configuration", JsonSerializer.Serialize(cashboxConfiguration) },
-                { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder!, "service") }, // TODO Set to only _launcherConfiguration.ServiceFolder and append "service" inside the packages where needed
+                { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder!, "service") },
             };
 
             if (launcherConfiguration.Proxy is not null)

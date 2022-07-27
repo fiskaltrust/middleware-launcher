@@ -1,10 +1,9 @@
-
-using fiskaltrust.Launcher.Configuration;
+using fiskaltrust.Launcher.Common.Configuration;
 using Serilog;
 using Serilog.Events;
 using Serilog.Filters;
 
-namespace fiskaltrust.Launcher.Extensions
+namespace fiskaltrust.Launcher.Common.Extensions
 {
     public static class LoggerConfigurationExtensions
     {

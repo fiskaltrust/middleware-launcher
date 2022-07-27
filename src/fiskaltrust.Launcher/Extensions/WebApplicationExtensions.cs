@@ -2,7 +2,6 @@
 using fiskaltrust.ifPOS.v1.de;
 using Microsoft.AspNetCore.Mvc;
 using System.IO.Pipelines;
-using System.Linq;
 
 namespace fiskaltrust.Launcher.Extensions
 {

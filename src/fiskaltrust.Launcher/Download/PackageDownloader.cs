@@ -1,6 +1,7 @@
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using fiskaltrust.Launcher.Configuration;
+using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.Download
@@ -39,12 +40,47 @@ namespace fiskaltrust.Launcher.Download
 
         public async Task DownloadPackageAsync(PackageConfiguration configuration)
         {
-            var name = $"{configuration.Package}-{configuration.Version}";
             var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
             var targetName = Path.Combine(targetPath, $"{configuration.Package}.dll");
-            var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{name}.zip");
+            await DownloadAsync(configuration.Package, configuration.Version, "undefined", targetPath, new[] { targetName });
+        }
 
-            if (File.Exists(targetName))
+        private const string LAUNCHER_NAME = "fiskaltrust.Launcher";
+        public async Task DownloadLauncherAsync()
+        {
+            string runtimeIdentifier = Environment.Is64BitProcess ? "x64" : "x86";
+            if (OperatingSystem.IsWindows())
+            {
+                runtimeIdentifier = $"win-{runtimeIdentifier}";
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                runtimeIdentifier = $"linux-{runtimeIdentifier}";
+            }
+            else if (OperatingSystem.IsMacOS())
+            {
+                runtimeIdentifier = $"osx-{runtimeIdentifier}";
+            }
+            else
+            {
+                runtimeIdentifier = RuntimeInformation.RuntimeIdentifier;
+            }
+
+            var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, LAUNCHER_NAME);
+
+            await DownloadAsync(LAUNCHER_NAME, _configuration.LauncherVersion!.ToString(), runtimeIdentifier, targetPath, new[]
+            {
+                Path.Combine(targetPath, $"{LAUNCHER_NAME}{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
+                Path.Combine(targetPath, $"{LAUNCHER_NAME}Updater{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
+            });
+        }
+
+        private async Task DownloadAsync(string name, string version, string platform, string targetPath, IEnumerable<string> targetNames)
+        {
+            var combinedName = $"{name}-{version}";
+            var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{combinedName}.zip");
+
+            if (targetNames.Select(t => File.Exists(t)).All(t => t))
             {
                 return;
             }
@@ -60,15 +96,15 @@ namespace fiskaltrust.Launcher.Download
                 {
                     if (_configuration.UseOffline!.Value)
                     {
-                        _logger?.LogWarning("Package {name} not found in package cache.", name);
+                        _logger?.LogWarning("Package {name} not found in download cache.", combinedName);
                         break;
                     }
 
-                    _logger?.LogInformation("Downloading package {name}.", name);
+                    _logger?.LogInformation("Downloading package {name}.", combinedName);
                     Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
 
                     {
-                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{configuration.Package}?version={configuration.Version}"));
+                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}?version={version}&platform={platform}"));
 
                         request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
                         request.Headers.Add("accesstoken", _configuration.AccessToken);
@@ -82,7 +118,7 @@ namespace fiskaltrust.Launcher.Download
                     }
 
                     {
-                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{configuration.Package}/hash?version={configuration.Version}"));
+                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}/hash?version={version}&platform={platform}"));
 
                         request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
                         request.Headers.Add("accesstoken", _configuration.AccessToken);
@@ -95,16 +131,13 @@ namespace fiskaltrust.Launcher.Download
                 }
                 else
                 {
-                    _logger?.LogDebug("Found Package in cache.");
+                    _logger?.LogDebug("Found package in download cache.");
                 }
 
                 if (!await CheckHashAsync(sourcePath))
                 {
-                    if (_configuration.UseOffline!.Value)
-                    {
-                        _logger?.LogWarning("File hash for {name} incorrect.", name);
-                    }
-                    else
+                    _logger?.LogWarning("File hash for {name} incorrect.", combinedName);
+                    if (!_configuration.UseOffline!.Value)
                     {
                         File.Delete(sourcePath);
                         continue;
@@ -113,11 +146,11 @@ namespace fiskaltrust.Launcher.Download
 
                 ZipFile.ExtractToDirectory(sourcePath, targetPath);
 
-                if (!File.Exists(targetName))
+                if (targetNames.Any(t => !File.Exists(t)))
                 {
+                    _logger?.LogWarning("Package {name} did not contain the needed files.", combinedName);
                     if (_configuration.UseOffline!.Value)
                     {
-                        _logger?.LogWarning("Package {name} did not contain the needed dlls.", name);
                         break;
                     }
 
@@ -128,11 +161,17 @@ namespace fiskaltrust.Launcher.Download
                 return;
             }
 
-            throw new Exception("Downloaded Package is invalid");
+            throw new Exception("Downloaded package is invalid");
         }
 
         public async Task<bool> CheckHashAsync(string sourcePath)
         {
+            if (!File.Exists($"{sourcePath}.hash"))
+            {
+                _logger?.LogWarning("Hash file not found.");
+                return false;
+            }
+
             using FileStream stream = File.OpenRead(sourcePath);
             var computedHash = SHA256.Create().ComputeHash(stream);
 
@@ -140,7 +179,7 @@ namespace fiskaltrust.Launcher.Download
 
             if (!computedHash.SequenceEqual(hash))
             {
-                _logger?.LogWarning("Incorrect Hash");
+                _logger?.LogWarning("Incorrect Hash.");
                 return false;
             }
 

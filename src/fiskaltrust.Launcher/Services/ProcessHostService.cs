@@ -1,7 +1,7 @@
 
 using System.ServiceModel;
-using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.ProcessHost;
+using fiskaltrust.Launcher.Services.Interfaces;
 using Serilog.Context;
 using Serilog.Events;
 using Serilog.Formatting.Compact.Reader;

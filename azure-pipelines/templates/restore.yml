@@ -7,7 +7,7 @@ steps:
 - task: yavt@1
   inputs:
     pathToVersionJson: version.json
-    semverVersion: v1 # still needed?
+    addCiLabel: true
 
 - task: UseDotNet@2
   inputs:

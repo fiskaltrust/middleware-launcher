@@ -18,6 +18,9 @@ stages:
 
   - template: templates/stages/deploy.yml
     parameters:
+      projects:
+        - fiskaltrust.Launcher
+        - fiskaltrust.LauncherUpdater
       ${{ if startsWith(variables.branch, 'refs/tags/v')}}:
         config: release
       ${{ else }}:

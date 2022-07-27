@@ -2,9 +2,11 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Security.Cryptography;
 using System.Text.Json;
+using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Extensions;
+using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
-using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
 
@@ -44,11 +46,15 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                _launcherConfiguration.OverwriteWith(JsonSerializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile)) ?? new LauncherConfiguration());
+                _launcherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default) ?? new LauncherConfiguration());
             }
-            catch
+            catch (DirectoryNotFoundException e)
             {
-                errors.Add((LogLevel.Warning, "Could not read launcher configuration file, using command line parameters only.", null));
+                errors.Add((LogLevel.Warning, $"Launcher configuration file \"{LauncherConfigurationFile}\" does not exist, using command line parameters only.", e));
+            }
+            catch (Exception e)
+            {
+                errors.Add((LogLevel.Critical, $"Could not read launcher configuration file \"{LauncherConfigurationFile}\"", e));
             }
 
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
@@ -82,7 +88,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                _launcherConfiguration.OverwriteWith(JsonSerializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!))?.LauncherConfiguration);
+                _launcherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!), SerializerContext.Default)?.LauncherConfiguration);
             }
             catch (Exception e)
             {
@@ -100,7 +106,7 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             Log.Logger = new LoggerConfiguration()
-                .AddLoggingConfiguration(_launcherConfiguration, _launcherConfiguration.CashboxId.HasValue ? new[] {_launcherConfiguration.CashboxId.Value.ToString()} : null)
+                .AddLoggingConfiguration(_launcherConfiguration, _launcherConfiguration.CashboxId.HasValue ? new[] { "fiskaltrust.Launcher", _launcherConfiguration.CashboxId.Value.ToString() } : null)
                 .Enrich.FromLogContext()
                 .CreateLogger();
 

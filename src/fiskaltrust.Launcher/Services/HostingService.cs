@@ -1,5 +1,5 @@
 ﻿using fiskaltrust.Launcher.Constants;
-using fiskaltrust.Launcher.Extensions;
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -7,15 +7,14 @@ using ProtoBuf.Grpc.Server;
 using Serilog;
 using System.Net;
 using System.Reflection;
-using fiskaltrust.Launcher.Configuration;
-using fiskaltrust.Launcher.Interfaces;
+using fiskaltrust.Launcher.Common.Configuration;
 using Microsoft.AspNetCore.HttpLogging;
+using fiskaltrust.Launcher.Services.Interfaces;
 
 namespace fiskaltrust.Launcher.Services
 {
-    public class HostingService : IAsyncDisposable
+    public class HostingService
     {
-        private readonly List<WebApplication> _hosts = new();
         private readonly PackageConfiguration _packageConfiguration;
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly IProcessHostService? _processHostService;
@@ -32,7 +31,7 @@ namespace fiskaltrust.Launcher.Services
         {
             var builder = WebApplication.CreateBuilder();
 
-            builder.Host.UseSerilog((hostingContext, services, loggerConfiguration) =>
+            builder.Host.UseSerilog((_, __, loggerConfiguration) =>
                 loggerConfiguration
                     .AddLoggingConfiguration(_launcherConfiguration, new[] { _packageConfiguration.Package, _packageConfiguration.Id.ToString() }, true)
                     .WriteTo.GrpcSink(_packageConfiguration, _processHostService));
@@ -88,7 +87,7 @@ namespace fiskaltrust.Launcher.Services
             var url = new Uri(uri.ToString().Replace("rest://", "http://"));
             app.UsePathBase(url.AbsolutePath);
             app.Urls.Add(url.GetLeftPart(UriPartial.Authority));
-            
+
             app.UseRouting();
             addEndpoints(app);
 
@@ -133,15 +132,5 @@ namespace fiskaltrust.Launcher.Services
                 });
             }
         }
-
-#pragma warning disable CA1816
-        public async ValueTask DisposeAsync()
-        {
-            foreach (var host in _hosts)
-            {
-                await host.StopAsync();
-            }
-        }
-#pragma warning restore CA1816
     }
 }

@@ -32,7 +32,9 @@ await new CommandLineBuilder(command)
           host.UseConsoleLifetime();
       }
 
-      host.ConfigureServices(services => services.AddSingleton(_ => subArguments));
+      host.ConfigureServices(services => services
+        .Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(45))
+        .AddSingleton(_ => subArguments));
 
       host
         .UseCommandHandler<HostCommand, HostCommandHandler>()

@@ -1,7 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using fiskaltrust.Launcher.Configuration;
+using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.Download
