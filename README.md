@@ -1,7 +1,7 @@
 # fiskaltrust Launcher
 The **fiskaltrust Launcher** is an application that hosts the packages of the **fiskaltrust Middleware**, a modular fiscalization and POS platform that can be embedded into POS systems to suffice international fiscalization regulations.
 
-> :warning: This all-new fiskaltrust Launcher is currently in development. We plan to release a preview version to interested customers soon - please reach out to us in the [discussion section](https://github.com/fiskaltrust/middleware-launcher/discussions) if you want to participate.
+> warning: This all-new fiskaltrust Launcher is currently in development. We plan to release a preview version to interested customers soon - please reach out to us in the [discussion section](https://github.com/fiskaltrust/middleware-launcher/discussions) if you want to participate.
 
 **You can track the ongoing development of the first release in the project's [backlog and board](https://github.com/orgs/fiskaltrust/projects/3/).**
 
@@ -15,7 +15,87 @@ Below, we illustrate a minimal sample configuration with the international SQLit
   <img src="./doc/images/overview.png" alt="overview" />
 </div>
 
+
 ## Getting Started
+
+> warning: This beta version  of the Launcher 2.0 is for test purpose only and should be used with our German sandbox.
+
+Download the latest release from GitHub.
+Unzip the downloaded release.
+
+### Supported Packages in the Alpha
+
+In the sandbox configure a cashbox based on the list of supported packages below.
+
+| Name                                           | Versions    |
+| ---------------------------------------------- | ----------- |
+| fiskaltrust.Middleware.Queue.MySQL             | v1.3.37     |
+| fiskaltrust.Middleware.Queue.SQLite            | v1.3.38-ci-22221-55477     |
+| fiskaltrust.Middleware.SCU.DE.FiskalyCertified | v1.3.35     |
+| fiskaltrust.Middleware.SCU.DE.CryptoVision     | v1.3.34 |
+| fiskaltrust.Middleware.SCU.DE.DeutscheFiskal   | v1.3.35     |
+| fiskaltrust.Middleware.SCU.DE.DieboldNixdorf   | v1.3.20     |
+| fiskaltrust.Middleware.SCU.DE.Epson            | v1.3.19     |
+| fiskaltrust.Middleware.SCU.DE.Swissbit         | v1.3.35-rc1    |
+| fiskaltrust.Middleware.SCU.DE.SwissbitCloud    | v1.3.35     |
+| fiskaltrust.Middleware.Helper.Helipad          | v1.3.26     |
+
+
+### Launcher configuration
+
+The Launcher 2.0 configuration is now read from a json file (`launcher.configuration.json` in the working directory per default).The configuration has to be created mannually.
+
+This file can be set via the `--launcher-configuration-file` cli argument.
+
+The configuration file should contain the following config keys:
+```jsonc
+{
+  
+  "ftCashBoxId": "<ftCashBoxId>",      // string
+  "accessToken": "<accessToken>",      // string
+  "launcherPort": "<launcherPort>",    // int (default: 5050)
+  "serviceFolder": "<serviceFolder>",  // string (default-windows: "C:/ProgramData/fiskaltrust", default-linux: "/var/lib/fiskaltrust", default-macos: "/Library/Application Support/fiskaltrust")
+  "sandbox": "<sandbox>",              // bool (default: true)
+  "useOffline": "<useOffline>",        // bool (default: false)
+  "logFolder": "<logFolder>",          // string (default: "<serviceFolder>/logs")
+  "logLevel": "<logLevel>",            // string (default: "Information")
+  "packagesUrl": "<packagesUrl>",      // string (default: "https://packages-2-0[-sandbox].fiskaltrust.cloud")
+  "helipadUrl": "<helipadUrl>",        // string (default: "https://helipad[-sandbox].fiskaltrust.cloud")
+  "downloadRetry": "<downloadRetry>",  // int (default: 1)
+  "sslValidation": "<sslValidation>",  // bool (default: false)
+  "proxy": "<proxy>",                  // string (default: null)
+  "configurationUrl": "<configurationUrl>",                    // string (default: "https://configuration[-sandbox].fiskaltrust.cloud")
+  "downloadTimeoutSec": "<downloadTimeoutSec>",                // int (default: 15)
+  "processHostPingPeriodSec": "<processHostPingPeriodSec>",    // int (default: 10)
+  "cashboxConfigurationFile": "<cashboxConfigurationFile>"     // string (default: "configuration-<ftCashBoxId>.json")
+}
+```
+All of these config keys can be overridden using the corresponding cli arguments.
+### Service
+
+The Launcher 2.0 can be installed as a service on Windows and linux (when systemd is available) using the `install` command:
+```sh
+fiskaltrust.Launcher.exe install --cashbox-id <cashboxid> --access-token <accesstoken> --launcher-configuration-file <launcher-configuration-file>
+```
+Start the Launcher via the commandline:
+```sh
+fiskaltrust.Launcher.exe run --cashbox-id <cashboxid> --access-token <accesstoken> --sandbox
+```
+
+To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
+
+> ***Note:***  
+> See help for other start parameters:
+> ```sh
+> fiskaltrust.Launcher.exe run --help
+> ```
+> See help for other available commands:
+> ```sh
+> fiskaltrust.Launcher.exe --help
+> ```
+
+
+## Getting Started for developpers
 
 Clone this github repository and bild the project with visual studio.
 
@@ -38,18 +118,18 @@ To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 
 ### Service
 
-The 2.0 Launcher can be installed as a service on Windows and linux (when systemd is available) using the `install` command:
+The Launcher 2.0 can be installed as a service on Windows and linux (when systemd is available) using the `install` command:
 ```sh
 fiskaltrust.Launcher.exe install --cashbox-id <cashboxid> --access-token <accesstoken> --launcher-configuration-file <launcher-configuration-file>
 ```
 
 ### Launcher configuration
 
-The 2.0 Launcher configuration is now read from a json file (`launcher.configuration.json` in the working directory per default).
+The Launcher 2.0 configuration is now read from a json file (`launcher.configuration.json` in the working directory per default).The configuration has to be created mannually.
 
 This file can be set via the `--launcher-configuration-file` cli argument.
 
-The file can contain the following config keys:
+The configuration file should contain the following config keys:
 ```jsonc
 {
   
@@ -57,7 +137,7 @@ The file can contain the following config keys:
   "accessToken": "<accessToken>",      // string
   "launcherPort": "<launcherPort>",    // int (default: 5050)
   "serviceFolder": "<serviceFolder>",  // string (default-windows: "C:/ProgramData/fiskaltrust", default-linux: "/var/lib/fiskaltrust", default-macos: "/Library/Application Support/fiskaltrust")
-  "sandbox": "<sandbox>",              // bool (default: false)
+  "sandbox": "<sandbox>",              // bool (default: true)
   "useOffline": "<useOffline>",        // bool (default: false)
   "logFolder": "<logFolder>",          // string (default: "<serviceFolder>/logs")
   "logLevel": "<logLevel>",            // string (default: "Information")
@@ -69,26 +149,27 @@ The file can contain the following config keys:
   "configurationUrl": "<configurationUrl>",                    // string (default: "https://configuration[-sandbox].fiskaltrust.cloud")
   "downloadTimeoutSec": "<downloadTimeoutSec>",                // int (default: 15)
   "processHostPingPeriodSec": "<processHostPingPeriodSec>",    // int (default: 10)
-  "cashboxConfigurationFile": "<cashboxConfigurationFile>",    // string (default: "configuration-<ftCashBoxId>.json")
+  "cashboxConfigurationFile": "<cashboxConfigurationFile>"     // string (default: "configuration-<ftCashBoxId>.json")
 }
 ```
-
 All of these config keys can be overridden using the corresponding cli arguments.
-
 ### Supported Packages in the Alpha
+
+In the sandbox configure a cashbox based on the list of supported packages below.
 
 | Name                                           | Versions    |
 | ---------------------------------------------- | ----------- |
-| fiskaltrust.Middleware.Queue.MySQL             | v1.3.28     |
-| fiskaltrust.Middleware.Queue.SQLite            | v1.3.28     |
-| fiskaltrust.Middleware.SCU.DE.FiskalyCertified | v1.3.26     |
-| fiskaltrust.Middleware.SCU.DE.CryptoVision     | v1.3.28-rc1 |
-| fiskaltrust.Middleware.SCU.DE.DeutscheFiskal   | v1.3.27     |
+| fiskaltrust.Middleware.Queue.MySQL             | v1.3.37     |
+| fiskaltrust.Middleware.Queue.SQLite            | v1.3.38-ci-22221-55477     |
+| fiskaltrust.Middleware.SCU.DE.FiskalyCertified | v1.3.35     |
+| fiskaltrust.Middleware.SCU.DE.CryptoVision     | v1.3.34 |
+| fiskaltrust.Middleware.SCU.DE.DeutscheFiskal   | v1.3.35     |
 | fiskaltrust.Middleware.SCU.DE.DieboldNixdorf   | v1.3.20     |
 | fiskaltrust.Middleware.SCU.DE.Epson            | v1.3.19     |
-| fiskaltrust.Middleware.SCU.DE.Swissbit         | v1.3.25     |
-| fiskaltrust.Middleware.SCU.DE.SwissbitCloud    | v1.3.27     |
+| fiskaltrust.Middleware.SCU.DE.Swissbit         | v1.3.35-rc1    |
+| fiskaltrust.Middleware.SCU.DE.SwissbitCloud    | v1.3.35     |
 | fiskaltrust.Middleware.Helper.Helipad          | v1.3.26     |
+
 
 ## Contributing
 In general, we welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!
