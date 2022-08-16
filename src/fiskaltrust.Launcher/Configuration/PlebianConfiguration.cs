@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Constants;
 
 namespace fiskaltrust.Launcher.Configuration

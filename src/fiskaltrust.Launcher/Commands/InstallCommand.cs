@@ -1,7 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using Serilog;
-using fiskaltrust.Launcher.ServceInstallation;
+using fiskaltrust.Launcher.ServiceInstallation;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -46,22 +46,26 @@ namespace fiskaltrust.Launcher.Commands
             _launcherConfiguration.EnableDefaults();
 
             var commandArgs = "run ";
-            commandArgs += string.Join(" ", new string[] {
+            commandArgs += string.Join(" ", new[] {
                 "--cashbox-id", _launcherConfiguration.CashboxId!.Value.ToString(),
                 "--access-token", _launcherConfiguration.AccessToken!,
                 "--sandbox", _launcherConfiguration.Sandbox!.Value.ToString(),
                 "--launcher-configuration-file", LauncherConfigurationFile,
             }.Concat(_subArguments.Args));
 
+            ServiceInstaller? installer = null;
             if (OperatingSystem.IsLinux())
             {
-                var linuxSystemd = new LinuxSystemD(ServiceName);
-                return await linuxSystemd.InstallSystemD(commandArgs, ServiceDescription).ConfigureAwait(false);
+                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
             }
             if (OperatingSystem.IsWindows())
             {
-                var windowsService = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
-                return await windowsService.InstallService(commandArgs, ServiceDisplayName, DelayedStart).ConfigureAwait(false);
+                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
+            }
+
+            if(installer is not null)
+            {
+                return await installer.InstallService(commandArgs, ServiceDisplayName, DelayedStart).ConfigureAwait(false);
             }
 
             Log.Error("For non windows or linux(systemd) service installation see: {link}", ""); // TODO

@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0-poc.1",
+  "version": "2.0.0-preview2",
   "releaseBranches": [
     "^refs/heads/master$",
     "^refs/tags/v\\d+(?:\\.\\d+)*(?:-.*)?$"

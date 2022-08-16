@@ -1,6 +1,7 @@
 using System.Diagnostics;
-using System.Reflection;
 using System.Text.Json;
+using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Download;
@@ -61,10 +62,13 @@ namespace fiskaltrust.Launcher.ProcessHost
                 return;
             }
 
-            _logger.LogInformation("Started all packages.");
-            if(!WindowsServiceHelpers.IsWindowsService())
+            if (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Press CTRL+C to exit.");
+                _logger.LogInformation("Started all packages.");
+                if (!WindowsServiceHelpers.IsWindowsService())
+                {
+                    _logger.LogInformation("Press CTRL+C to exit.");
+                }
             }
 
             try
@@ -82,6 +86,11 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private async Task StartProcessHostMonarch(PackageConfiguration configuration, PackageType packageType, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
             try
             {
                 await _downloader.DownloadPackageAsync(configuration);
@@ -98,15 +107,21 @@ namespace fiskaltrust.Launcher.ProcessHost
                 configuration,
                 packageType);
 
-            _hosts.Add(
-                configuration.Id,
-                monarch
-            );
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                _hosts.Add(
+                    configuration.Id,
+                    monarch
+                );
+            }
 
             try
             {
                 await monarch.Start(cancellationToken);
-                _logger.LogInformation("Started {Package} {Id}.", configuration.Package, configuration.Id);
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    _logger.LogInformation("Started {Package} {Id}.", configuration.Package, configuration.Id);
+                }
             }
             catch (TaskCanceledException)
             {
@@ -122,7 +137,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private void StartupLogging()
         {
-            _logger.LogInformation("fiskaltrust.Launcher: {version}", Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
+            _logger.LogInformation("fiskaltrust.Launcher: {version}", Common.Constants.Version.CurrentVersion);
             _logger.LogInformation("OS:                   {OS}, {Bit}", Environment.OSVersion.VersionString, Environment.Is64BitOperatingSystem ? "64Bit" : "32Bit");
             if (OperatingSystem.IsWindows())
             {
@@ -140,10 +155,12 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly Process _process;
         private readonly TaskCompletionSource _started;
         private readonly TaskCompletionSource _stopped;
+        private readonly PackageConfiguration _packageConfiguration;
         private readonly ILogger<ProcessHostMonarch> _logger;
 
         public ProcessHostMonarch(ILogger<ProcessHostMonarch> logger, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PackageType packageType)
         {
+            _packageConfiguration = packageConfiguration;
             _logger = logger;
 
             _process = new Process();
@@ -153,15 +170,15 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _process.StartInfo.Arguments = string.Join(" ", new string[] {
                 "host",
-                "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new PlebianConfiguration { PackageType = packageType, PackageId = packageConfiguration.Id })))}\"",
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(launcherConfiguration)))}\"",
+                "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(new PlebianConfiguration { PackageType = packageType, PackageId = packageConfiguration.Id }, Helpers.Serialization.SerializerContext.Default)))}\"",
+                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(launcherConfiguration, SerializerContext.Default)))}\"",
             });
 
             // if(Debugger.IsAttached)
             // {
             //     _process.StartInfo.Arguments += " --debugging";
             // }
-
+            _process.StartInfo.RedirectStandardInput = true;
             _process.StartInfo.RedirectStandardError = true;
             _process.StartInfo.RedirectStandardOutput = true;
 
@@ -176,27 +193,39 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 try
                 {
-                    _process.Kill();
+                    if (!_process.HasExited)
+                    {
+                        _logger.LogInformation("Killing {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
+                        _process.Kill();
+                    }
                 }
                 catch { }
             });
 
-            _process.Exited += (sender, e) =>
+            _process.Exited += async (_, __) =>
             {
+                _logger.LogInformation("Host {package} {id} has shutdown.", _packageConfiguration.Package, _packageConfiguration.Id);
+
+                await Task.Delay(1000);
                 if (!cancellationToken.IsCancellationRequested)
                 {
                     if (_process.ExitCode != 0)
                     {
                         try
                         {
-                            if (!_process.Start()) { throw new Exception("Process.Start() was false."); }
+                            _logger.LogInformation("Restarting {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
+                            if (!_process.Start()) { throw new Exception($"Process.Start() was false for {_packageConfiguration.Package} {_packageConfiguration.Id}"); }
 
-                            _process.BeginOutputReadLine();
-                            _process.BeginErrorReadLine();
+                            try
+                            {
+                                _process.BeginOutputReadLine();
+                                _process.BeginErrorReadLine();
+                            }
+                            catch { }
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, "Could not start ProcessHost process.");
+                            _logger.LogError(ex, "Could not start ProcessHost process for {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
                             _started.TrySetResult();
                             _stopped.TrySetCanceled(cancellationToken);
                         }
@@ -216,7 +245,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             try
             {
-                if (!_process.Start()) { throw new Exception("Process.Start() was false."); }
+                if (!_process.Start()) { throw new Exception("Process.Start() was false"); }
                 _process.BeginOutputReadLine();
                 _process.BeginErrorReadLine();
             }

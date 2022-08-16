@@ -21,9 +21,9 @@ namespace fiskaltrust.Launcher.Download
                 else
                 {
 
-                    foreach (string keyvalue in proxyString.Split(new char[] { ';' }))
+                    foreach (string keyvalue in proxyString.Split(new[] { ';' }))
                     {
-                        var data = keyvalue.Split(new char[] { '=' });
+                        var data = keyvalue.Split(new[] { '=' });
                         if (data.Length < 2)
                         {
                             continue;
@@ -36,7 +36,6 @@ namespace fiskaltrust.Launcher.Download
                             case "bypass": bypass.Add(data[1]); break;
                             case "username": username = data[1]; break;
                             case "password": password = data[1]; break;
-                            default: break;
                         }
                     }
 

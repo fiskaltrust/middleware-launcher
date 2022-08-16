@@ -1,10 +1,11 @@
 using fiskaltrust.ifPOS.v1;
 using fiskaltrust.ifPOS.v1.de;
+using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Extensions;
-using fiskaltrust.Launcher.Interfaces;
 using fiskaltrust.Launcher.Services;
+using fiskaltrust.Launcher.Services.Interfaces;
 using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.storage.serialization.V0;
 
@@ -88,8 +89,8 @@ namespace fiskaltrust.Launcher.ProcessHost
             (object instance, Type type) = _plebianConfiguration.PackageType switch
             {
                 PackageType.Queue => ((object)_services.GetRequiredService<IPOS>(), typeof(IPOS)),
-                PackageType.SCU => ((object)_services.GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
-                PackageType.Helper => ((object)_services.GetRequiredService<IHelper>(), typeof(IHelper)),
+                PackageType.SCU => (_services.GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
+                PackageType.Helper => (_services.GetRequiredService<IHelper>(), typeof(IHelper)),
                 _ => throw new NotImplementedException()
             };
 
@@ -103,9 +104,9 @@ namespace fiskaltrust.Launcher.ProcessHost
                 {
                     HostingType.REST => _plebianConfiguration.PackageType switch
                     {
-                        PackageType.Queue => (WebApplication app) => app.AddQueueEndpoints((IPOS)instance),
-                        PackageType.SCU => (WebApplication app) => app.AddScuEndpoints((IDESSCD)instance),
-                        PackageType.Helper => (WebApplication _) => { }
+                        PackageType.Queue => app => app.AddQueueEndpoints((IPOS)instance),
+                        PackageType.SCU => app => app.AddScuEndpoints((IDESSCD)instance),
+                        PackageType.Helper => _ => { }
                         ,
                         _ => throw new NotImplementedException()
                     },

@@ -1,9 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using Serilog;
-using System.Diagnostics;
-using Serilog.Context;
-using fiskaltrust.Launcher.ServceInstallation;
+using fiskaltrust.Launcher.ServiceInstallation;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -26,16 +24,19 @@ namespace fiskaltrust.Launcher.Commands
                 return 1;
             }
 
+            ServiceInstaller? installer = null;
             if (OperatingSystem.IsLinux())
             {
-                var linuxSystemd = new LinuxSystemD(ServiceName);
-                return linuxSystemd.UninstallSystemD();
+                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
             }
-
             if (OperatingSystem.IsWindows())
             {
-                var windowsService = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
-                return await windowsService.UninstallService().ConfigureAwait(false);
+                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
+            }
+
+            if(installer is not null)
+            {
+                return await installer.UninstallService().ConfigureAwait(false);
             }
 
             Log.Error("For non windows or linux(systemd) service uninstallation see: {link}", ""); // TODO
