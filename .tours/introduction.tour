@@ -1,0 +1,22 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Introduction",
+  "steps": [
+    {
+      "title": "Welcome",
+      "description": "# Welcome\r\nWelcome to the fiskaltrust.Launcher Code Tour.\r\n\r\nThese tours expect some familiarity with the fiskaltrust.Launcher and Middleware.\r\n\r\nThe introduction will guide you through dev environment setup and how to contribute to the Launcher.\r\n\r\n# Setup\r\n\r\nYou can use VisualStudio or VisualStudio Code to contribute to the fiskaltrust.Launcher.\r\n\r\nFor VisualStudio Code you'll need the [C#](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) extension.\r\n\r\n\r\n> Use the command [.NET: Generate Assets for Build and Debug](command:dotnet.generateAssets) to get debug and build functionality in vscode. See the [Debugging](command:codetour.startTour?[\"Debugging\"]) tour for more information."
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "description": "# Contributing\r\n\r\nPlease read through the contribution guidelines before contributing to the Launcher\r\n\r\nAfter you've made your changes create a Pull Request.\r\n\r\nPlease make sure your code is well formatted and tested before opening a PR for review to make reviewing as easy as possible.",
+      "line": 1
+    },
+    {
+      "file": "CHANGELOG.md",
+      "description": "# Changelog\r\n\r\nPlease add your changes here and document them in the [README](./README.md) and [interface-doc](https://github.com/fiskaltrust/interface-doc) if applicable.",
+      "line": 7
+    }
+  ],
+  "isPrimary": true,
+  "nextTour": "Overview"
+}

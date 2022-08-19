@@ -1,0 +1,189 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Overview",
+  "steps": [
+    {
+      "title": "Introduction",
+      "description": "# Intruduction\r\n\r\nThis tour will give you an overview of the Launcher architecture.\r\n\r\nThe Launcher hosts Middleware packages like Queues, SCUs and Helpers.\r\n\r\nIt does that by starting a main process (we call this process the Monarch) which downloads configs and packages and then starts secondary processes (we call Plebians) for each package."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Program.cs",
+      "description": "# Commands\r\n\r\nThe Launcher can be started uwing different commands which are defined here using the `System.CommandLine` library.",
+      "selection": {
+        "start": {
+          "line": 8,
+          "character": 1
+        },
+        "end": {
+          "line": 13,
+          "character": 3
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "selection": {
+        "start": {
+          "line": 18,
+          "character": 1
+        },
+        "end": {
+          "line": 31,
+          "character": 10
+        }
+      },
+      "description": "# Run Command\r\n\r\nThe `RunCommand` command is used to start the Launcher. Its options are defined here and in the [`CommonCommand`](./Common.cs) it inherits from.\r\n\r\nBelow you can find the `RunCommandHandler` which is executed when this command is run."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "The Launcher uses an `AcpNetCore` `WebApplication` to start its components and the `ProcessHostService` which is used for communication between Monarch and Plebians.",
+      "line": 65
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Services/IProcessHostService.cs",
+      "selection": {
+        "start": {
+          "line": 18,
+          "character": 1
+        },
+        "end": {
+          "line": 29,
+          "character": 6
+        }
+      },
+      "description": "# ProcessHostService\r\n\r\nThis is a hosted as a grpc service on the port configured in the [`LauncherConfiguration`](../../fiskaltrust.Launcher.Common/Configuration/LauncherConfiguration) as `LauncherPort`.\r\n\r\nIt is used by the Plebians to send status information and logs to the Launcher."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "selection": {
+        "start": {
+          "line": 61,
+          "character": 21
+        },
+        "end": {
+          "line": 61,
+          "character": 75
+        }
+      },
+      "description": "The `ProcessHostMonarch` is added as a `HostedService`. This is the main componend that is doing the work of the Monarch."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
+      "selection": {
+        "start": {
+          "line": 43,
+          "character": 1
+        },
+        "end": {
+          "line": 56,
+          "character": 18
+        }
+      },
+      "description": "# ProcessHostMonarchStartup\r\n\r\nHere the `ProcessHostMonarch` startup class is starting a `ProcessHostMonarch` for each package with the correct configurations."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
+      "selection": {
+        "start": {
+          "line": 166,
+          "character": 1
+        },
+        "end": {
+          "line": 187,
+          "character": 51
+        }
+      },
+      "description": "# ProcessHostMonarch\r\nThe `ProcessHostMonarch` creates the process of the Plebian.\r\n\r\nThis process is another instance of the Launcher started with the `host` command.\r\n\r\nBelow in the `Start` Method the process is started, stopped and restarted if it crashed.\r\n\r\n> You can view this [followup tour](command:codetour.startTour?[\"Monarch\"]) to go into detail"
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
+      "selection": {
+        "start": {
+          "line": 29,
+          "character": 1
+        },
+        "end": {
+          "line": 35,
+          "character": 10
+        }
+      },
+      "description": "# Host Command\r\n\r\nThe `host` command is used to start a Launcher instance as a Plebian. "
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
+      "description": "The Plebian connects to the Munarch via the ProcessHostService.",
+      "line": 83
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
+      "description": "The Plebian uses a general `IHost` for dependency injection purposes.",
+      "line": 91
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
+      "selection": {
+        "start": {
+          "line": 117,
+          "character": 1
+        },
+        "end": {
+          "line": 140,
+          "character": 66
+        }
+      },
+      "description": "Here the package (The Queue, SCU or Helper) assembly is loaded and the IMiddlewareBootstrapper configured."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
+      "selection": {
+        "start": {
+          "line": 109,
+          "character": 21
+        },
+        "end": {
+          "line": 109,
+          "character": 69
+        }
+      },
+      "description": "The `ProcessHostPlebian` does most of the Plebians work."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostPlebian.cs",
+      "selection": {
+        "start": {
+          "line": 45,
+          "character": 17
+        },
+        "end": {
+          "line": 45,
+          "character": 63
+        }
+      },
+      "description": "# ProcessHostPlebian\r\n\r\nThe most importan thing the Plebian does is start the hosting of the package.\r\n\r\nThis means hosting the http or grpc service and starting the package.\r\n\r\n> You can view this [followup tour](command:codetour.startTour?[\"Plebian\"]) later to go into more detail",
+      "line": 85
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostPlebian.cs",
+      "selection": {
+        "start": {
+          "line": 118,
+          "character": 21
+        },
+        "end": {
+          "line": 118,
+          "character": 96
+        }
+      },
+      "description": "The hosting is started here by the `HostingService` for each configured url."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Services/HostingService.cs",
+      "description": "# HostingService\r\n\r\nThe `HostingService` starts up an `AspNetCore` `WebApplication` and adds the relevant endpoints.",
+      "line": 30
+    },
+    {
+      "title": "Outro",
+      "description": "Congratulations 🎉 you've made it through the Overview Code Tour. You can jump right into coding or go more indepth in one of the Advanced Tours.\r\n\r\n* [Monarch](command:codetour.startTour?[\"Monarch\"])\r\n* [Plebian](command:codetour.startTour?[\"Plebian\"])\r\n* [Debugging](command:codetour.startTour?[\"Debugging\"])\r\n* [Logging](command:codetour.startTour?[\"Logging\"])\r\n* [Self Update](command:codetour.startTour?[\"Self Update\"])"
+    }
+  ]
+}
