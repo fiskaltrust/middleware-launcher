@@ -63,8 +63,9 @@ namespace fiskaltrust.Launcher.ProcessHost
 
                     if (_plebianConfiguration.PackageType == PackageType.Helper)
                     {
-                        _services.GetRequiredService<IHelper>().StopBegin();
-                        _services.GetRequiredService<IHelper>().StopEnd();
+                        var helper = _services.GetRequiredService<IHelper>();
+                        helper.StopBegin();
+                        helper.StopEnd();
                     };
                 }
                 catch (Exception e)
