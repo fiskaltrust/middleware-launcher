@@ -57,6 +57,21 @@ namespace fiskaltrust.Launcher.ProcessHost
             cancellationToken.Register(() =>
             {
                 _logger.LogInformation("Stopping Package");
+
+                try
+                {
+
+                    if (_plebianConfiguration.PackageType == PackageType.Helper)
+                    {
+                        _services.GetRequiredService<IHelper>().StopBegin();
+                        _services.GetRequiredService<IHelper>().StopEnd();
+                    };
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Exception when calling StopBegin and StopEnd hooks");
+                }
+
                 promise.SetResult();
             });
 
@@ -116,6 +131,11 @@ namespace fiskaltrust.Launcher.ProcessHost
                 try
                 {
                     await _hosting.HostService(type, url, hostingType, instance, addEndpoints);
+                    if (_plebianConfiguration.PackageType == PackageType.Helper)
+                    {
+                        ((IHelper)instance).StartBegin();
+                        ((IHelper)instance).StartEnd();
+                    }
                     hostingFailedCompletely = false;
                 }
                 catch (Exception e)

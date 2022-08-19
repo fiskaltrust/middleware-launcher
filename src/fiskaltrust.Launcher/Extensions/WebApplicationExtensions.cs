@@ -7,7 +7,7 @@ namespace fiskaltrust.Launcher.Extensions
 {
     public static class WebApplicationExtensions
     {
-        private static readonly string[] _prefixes = new[] { "", "json/", "v1/", "json/v1/", "v2/" };
+        private static readonly string[] _prefixes = new[] { "", "json/", "v1/", "json/v1/" };
         private static IEnumerable<RouteHandlerBuilder> MapMultiple(this WebApplication app, IEnumerable<string> urls, Func<IEndpointRouteBuilder, string, Delegate, RouteHandlerBuilder> method, Delegate callback) =>
             urls.Select(url => method(app, url, callback)).ToList();
 
@@ -18,18 +18,7 @@ namespace fiskaltrust.Launcher.Extensions
         {
             app.MapMultiplePrefixed(_prefixes, "Echo", EndpointRouteBuilderExtensions.MapPost, async (EchoRequest req) => await pos.EchoAsync(req));
             app.MapMultiplePrefixed(_prefixes, "Sign", EndpointRouteBuilderExtensions.MapPost, async (ReceiptRequest req) => await pos.SignAsync(req));
-            app.MapMultiplePrefixed(new[] { "", "json/", "v2/" }, "Journal", EndpointRouteBuilderExtensions.MapGet, ([FromQuery] long type, [FromQuery] long? from, [FromQuery] long? to) =>
-            {
-                var pipe = new Pipe();
-                var journal = pos.JournalAsync(new JournalRequest { ftJournalType = type, From = from ?? 0, To = to ?? 0 });
-                var _ = Task.Run(async () =>
-                {
-                    await journal.ForEachAwaitAsync(async b => await pipe.Writer.WriteAsync(new ReadOnlyMemory<byte>(b.Chunk.ToArray())));
-                    await pipe.Writer.CompleteAsync();
-                });
-                return Results.Stream(pipe.Reader.AsStream());
-            });
-            app.MapMultiplePrefixed(new[] { "", "v1/", "json/v1/" }, "Journal", EndpointRouteBuilderExtensions.MapPost, ([FromQuery] long type, [FromQuery] long? from, [FromQuery] long? to) =>
+            app.MapMultiplePrefixed(_prefixes, "Journal", EndpointRouteBuilderExtensions.MapPost, ([FromQuery] long type, [FromQuery] long? from, [FromQuery] long? to) =>
             {
                 var pipe = new Pipe();
                 var journal = pos.JournalAsync(new JournalRequest { ftJournalType = type, From = from ?? 0, To = to ?? 0 });
