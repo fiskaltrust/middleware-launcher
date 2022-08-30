@@ -7,8 +7,6 @@ using ProtoBuf.Grpc.Server;
 using fiskaltrust.Launcher.Download;
 using System.Diagnostics;
 using Serilog.Context;
-using System.Text.Json;
-using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 
 namespace fiskaltrust.Launcher.Commands

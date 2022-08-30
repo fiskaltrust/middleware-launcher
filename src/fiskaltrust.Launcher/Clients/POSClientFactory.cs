@@ -21,7 +21,7 @@ namespace fiskaltrust.Launcher.Clients
             switch (configuration.UrlType)
             {
                 case "grpc":
-                    return GrpcPosFactory.CreatePosAsync(new GrpcClientOptions { Url = new Uri(configuration.Url), RetryPolicyOptions = RetryPolicyOptions.Default, ChannelOptions = new GrpcChannelOptions { Credentials = ChannelCredentials.Insecure } }).Result;
+                    return GrpcPosFactory.CreatePosAsync(new GrpcClientOptions { Url = new Uri(configuration.Url), RetryPolicyOptions = RetryPolicyOptions.Default }).Result;
                 case "rest":
                     var url = configuration.Url.Replace("rest://", "http://");
                     return HttpPosFactory.CreatePosAsync(new HttpPosClientOptions { Url = new Uri(url), RetryPolicyOptions = RetryPolicyOptions.Default }).Result;
