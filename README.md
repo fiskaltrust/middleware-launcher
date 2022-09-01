@@ -172,6 +172,21 @@ In the sandbox configure a cashbox based on the list of supported packages below
 | fiskaltrust.Middleware.SCU.DE.SwissbitCloud    | v1.3.35     |
 | fiskaltrust.Middleware.Helper.Helipad          | v1.3.26     |
 
+## FAQ
+
+**Question:** Are additional components required to be installed to be able to run the Launcher 2.0?
+
+**Answer:** The Launcher 2.0 does not require any additionnal components to be installed. 
+##
+**Q:** Which market can test the launcher 2.0?
+
+**A:** Right now only the German market can test the launcher 2.0. It is possible for everyone to register to the German sandbox and test the launcher 2.0.  Also, we are working on making the launcher available for all market.
+##
+##
+**Q:** Is it possible to update the launcher version (e.g. from 1.3 to 2.0) ?
+
+**A:**Currently it is not possible, however we are working on it.
+##
 
 ## Contributing
 In general, we welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!

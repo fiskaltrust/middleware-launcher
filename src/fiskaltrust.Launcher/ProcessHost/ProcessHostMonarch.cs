@@ -174,7 +174,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(launcherConfiguration, SerializerContext.Default)))}\"",
             });
 
-            // if(Debugger.IsAttached)
+            // if (Debugger.IsAttached)
             // {
             //     _process.StartInfo.Arguments += " --debugging";
             // }

@@ -41,7 +41,7 @@ namespace fiskaltrust.Launcher.Download
         public async Task DownloadPackageAsync(PackageConfiguration configuration)
         {
             var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, configuration.Id.ToString());
-            var targetName = Path.Combine(targetPath, $"{configuration.Package}.dll");
+            var targetName = $"{configuration.Package}.dll";
             await DownloadAsync(configuration.Package, configuration.Version, "undefined", targetPath, new[] { targetName });
         }
 
@@ -70,8 +70,8 @@ namespace fiskaltrust.Launcher.Download
 
             await DownloadAsync(LAUNCHER_NAME, _configuration.LauncherVersion!.ToString(), runtimeIdentifier, targetPath, new[]
             {
-                Path.Combine(targetPath, $"{LAUNCHER_NAME}{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
-                Path.Combine(targetPath, $"{LAUNCHER_NAME}Updater{(OperatingSystem.IsWindows() ? ".exe" : "")}"),
+                $"{LAUNCHER_NAME}{(OperatingSystem.IsWindows() ? ".exe" : "")}",
+                $"{LAUNCHER_NAME}Updater{(OperatingSystem.IsWindows() ? ".exe" : "")}",
             });
         }
 
@@ -79,8 +79,9 @@ namespace fiskaltrust.Launcher.Download
         {
             var combinedName = $"{name}-{version}";
             var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{combinedName}.zip");
+            var versionFile = Path.Combine(targetPath, "version.txt");
 
-            if (targetNames.Select(t => File.Exists(t)).All(t => t))
+            if (File.Exists(versionFile) && await File.ReadAllTextAsync(versionFile) == version && targetNames.Select(t => File.Exists(Path.Combine(targetPath, t))).All(t => t))
             {
                 return;
             }
@@ -88,7 +89,7 @@ namespace fiskaltrust.Launcher.Download
             if (Directory.Exists(targetPath)) { Directory.Delete(targetPath, true); }
 
             Directory.CreateDirectory(targetPath);
-
+            await File.WriteAllTextAsync(versionFile, version);
 
             for (var i = 0; i <= 1; i++)
             {
@@ -146,7 +147,7 @@ namespace fiskaltrust.Launcher.Download
 
                 ZipFile.ExtractToDirectory(sourcePath, targetPath);
 
-                if (targetNames.Any(t => !File.Exists(t)))
+                if (targetNames.Any(t => !File.Exists(Path.Combine(targetPath, t))))
                 {
                     _logger?.LogWarning("Package {name} did not contain the needed files.", combinedName);
                     if (_configuration.UseOffline!.Value)
@@ -160,8 +161,10 @@ namespace fiskaltrust.Launcher.Download
 
                 return;
             }
-
-            throw new Exception("Downloaded package is invalid");
+            if (!_configuration.UseOffline!.Value)
+            {
+                throw new Exception("Downloaded package is invalid");
+            }
         }
 
         public async Task<bool> CheckHashAsync(string sourcePath)
