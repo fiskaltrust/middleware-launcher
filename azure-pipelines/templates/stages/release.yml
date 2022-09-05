@@ -29,7 +29,7 @@ stages:
             steps:
 
             - download: current
-              patterns: package-*/*
+              patterns: package-*/**
               displayName: Download artifacts
 
             - pwsh: get-childitem "$(Pipeline.Workspace)/package-*/*" | foreach { rename-item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
