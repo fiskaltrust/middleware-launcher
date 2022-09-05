@@ -61,15 +61,15 @@ stages:
         $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
 
         if("$(vmImage)" -eq "windows-latest") {
-          Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher.$version.zip
+          Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip
         } else {
-          bash -c "cd $(Build.ArtifactStagingDirectory)/raw-$(target)/`nzip -r $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher.$version.zip ./"
+          bash -c "cd $(Build.ArtifactStagingDirectory)/raw-$(target)/`nzip -r $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip ./"
         }
 
-        $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher.$version.zip -Algorithm SHA256
+        $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip -Algorithm SHA256
         $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
         $hashstring = [System.Convert]::ToBase64String($hashbytes)
-        $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher.$version.zip.hash
+        $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash
       displayName: Pagkage executables
 
     - publish: $(Build.ArtifactStagingDirectory)/package-$(target)

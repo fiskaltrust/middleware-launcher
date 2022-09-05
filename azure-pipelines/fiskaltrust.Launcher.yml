@@ -26,3 +26,23 @@ stages:
       ${{ else }}:
         config: debug
 
+  - template: templates/stages/release.yml
+    parameters:
+      stages:
+        - stage: Release-Sandbox
+          dependsOn: Deploy
+          # condition: startsWith(variables.branch, 'refs/tags/v')
+          templateContext:
+            env: sandbox
+            storage: stdevwesteuropepackages
+            serviceConnection: rg-dev-westeurope-packages
+
+        # - stage: Release-Production
+        #   dependsOn: Release-Sandbox
+        #   condition: ${{ stage.templateContext.condition }}
+        #   templateContext:
+        #     env: production
+        #     storage: stwesteuropepackages
+        #     serviceConnection: rg-westeurope-packages
+          
+
