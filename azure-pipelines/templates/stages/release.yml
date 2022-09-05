@@ -28,14 +28,14 @@ stages:
           deploy:
             steps:
 
+            - download: current
+              patterns: package-*-*/*
+              displayName: Download artifacts
+
+            - pwsh: get-childitem "$(Pipeline.Workspace)/package-*-*/*" | foreach { rename-item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
+              displayName: Rename artifacts
+
             - ${{ each target in parameters.targets }}:
-              - download: current
-                artifact: package-${{ target }}
-                displayName: "[${{ target }}] Download artifacts"
-
-              - pwsh: get-childitem "$(Pipeline.Workspace)/package-${{ target }}/*" | foreach { rename-item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
-                displayName: "[${{ target }}] Rename artifacts"
-
               - task: AzureCLI@2
                 displayName: "[${{ target }}] Publish to blob storage"
                 inputs:
