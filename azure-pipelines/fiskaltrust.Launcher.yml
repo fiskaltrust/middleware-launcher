@@ -2,8 +2,8 @@ trigger:
   batch: true
   branches:
     include:
-    - master
-    - refs/tags/*
+      - master
+      - refs/tags/*
 
 variables:
   branch: $(Build.SourceBranch)
@@ -29,19 +29,17 @@ stages:
   - template: templates/stages/release.yml
     parameters:
       stages:
-        - stage: Release-Sandbox
+        - stage: Release_Sandbox
           dependsOn: Deploy
           # condition: startsWith(variables.branch, 'refs/tags/v')
           templateContext:
             storage: stdevwesteuropepackages
             environment: rg-dev-westeurope-packages
 
-        # - stage: Release-Production
+        # - stage: Release_Production
         #   dependsOn: Release-Sandbox
         #   condition: ${{ stage.templateContext.condition }}
         #   templateContext:
         #     env: production
         #     storage: stwesteuropepackages
         #     serviceConnection: rg-westeurope-packages
-          
-
