@@ -31,14 +31,13 @@ stages:
       stages:
         - stage: Release_Sandbox
           dependsOn: Deploy
-          # condition: startsWith(variables.branch, 'refs/tags/v')
           templateContext:
             storage: stdevwesteuropepackages
             environment: rg-dev-westeurope-packages
 
         # - stage: Release_Production
         #   dependsOn: Release-Sandbox
-        #   condition: ${{ stage.templateContext.condition }}
+        # condition: startsWith(variables.branch, 'refs/tags/v')
         #   templateContext:
         #     env: production
         #     storage: stwesteuropepackages
