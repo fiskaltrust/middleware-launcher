@@ -12,11 +12,9 @@ parameters:
 
 stages:
 - ${{ each stage in parameters.stages }}:
-  - stage:
-    
-    # dependsOn: ${{ stage.templateContext.dependsOn }}
-
-    # condition: ${{ stage.templateContext.condition }}
+  - ${{ each pair in stage }}:
+      ${{ if ne(pair.key, 'jobs') }}:
+        ${{ pair.key }}: ${{ pair.value }}
     
     jobs:
     - deployment: Release
