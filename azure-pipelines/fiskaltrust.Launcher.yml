@@ -33,9 +33,8 @@ stages:
           dependsOn: Deploy
           # condition: startsWith(variables.branch, 'refs/tags/v')
           templateContext:
-            env: sandbox
             storage: stdevwesteuropepackages
-            serviceConnection: rg-dev-westeurope-packages
+            environment: rg-dev-westeurope-packages
 
         # - stage: Release-Production
         #   dependsOn: Release-Sandbox

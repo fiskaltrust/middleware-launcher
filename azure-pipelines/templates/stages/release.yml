@@ -24,7 +24,7 @@ stages:
       pool:
         vmImage: windows-latest
 
-      environment: fiskaltrust.Launcher-${{ stage.templateContext.env }}
+      environment: ${{ stage.templateContext.environment }}
 
       strategy:
         runOnce:
@@ -38,9 +38,9 @@ stages:
                 displayName: Rename artifacts
 
               - task: AzureCLI@2
-                displayName: Publish to ${{ stage.templateContext.env }} blob storage
+                displayName: Publish to blob storage
                 inputs:
-                  azureSubscription: ${{ stage.templateContext.serviceConnection }}
+                  azureSubscription: ${{ stage.templateContext.environment }}
                   scriptType: ps
                   scriptLocation: inlineScript
                   inlineScript: |
