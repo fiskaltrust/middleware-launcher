@@ -28,9 +28,10 @@ stages:
           deploy:
             steps:
 
-            - download: current
-              patterns: '*package*/**'
-              displayName: Download artifacts
+            - ${{ each target in parameters.targets }}:
+              - download: current
+                artifact: package-${{ target }}
+                displayName: "[${{ target }}] Download artifact"
 
             - pwsh: get-childitem "$(Pipeline.Workspace)/package-*/*" | foreach { rename-item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
               displayName: Rename artifacts
