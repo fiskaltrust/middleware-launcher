@@ -16,7 +16,7 @@ stages:
       ${{ else }}:
         config: debug
 
-  - template: templates/stages/deploy.yml
+  - template: templates/stages/build.yml
     parameters:
       projects:
         - fiskaltrust.Launcher
@@ -30,7 +30,7 @@ stages:
     parameters:
       stages:
         - stage: Release_Sandbox
-          dependsOn: Deploy
+          dependsOn: Build
           templateContext:
             storage: stdevwesteuropepackages
             environment: rg-dev-westeurope-packages
