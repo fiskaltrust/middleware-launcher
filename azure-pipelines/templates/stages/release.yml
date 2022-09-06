@@ -1,0 +1,47 @@
+parameters:
+- name: stages
+  type: stageList
+
+- name: targets
+  type: object
+  default:
+  - win-x64
+  - win-x86
+  - linux-x64
+  - osx-x64
+
+stages:
+- ${{ each stage in parameters.stages }}:
+  - ${{ each pair in stage }}:
+      ${{ pair.key }}: ${{ pair.value }}
+    
+    jobs:
+    - deployment: Release
+
+      pool:
+        vmImage: windows-latest
+
+      environment: ${{ stage.templateContext.environment }}
+
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+
+            - ${{ each target in parameters.targets }}:
+              - download: current
+                artifact: package-${{ target }}
+                displayName: "[${{ target }}] Download artifact"
+
+            - pwsh: get-childitem "$(Pipeline.Workspace)/package-*/*" | foreach { rename-item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
+              displayName: Rename artifacts
+
+            - ${{ each target in parameters.targets }}:
+              - task: AzureCLI@2
+                displayName: "[${{ target }}] Publish to blob storage"
+                inputs:
+                  azureSubscription: ${{ stage.templateContext.environment }}
+                  scriptType: ps
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher/" -s "$(Pipeline.Workspace)/package-${{ target }}/" --pattern "*.zip*"

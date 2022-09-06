@@ -2,8 +2,8 @@ trigger:
   batch: true
   branches:
     include:
-    - master
-    - refs/tags/*
+      - master
+      - refs/tags/*
 
 variables:
   branch: $(Build.SourceBranch)
@@ -16,7 +16,7 @@ stages:
       ${{ else }}:
         config: debug
 
-  - template: templates/stages/deploy.yml
+  - template: templates/stages/build.yml
     parameters:
       projects:
         - fiskaltrust.Launcher
@@ -26,3 +26,19 @@ stages:
       ${{ else }}:
         config: debug
 
+  - template: templates/stages/release.yml
+    parameters:
+      stages:
+        - stage: Release_Sandbox
+          dependsOn: Build
+          templateContext:
+            storage: stdevwesteuropepackages
+            environment: rg-dev-westeurope-packages
+
+        # - stage: Release_Production
+        #   dependsOn: Release-Sandbox
+        # condition: startsWith(variables.branch, 'refs/tags/v')
+        #   templateContext:
+        #     env: production
+        #     storage: stwesteuropepackages
+        #     serviceConnection: rg-westeurope-packages
