@@ -23,8 +23,6 @@ stages:
 
     ${{ if eq(stage.templateContext.environment, 'production') }}:
       condition: startsWith(variables.branch, 'refs/tags/v')
-    ${{ else }}:
-      condition: or(startsWith(variables['Build.Reason'], 'Manual'), startsWith(variables.branch, 'refs/tags/v')))
 
     jobs:
     - deployment: Release
