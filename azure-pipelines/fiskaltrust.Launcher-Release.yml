@@ -1,0 +1,31 @@
+resources:
+  pipelines:
+    - pipeline: build
+      source: fiskaltrust.Launcher
+      trigger:
+        branches:
+          include:
+            - main
+        tags:
+          - refs/tags/v*
+
+trigger: none
+pr: none
+
+stages:
+  - template: templates/stages/release.yml
+    parameters:
+      artifact: build
+      stages:
+        - stage: Release_Sandbox
+          templateContext:
+            environment: sandbox
+            storage: stdevwesteuropepackages
+            serviceConnection: rg-dev-westeurope-packages
+
+        # - stage: Release_Production
+        #   dependsOn: Release-Sandbox
+        #   templateContext:
+        #     environment: production
+        #     storage: stwesteuropepackages
+        #     serviceConnection: rg-westeurope-packages
