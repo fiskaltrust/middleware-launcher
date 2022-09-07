@@ -40,7 +40,7 @@ stages:
             steps:
 
             - ${{ each target in parameters.targets }}:
-              - download: current
+              - download: ${{ parameters.artifact }}
                 artifact: package-${{ target }}
                 displayName: "[${{ target }}] Download artifact"
 
