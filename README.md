@@ -20,17 +20,17 @@ Below, we illustrate a minimal sample configuration with the international SQLit
 
 > warning: This beta version  of the Launcher 2.0 is for test purpose only and should be used with our German sandbox.
 
-Download the latest release from GitHub.
+Download the latest release from GitHub. We always recommend using the latest release to benefits from the newest improvements.
 Unzip the downloaded release.
 
-### Supported Packages in the Alpha
+### <a name="supported-packages-in-the-alpha"></a>Supported Packages in the Alpha
 
 In the sandbox configure a cashbox based on the list of supported packages below.
 
 | Name                                           | Versions    |
 | ---------------------------------------------- | ----------- |
 | fiskaltrust.Middleware.Queue.MySQL             | v1.3.37     |
-| fiskaltrust.Middleware.Queue.SQLite            | v1.3.38-ci-22221-55477     |
+| fiskaltrust.Middleware.Queue.SQLite            | v1.3.38-rc1-22249-56008 8-ci-22221-55477     |
 | fiskaltrust.Middleware.SCU.DE.FiskalyCertified | v1.3.35     |
 | fiskaltrust.Middleware.SCU.DE.CryptoVision     | v1.3.34 |
 | fiskaltrust.Middleware.SCU.DE.DeutscheFiskal   | v1.3.35     |
@@ -38,10 +38,10 @@ In the sandbox configure a cashbox based on the list of supported packages below
 | fiskaltrust.Middleware.SCU.DE.Epson            | v1.3.19     |
 | fiskaltrust.Middleware.SCU.DE.Swissbit         | v1.3.35-rc1    |
 | fiskaltrust.Middleware.SCU.DE.SwissbitCloud    | v1.3.35     |
-| fiskaltrust.Middleware.Helper.Helipad          | v1.3.26     |
+| fiskaltrust.Middleware.Helper.Helipad          | v1.3.33     |
 
 
-### Launcher configuration
+### <a name="launcher-configuration"></a> Launcher configuration
 
 The Launcher 2.0 configuration is now read from a json file (`launcher.configuration.json` in the working directory per default).The configuration has to be created mannually.
 
@@ -94,6 +94,19 @@ To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 > fiskaltrust.Launcher.exe --help
 > ```
 
+## Migration guide
+
+> Caution: To switch from a launcher version 1.3.x to a version 2.0 is possible using the version Launcher 2.0- Public Preview 3 onwards.
+
+Before switching from a 1.3.x Launcher to a Launcher 2.0, please make sure that the packages configured are compatible.  You can check with the [table of the supported Packages in the Alpha](#supported-packages-in-the-alpha).
+
+Run the uninstall-service.cmd or sh command to desintall the old launcher.
+
+Create the [configuration file](#launcher-configuration), and make sure to include the cashboxId and access token. 
+
+In the new launcher folder run the following command .\fiskaltrust.Launcher.exe install --sandbox.
+
+To check that the switch is successful, try send receipt to the middleware using our Postman collection.
 
 ## Getting Started for developpers
 
@@ -162,7 +175,7 @@ In the sandbox configure a cashbox based on the list of supported packages below
 | Name                                           | Versions    |
 | ---------------------------------------------- | ----------- |
 | fiskaltrust.Middleware.Queue.MySQL             | v1.3.37     |
-| fiskaltrust.Middleware.Queue.SQLite            | v1.3.38-ci-22221-55477     |
+| fiskaltrust.Middleware.Queue.SQLite            | v1.3.38-rc1-22249-56008     |
 | fiskaltrust.Middleware.SCU.DE.FiskalyCertified | v1.3.35     |
 | fiskaltrust.Middleware.SCU.DE.CryptoVision     | v1.3.34 |
 | fiskaltrust.Middleware.SCU.DE.DeutscheFiskal   | v1.3.35     |
@@ -170,7 +183,7 @@ In the sandbox configure a cashbox based on the list of supported packages below
 | fiskaltrust.Middleware.SCU.DE.Epson            | v1.3.19     |
 | fiskaltrust.Middleware.SCU.DE.Swissbit         | v1.3.35-rc1    |
 | fiskaltrust.Middleware.SCU.DE.SwissbitCloud    | v1.3.35     |
-| fiskaltrust.Middleware.Helper.Helipad          | v1.3.26     |
+| fiskaltrust.Middleware.Helper.Helipad          | v1.3.33     |
 
 ## FAQ
 
@@ -185,7 +198,7 @@ In the sandbox configure a cashbox based on the list of supported packages below
 ##
 **Q:** Is it possible to update the launcher version (e.g. from 1.3 to 2.0) ?
 
-**A:**Currently it is not possible, however we are working on it.
+**A:** It is possible to switch the launcher version from 1.3 to 2.0  using the version Launcher 2.0-Public Preview 3 and later versions.
 ##
 
 ## Contributing
