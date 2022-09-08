@@ -168,22 +168,7 @@ The configuration file should contain the following config keys:
 }
 ```
 All of these config keys can be overridden using the corresponding cli arguments.
-### Supported Packages in the Alpha
 
-In the sandbox configure a cashbox based on the list of supported packages below.
-
-| Name                                           | Versions    |
-| ---------------------------------------------- | ----------- |
-| fiskaltrust.Middleware.Queue.MySQL             | v1.3.37     |
-| fiskaltrust.Middleware.Queue.SQLite            | v1.3.38-rc1-22249-56008     |
-| fiskaltrust.Middleware.SCU.DE.FiskalyCertified | v1.3.35     |
-| fiskaltrust.Middleware.SCU.DE.CryptoVision     | v1.3.34 |
-| fiskaltrust.Middleware.SCU.DE.DeutscheFiskal   | v1.3.35     |
-| fiskaltrust.Middleware.SCU.DE.DieboldNixdorf   | v1.3.20     |
-| fiskaltrust.Middleware.SCU.DE.Epson            | v1.3.19     |
-| fiskaltrust.Middleware.SCU.DE.Swissbit         | v1.3.35-rc1    |
-| fiskaltrust.Middleware.SCU.DE.SwissbitCloud    | v1.3.35     |
-| fiskaltrust.Middleware.Helper.Helipad          | v1.3.33     |
 
 ## FAQ
 
