@@ -104,7 +104,7 @@ Run the uninstall-service.cmd or sh command to desintall the old launcher.
 
 Create the [configuration file](#launcher-configuration), and make sure to include the cashboxId and access token. 
 
-In the new launcher folder run the following command .\fiskaltrust.Launcher.exe install --sandbox.
+In the new launcher folder run the following command `.\fiskaltrust.Launcher.exe install --sandbox`.
 
 To check that the switch is successful, try send receipt to the middleware using our Postman collection.
 
