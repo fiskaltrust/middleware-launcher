@@ -183,7 +183,7 @@ All of these config keys can be overridden using the corresponding cli arguments
 ##
 **Q:** Is it possible to update the launcher version (e.g. from 1.3 to 2.0) ?
 
-**A:** It is possible to switch the launcher version from 1.3 to 2.0  using the version Launcher 2.0-Public Preview 3 and later versions.
+**A:** It is possible to switch the launcher version from 1.3 to 2.0 using the version Launcher 2.0-Public Preview 3 and later versions.
 ##
 
 ## Contributing
