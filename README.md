@@ -100,7 +100,7 @@ To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 
 Before switching from a 1.3.x Launcher to a Launcher 2.0, please make sure that the packages configured are compatible. You can check with the [table of the supported Packages in the Alpha](#supported-packages-in-the-alpha).
 
-Run the uninstall-service.cmd or sh command to desintall the old launcher.
+Run the uninstall-service.cmd or sh command to deinstall the old launcher.
 
 Create the [configuration file](#launcher-configuration), and make sure to include the cashboxId and access token. 
 
