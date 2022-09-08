@@ -37,7 +37,7 @@ In the sandbox configure a cashbox based on the list of supported packages below
 | fiskaltrust.Middleware.SCU.DE.DieboldNixdorf   | v1.3.20     |
 | fiskaltrust.Middleware.SCU.DE.Epson            | v1.3.19     |
 | fiskaltrust.Middleware.SCU.DE.Swissbit         | v1.3.35-rc1    |
-| fiskaltrust.Middleware.SCU.DE.SwissbitCloud    | v1.3.35     |
+| fiskaltrust.Middleware.SCU.DE.SwissbitCloud    | v1.3.39     |
 | fiskaltrust.Middleware.Helper.Helipad          | v1.3.33     |
 
 
