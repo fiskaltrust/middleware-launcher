@@ -20,7 +20,7 @@ Below, we illustrate a minimal sample configuration with the international SQLit
 
 > warning: This beta version  of the Launcher 2.0 is for test purpose only and should be used with our German sandbox.
 
-Download the latest release from GitHub. We always recommend using the latest release to benefits from the newest improvements.
+Download the latest release from GitHub. We always recommend using the latest release to benefit from the newest improvements.
 Unzip the downloaded release.
 
 ### <a name="supported-packages-in-the-alpha"></a>Supported Packages in the Alpha
