@@ -29,7 +29,7 @@ In the sandbox configure a cashbox based on the list of supported packages below
 
 | Name                                           | Versions    |
 | ---------------------------------------------- | ----------- |
-| fiskaltrust.Middleware.Queue.MySQL             | v1.3.37     |
+| fiskaltrust.Middleware.Queue.MySQL             | v1.3.39     |
 | fiskaltrust.Middleware.Queue.SQLite            | v1.3.38-rc1-22249-56008 8-ci-22221-55477     |
 | fiskaltrust.Middleware.SCU.DE.FiskalyCertified | v1.3.35     |
 | fiskaltrust.Middleware.SCU.DE.CryptoVision     | v1.3.34 |
