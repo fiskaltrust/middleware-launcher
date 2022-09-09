@@ -76,13 +76,21 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (launcherVersion is not null && Common.Constants.Version.CurrentVersion < launcherVersion)
                 {
-                    Log.Information("A new Launcher version is configured. Downloading new version {new}.", _launcherConfiguration.LauncherVersion);
+                    if (_launcherConfiguration.LauncherVersion.ToString() == launcherVersion.ToString())
+                    {
+                        Log.Information("A new Launcher version is set.");
+                    }
+                    else
+                    {
+                        Log.Information("A new Launcher version is found for configured range \"{range}\".", _launcherConfiguration.LauncherVersion);
+                    }
+                    Log.Information("Downloading new version {new}.", launcherVersion);
 
                     try
                     {
                         await packageDownloader.DownloadLauncherAsync(launcherVersion);
                         _updatePending = true;
-                        Log.Information("Launcher will be updated to version {new} on shutdown.", _launcherConfiguration.LauncherVersion);
+                        Log.Information("Launcher will be updated to version {new} on shutdown.", launcherVersion);
 
                     }
                     catch (Exception e)
