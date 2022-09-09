@@ -1,5 +1,75 @@
 {
   "$schema": "https://aka.ms/codetour-schema",
   "title": "Self Update",
-  "steps": []
+  "steps": [
+    {
+      "title": "Overview",
+      "description": "The self update mechanism of the Launcher works in the following way:\r\n\r\n1. On startup detect need for update\r\n2. Download new binaries\r\n3. On exit start the LaucherUpdater\r\n4. Shutdown Launcher\r\n5. LauncherUpdater overwrites the Laucher executable"
+    },
+    {
+      "file": "src/fiskaltrust.Launcher.Common/Configuration/Configuration.cs",
+      "description": "# Configuration\r\n\r\nThe Launcher version which should be used is set in the Configuration.",
+      "line": 117
+    },
+    {
+      "file": "src/fiskaltrust.Launcher.Common/Configuration/Converters.cs",
+      "description": "# Parsing\r\n\r\nIt is parsed through this JsonConverter.",
+      "line": 8
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "# Download\r\n\r\nIn the `RunCommand` the `LauncherVersion` is checked against the Version of the Assembly and the new version is downloaded if needed.",
+      "line": 74
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "The `_updatePending` flag is set to indicate the Launcher should be updated.",
+      "line": 81
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "The new Launcher version including the new LauncherUpdater are extracted to the service folder similar to how Packages are extracted.",
+      "line": 73
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "If the update is pending the Launcher Update is started on shutdown.",
+      "line": 95
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "# Start Updater\r\n\r\nThe LauncherUpdater process is started with:\r\n\r\n| parameter | description |\r\n|---|---|\r\n| `launcher-process-id` | Id of the Launcher process so the Updater can wait for the Launcher to shutdown. |\r\n| `from` | The location of the newly downloaded Launcher executable. |\r\n| `to` | The location of the current Launcher executable. |\r\n| `launcher-configuration` | The current `LauncherConfiguration` as Base64. |",
+      "line": 125,
+      "selection": {
+        "start": {
+          "line": 129,
+          "character": 20
+        },
+        "end": {
+          "line": 129,
+          "character": 42
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "The Launcher waits 10 seconds so its able to detect crashes of the LauncherUpdater.",
+      "line": 139
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "If the LauncherUpdater has crashed its output is logged by the Launcher.",
+      "line": 141
+    },
+    {
+      "file": "src/fiskaltrust.LauncherUpdater/Program.cs",
+      "description": "# LauncherUpdater\r\n\r\nThe LauncherUpdater waits for the Launcher process to exit.",
+      "line": 68
+    },
+    {
+      "file": "src/fiskaltrust.LauncherUpdater/Program.cs",
+      "description": "And then copies over the new Launcher executable.",
+      "line": 75
+    }
+  ]
 }
