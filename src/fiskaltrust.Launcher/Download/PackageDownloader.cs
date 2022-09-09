@@ -1,5 +1,4 @@
 using System.IO.Compression;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.storage.serialization.V0;
@@ -45,34 +44,37 @@ namespace fiskaltrust.Launcher.Download
             await DownloadAsync(configuration.Package, configuration.Version, "undefined", targetPath, new[] { targetName });
         }
 
-        private const string LAUNCHER_NAME = "fiskaltrust.Launcher";
-        public async Task DownloadLauncherAsync()
+        public const string LAUNCHER_NAME = "fiskaltrust.Launcher";
+        public async Task DownloadLauncherAsync(SemanticVersioning.Version version)
         {
-            string runtimeIdentifier = Environment.Is64BitProcess ? "x64" : "x86";
-            if (OperatingSystem.IsWindows())
-            {
-                runtimeIdentifier = $"win-{runtimeIdentifier}";
-            }
-            else if (OperatingSystem.IsLinux())
-            {
-                runtimeIdentifier = $"linux-{runtimeIdentifier}";
-            }
-            else if (OperatingSystem.IsMacOS())
-            {
-                runtimeIdentifier = $"osx-{runtimeIdentifier}";
-            }
-            else
-            {
-                runtimeIdentifier = RuntimeInformation.RuntimeIdentifier;
-            }
-
             var targetPath = Path.Combine(_configuration.ServiceFolder!, "service", _configuration.CashboxId?.ToString()!, LAUNCHER_NAME);
-
-            await DownloadAsync(LAUNCHER_NAME, _configuration.LauncherVersion!.ToString(), runtimeIdentifier, targetPath, new[]
+            await DownloadAsync(LAUNCHER_NAME, version.ToString(), Constants.Runtime.Identifier, targetPath, new[]
             {
                 $"{LAUNCHER_NAME}{(OperatingSystem.IsWindows() ? ".exe" : "")}",
                 $"{LAUNCHER_NAME}Updater{(OperatingSystem.IsWindows() ? ".exe" : "")}",
             });
+        }
+
+        public async Task<SemanticVersioning.Version> GetConcreteVersionFromRange(string name, SemanticVersioning.Range range, string platform)
+        {
+            try
+            {
+                return new SemanticVersioning.Version(range.ToString());
+            }
+            catch { }
+
+            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/packages/{name}?platform={platform}"));
+
+            request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+            request.Headers.Add("accesstoken", _configuration.AccessToken);
+
+            var response = await _httpClient!.SendAsync(request);
+
+            response.EnsureSuccessStatusCode();
+
+            var versions = (await response.Content.ReadFromJsonAsync<IEnumerable<string>>())?.Select(v => new SemanticVersioning.Version(v)) ?? new List<SemanticVersioning.Version>();
+
+            return range.MaxSatisfying(versions);
         }
 
         private async Task DownloadAsync(string name, string version, string platform, string targetPath, IEnumerable<string> targetNames)

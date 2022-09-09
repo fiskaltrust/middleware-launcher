@@ -69,21 +69,28 @@ namespace fiskaltrust.Launcher.Commands
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 
-            if (_launcherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null && Common.Constants.Version.CurrentVersion.ComparePrecedenceTo(_launcherConfiguration.LauncherVersion) < 0)
+            if (_launcherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null)
             {
-                Log.Information("A new Launcher version is configured. Downloading new version {new}.", _launcherConfiguration.LauncherVersion);
+                var packageDownloader = app.Services.GetRequiredService<PackageDownloader>();
+                var launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, _launcherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
 
-                try
+                if (Common.Constants.Version.CurrentVersion < launcherVersion)
                 {
-                    await app.Services.GetRequiredService<PackageDownloader>().DownloadLauncherAsync();
-                    _updatePending = true;
-                    Log.Information("Launcher will be updated to version {new} on shutdown.", _launcherConfiguration.LauncherVersion);
+                    Log.Information("A new Launcher version is configured. Downloading new version {new}.", _launcherConfiguration.LauncherVersion);
 
+                    try
+                    {
+                        await app.Services.GetRequiredService<PackageDownloader>().DownloadLauncherAsync(launcherVersion);
+                        _updatePending = true;
+                        Log.Information("Launcher will be updated to version {new} on shutdown.", _launcherConfiguration.LauncherVersion);
+
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, "Could not download new Launcher version.");
+                    }
                 }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Could not download new Launcher version.");
-                }
+
             }
 
             try

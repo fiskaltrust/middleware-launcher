@@ -2,7 +2,6 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Common.Constants;
 using Microsoft.Extensions.Logging;
-using Semver;
 
 namespace fiskaltrust.Launcher.Common.Configuration
 {
@@ -114,10 +113,10 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("cashboxConfigurationFile")]
         public string? CashboxConfigurationFile { get => WithDefault(_cashboxConfiguration, () => Path.Join(ServiceFolder, "service", $"Configuration-{CashboxId}.json")); set => _cashboxConfiguration = value; }
 
-        private SemVersion? _launcherVersion = null;
+        private SemanticVersioning.Range? _launcherVersion = null;
         [JsonPropertyName("launcherVersion")]
         [JsonConverter(typeof(SemVersionConverter))]
-        public SemVersion? LauncherVersion { get => _launcherVersion; set => _launcherVersion = value?.PrecedenceEquals(new SemVersion(0)) ?? true ? null : value; }
+        public SemanticVersioning.Range? LauncherVersion { get => _launcherVersion; set => _launcherVersion = (value is null || value == new SemanticVersioning.Range("")) ? null : value; }
 
         public void OverwriteWith(LauncherConfiguration? source)
         {
