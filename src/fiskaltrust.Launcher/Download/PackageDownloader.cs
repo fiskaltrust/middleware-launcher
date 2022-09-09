@@ -55,7 +55,7 @@ namespace fiskaltrust.Launcher.Download
             });
         }
 
-        public async Task<SemanticVersioning.Version> GetConcreteVersionFromRange(string name, SemanticVersioning.Range range, string platform)
+        public async Task<SemanticVersioning.Version?> GetConcreteVersionFromRange(string name, SemanticVersioning.Range range, string platform)
         {
             try
             {
@@ -63,18 +63,32 @@ namespace fiskaltrust.Launcher.Download
             }
             catch { }
 
-            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/packages/{name}?platform={platform}"));
+            if (_configuration.UseOffline!.Value)
+            {
+                _logger?.LogWarning("Cannot get latest {package} version from SemVer Range in offline mode.", name);
+                return null;
+            }
 
-            request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
-            request.Headers.Add("accesstoken", _configuration.AccessToken);
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/packages/{name}?platform={platform}"));
 
-            var response = await _httpClient!.SendAsync(request);
+                request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-            response.EnsureSuccessStatusCode();
+                var response = await _httpClient!.SendAsync(request);
 
-            var versions = (await response.Content.ReadFromJsonAsync<IEnumerable<string>>())?.Select(v => new SemanticVersioning.Version(v)) ?? new List<SemanticVersioning.Version>();
+                response.EnsureSuccessStatusCode();
 
-            return range.MaxSatisfying(versions);
+                var versions = (await response.Content.ReadFromJsonAsync<IEnumerable<string>>())?.Select(v => new SemanticVersioning.Version(v)) ?? new List<SemanticVersioning.Version>();
+
+                return range.MaxSatisfying(versions);
+            }
+            catch (Exception e)
+            {
+                _logger?.LogWarning(e, "Could not get latest {package} version from SemVer Range {range}", name, range);
+                return null;
+            }
         }
 
         private async Task DownloadAsync(string name, string version, string platform, string targetPath, IEnumerable<string> targetNames)
