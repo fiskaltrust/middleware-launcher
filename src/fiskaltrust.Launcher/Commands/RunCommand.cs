@@ -8,6 +8,7 @@ using fiskaltrust.Launcher.Download;
 using System.Diagnostics;
 using Serilog.Context;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
+using fiskaltrust.Launcher.Extensions;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -32,11 +33,11 @@ namespace fiskaltrust.Launcher.Commands
     public class RunCommandHandler : CommonCommandHandler
     {
         private bool _updatePending = false;
-        private readonly CancellationToken _cancellationToken;
+        private readonly Lifetime _lifetime;
 
-        public RunCommandHandler(IHostApplicationLifetime lifetime)
+        public RunCommandHandler(Lifetime lifetime)
         {
-            _cancellationToken = lifetime.ApplicationStopping;
+            _lifetime = lifetime;
         }
 
         public new async Task<int> InvokeAsync(InvocationContext context)
@@ -53,6 +54,7 @@ namespace fiskaltrust.Launcher.Commands
                 {
                     services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => _launcherConfiguration);
+                    services.AddSingleton(_ => _lifetime);
                     services.AddSingleton(_ => _cashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
                     services.AddSingleton<PackageDownloader>();
@@ -88,7 +90,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                await app.RunAsync(_cancellationToken);
+                await app.RunAsync(_lifetime.ApplicationLifetime.ApplicationStopping);
 
                 if (_updatePending)
                 {
