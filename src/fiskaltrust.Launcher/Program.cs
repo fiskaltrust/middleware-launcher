@@ -23,7 +23,7 @@ args = args.TakeWhile(a => a != "--").ToArray();
 await new CommandLineBuilder(command)
   .UseHost(host =>
   {
-      host.UseLifetime();
+      host.UseCustomHostLifetime();
 
       host.ConfigureServices(services => services
         .Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(45))
