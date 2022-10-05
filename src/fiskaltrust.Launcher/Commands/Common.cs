@@ -24,6 +24,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--log-folder"));
             AddOption(new Option<LogLevel?>("--log-level"));
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
+            AddOption(new Option<string>("--legacy-config-file", getDefaultValue: () => "fiskaltrust.exe.config"));
         }
     }
 
@@ -31,6 +32,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
+        public string LegacyConfigFile { get; set; } = null!;
 
         protected LauncherConfiguration _launcherConfiguration = null!;
         protected ftCashBoxConfiguration _cashboxConfiguration = null!;
@@ -55,6 +57,7 @@ namespace fiskaltrust.Launcher.Commands
             catch (Exception e)
             {
                 errors.Add((LogLevel.Critical, $"Could not read launcher configuration file \"{LauncherConfigurationFile}\"", e));
+                _launcherConfiguration.OverwriteWith(await LegacyConfigFileReader.ReadLegacyConfigFile(errors, LegacyConfigFile));
             }
 
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
