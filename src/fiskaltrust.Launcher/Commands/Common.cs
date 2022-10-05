@@ -25,6 +25,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<LogLevel?>("--log-level"));
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
             AddOption(new Option<string>("--legacy-config-file", getDefaultValue: () => "fiskaltrust.exe.config"));
+            AddOption(new Option<bool>("--use-legacy-config", getDefaultValue: () => false));
         }
     }
 
@@ -33,6 +34,7 @@ namespace fiskaltrust.Launcher.Commands
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
         public string LegacyConfigFile { get; set; } = null!;
+        public bool UseLegacyConfig { get; set; }
 
         protected LauncherConfiguration _launcherConfiguration = null!;
         protected ftCashBoxConfiguration _cashboxConfiguration = null!;
@@ -41,11 +43,16 @@ namespace fiskaltrust.Launcher.Commands
         public async Task<int> InvokeAsync(InvocationContext context)
         {
             _clientEcdh = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
-
-            _launcherConfiguration = new LauncherConfiguration();
-
             List<(LogLevel logLevel, string message, Exception? e)> errors = new();
 
+            if (UseLegacyConfig)
+            {
+                _launcherConfiguration = await LegacyConfigFileReader.ReadLegacyConfigFile(errors, LegacyConfigFile);
+            }
+            else
+            {
+                _launcherConfiguration = new LauncherConfiguration();
+            }
             try
             {
                 _launcherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default) ?? new LauncherConfiguration());
@@ -57,7 +64,10 @@ namespace fiskaltrust.Launcher.Commands
             catch (Exception e)
             {
                 errors.Add((LogLevel.Critical, $"Could not read launcher configuration file \"{LauncherConfigurationFile}\"", e));
-                _launcherConfiguration.OverwriteWith(await LegacyConfigFileReader.ReadLegacyConfigFile(errors, LegacyConfigFile));
+                if (!UseLegacyConfig)
+                {
+                    _launcherConfiguration = await LegacyConfigFileReader.ReadLegacyConfigFile(errors, LegacyConfigFile);
+                }
             }
 
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);

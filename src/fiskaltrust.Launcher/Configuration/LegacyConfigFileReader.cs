@@ -30,6 +30,7 @@ namespace fiskaltrust.Launcher.Configuration
             {
                 errors.Add((LogLevel.Error, $"Error when reading legacy config file {path}.", e));
             }
+            errors.Add((LogLevel.Information, $"Read legacy config file {path}.", null));
             return launcherConfiguration;
         }
 
