@@ -9,6 +9,7 @@ using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
+using Serilog.Extensions.Logging;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -72,7 +73,11 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 using var downloader = new ConfigurationDownloader(_launcherConfiguration);
-                await downloader.DownloadConfigurationAsync(_clientEcdh);
+                var exists = await downloader.DownloadConfigurationAsync(_clientEcdh);
+                if (_launcherConfiguration.UseOffline!.Value && !exists)
+                {
+                    errors.Add((LogLevel.Warning, "Cashbox configuration was not downloaded because UseOffline is set.", null));
+                }
             }
             catch (Exception e)
             {
@@ -112,14 +117,7 @@ namespace fiskaltrust.Launcher.Commands
 
             foreach (var (logLevel, message, e) in errors.AsEnumerable())
             {
-                if (logLevel == LogLevel.Warning)
-                {
-                    Log.Warning(e, message);
-                }
-                else
-                {
-                    Log.Error(e, message);
-                }
+                Log.Write(LevelConvert.ToSerilogLevel(logLevel), e, message);
             }
 
             if (errors.Where(e => e.logLevel == LogLevel.Critical).Any())
