@@ -1,10 +1,10 @@
 using System.Diagnostics;
-using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Download;
+using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.Extensions.Hosting.WindowsServices;
 
@@ -20,9 +20,9 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly PackageDownloader _downloader;
         private readonly ILogger _logger;
         private readonly ILoggerFactory _loggerFactory;
-        private readonly IHostApplicationLifetime _lifetime;
+        private readonly Lifetime _lifetime;
 
-        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, IHostApplicationLifetime lifetime)
+        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, Lifetime lifetime)
         {
             _loggerFactory = loggerFactory;
             _logger = logger;
@@ -58,7 +58,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             catch (Exception e)
             {
                 if (e is not AlreadyLoggedException) { _logger.LogError(e, "Error Starting Monarchs"); }
-                _lifetime.StopApplication();
+                _lifetime.ApplicationLifetime.StopApplication();
                 return;
             }
 
@@ -69,6 +69,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 {
                     _logger.LogInformation("Press CTRL+C to exit.");
                 }
+                _lifetime.ServiceStartupCompleted();
             }
 
             try

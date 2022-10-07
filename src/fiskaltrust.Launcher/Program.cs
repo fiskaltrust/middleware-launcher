@@ -1,9 +1,9 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Parsing;
 using fiskaltrust.Launcher.Commands;
-using Microsoft.Extensions.Hosting.WindowsServices;
 using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
+using fiskaltrust.Launcher.Extensions;
 
 var command = new RootCommand {
   new RunCommand(),
@@ -23,14 +23,7 @@ args = args.TakeWhile(a => a != "--").ToArray();
 await new CommandLineBuilder(command)
   .UseHost(host =>
   {
-      if (WindowsServiceHelpers.IsWindowsService())
-      {
-          host.UseWindowsService();
-      }
-      else
-      {
-          host.UseConsoleLifetime();
-      }
+      host.UseCustomHostLifetime();
 
       host.ConfigureServices(services => services
         .Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(45))
