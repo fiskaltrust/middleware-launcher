@@ -20,7 +20,7 @@ Below, we illustrate a minimal sample configuration with the international SQLit
 
 > warning: This beta version  of the Launcher 2.0 is for test purpose only and should be used with our German sandbox.
 
-Download the latest release from GitHub.
+Download the latest release from GitHub. We always recommend using the latest release to benefit from the newest improvements.
 Unzip the downloaded release.
 
 Start the Launcher via the commandline:
@@ -40,7 +40,20 @@ To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 > fiskaltrust.Launcher.exe --help
 > ```
 
-### Supported Packages in the Alpha
+## Migration guide
+
+> Caution: To switch from a launcher version 1.3.x to a version 2.0 is possible using the version Launcher 2.0- Public Preview 3 onwards.
+
+Before switching from a 1.3.x Launcher to a Launcher 2.0, please make sure that the packages configured are compatible. You can check with the [table of the supported Packages in the Alpha](#supported-packages-in-the-alpha).
+
+Run the uninstall-service.cmd or sh command to deinstall the old launcher.
+
+Create the [configuration file](#launcher-configuration), and make sure to include the cashboxId and access token. 
+
+In the new launcher folder run the following command `.\fiskaltrust.Launcher.exe install --sandbox`.
+
+To check that the switch is successful, try send receipt to the middleware using our Postman collection.
+## Supported Packages in the Alpha
 
 In the sandbox configure a cashbox based on the list of supported packages below.
 
@@ -89,14 +102,14 @@ The configuration file should contain the following config keys:
 ```
 All of these config keys can be overridden using the corresponding cli arguments.
 
-### Service
+## Service
 
 The Launcher 2.0 can be installed as a service on Windows and linux (when systemd is available) using the `install` command:
 ```sh
 fiskaltrust.Launcher.exe install --cashbox-id <cashboxid> --access-token <accesstoken> --launcher-configuration-file <launcher-configuration-file>
 ```
 
-### Selfupdate
+## Selfupdate
 
 The Launcher 2.0 can update itsself automatically. For this the `launcherVersion` must be set in the [launcher configuration file](#launcher-configuration).
 
@@ -125,7 +138,7 @@ fiskaltrust.Launcher.exe run --cashbox-id <cashboxid> --access-token <accesstoke
 
 **Q:** Is it possible to update the launcher version (e.g. from 1.3 to 2.0) ?
 
-**A:**Currently it is not possible, however we are working on it.
+**A:** It is possible to switch the launcher version from 1.3 to 2.0 using the version Launcher 2.0-Public Preview 3 and later versions.
 
 ## Contributing
 In general, we welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!
