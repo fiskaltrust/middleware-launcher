@@ -7,8 +7,10 @@ using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
+using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
+using Serilog.Events;
 using Serilog.Extensions.Logging;
 
 namespace fiskaltrust.Launcher.Commands
@@ -43,7 +45,10 @@ namespace fiskaltrust.Launcher.Commands
 
             _launcherConfiguration = new LauncherConfiguration();
 
-            List<(LogLevel logLevel, string message, Exception? e)> errors = new();
+            var collectionSink = new CollectionSink();
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Sink(collectionSink)
+                .CreateLogger();
 
             try
             {
@@ -51,11 +56,11 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (DirectoryNotFoundException e)
             {
-                errors.Add((LogLevel.Warning, $"Launcher configuration file \"{LauncherConfigurationFile}\" does not exist, using command line parameters only.", e));
+                Log.Warning(e, "Launcher configuration file \"{LauncherConfigurationFile}\" does not exist, using command line parameters only.", LauncherConfigurationFile);
             }
             catch (Exception e)
             {
-                errors.Add((LogLevel.Critical, $"Could not read launcher configuration file \"{LauncherConfigurationFile}\"", e));
+                Log.Fatal(e, "Could not read launcher configuration file \"{LauncherConfigurationFile}\"", LauncherConfigurationFile);
             }
 
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
@@ -67,7 +72,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                errors.Add((LogLevel.Error, "Could not create Cashbox directory.", e));
+                Log.Error(e, "Could not create Cashbox directory.");
             }
 
             try
@@ -76,7 +81,7 @@ namespace fiskaltrust.Launcher.Commands
                 var exists = await downloader.DownloadConfigurationAsync(_clientEcdh);
                 if (_launcherConfiguration.UseOffline!.Value && !exists)
                 {
-                    errors.Add((LogLevel.Warning, "Cashbox configuration was not downloaded because UseOffline is set.", null));
+                    Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
                 }
             }
             catch (Exception e)
@@ -88,7 +93,7 @@ namespace fiskaltrust.Launcher.Commands
                     message += " Did you forget the --sandbox flag?";
                 }
                 message += ")";
-                errors.Add((LogLevel.Error, message, e));
+                Log.Error(e, message);
             }
 
             try
@@ -97,7 +102,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                errors.Add((LogLevel.Critical, "Could not read Cashbox configuration file.", e));
+                Log.Fatal(e, "Could not read Cashbox configuration file.");
             }
 
             try
@@ -107,7 +112,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                errors.Add((LogLevel.Critical, "Could not parse Cashbox configuration.", e));
+                Log.Fatal(e, "Could not parse Cashbox configuration.");
             }
 
             Log.Logger = new LoggerConfiguration()
@@ -115,12 +120,12 @@ namespace fiskaltrust.Launcher.Commands
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
-            foreach (var (logLevel, message, e) in errors.AsEnumerable())
+            foreach (var logEvent in collectionSink.Events)
             {
-                Log.Write(LevelConvert.ToSerilogLevel(logLevel), e, message);
+                Log.Write(logEvent);
             }
 
-            if (errors.Where(e => e.logLevel == LogLevel.Critical).Any())
+            if (collectionSink.Events.Where(e => e.Level == LogEventLevel.Fatal).Any())
             {
                 return 1;
             }
