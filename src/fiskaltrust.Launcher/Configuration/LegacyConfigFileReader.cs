@@ -8,14 +8,10 @@ namespace fiskaltrust.Launcher.Configuration
     {
         public static async Task<LauncherConfiguration> ReadLegacyConfigFile(List<(LogLevel logLevel, string message, Exception? e)> errors, string path)
         {
+            using FileStream fsSource = new FileStream(path, FileMode.Open, FileAccess.Read);
             var launcherConfiguration = new LauncherConfiguration(true);
-            if (!File.Exists(path))
-            {
-                return launcherConfiguration;
-            }
             try
             {
-                using FileStream fsSource = new FileStream(path, FileMode.Open, FileAccess.Read);
                 XElement purchaseOrder = await XElement.LoadAsync(fsSource, LoadOptions.None, CancellationToken.None);
                 var appSettings = from item in purchaseOrder.Descendants("appSettings").DescendantsAndSelf("add")
                                   select item;
@@ -29,6 +25,10 @@ namespace fiskaltrust.Launcher.Configuration
             }catch(Exception e)
             {
                 errors.Add((LogLevel.Error, $"Error when reading legacy config file {path}.", e));
+            }
+            finally
+            {
+                fsSource.Close();
             }
             errors.Add((LogLevel.Information, $"Read legacy config file {path}.", null));
             return launcherConfiguration;

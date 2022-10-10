@@ -1,5 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Diagnostics;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
@@ -25,7 +27,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<LogLevel?>("--log-level"));
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
             AddOption(new Option<string>("--legacy-config-file", getDefaultValue: () => "fiskaltrust.exe.config"));
-            AddOption(new Option<bool>("--use-legacy-config", getDefaultValue: () => false));
+            AddOption(new Option<bool>("--merge-legacy-config-if-exists", getDefaultValue: () => true));
         }
     }
 
@@ -34,7 +36,7 @@ namespace fiskaltrust.Launcher.Commands
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
         public string LegacyConfigFile { get; set; } = null!;
-        public bool UseLegacyConfig { get; set; }
+        public bool MergeLegacyConfigIfExists { get; set; }
 
         protected LauncherConfiguration _launcherConfiguration = null!;
         protected ftCashBoxConfiguration _cashboxConfiguration = null!;
@@ -45,28 +47,31 @@ namespace fiskaltrust.Launcher.Commands
             _clientEcdh = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
             List<(LogLevel logLevel, string message, Exception? e)> errors = new();
 
-            if (UseLegacyConfig)
+            if (MergeLegacyConfigIfExists && File.Exists(LegacyConfigFile))
             {
                 _launcherConfiguration = await LegacyConfigFileReader.ReadLegacyConfigFile(errors, LegacyConfigFile);
+                if (_launcherConfiguration != null)
+                {
+                    await File.WriteAllTextAsync(LauncherConfigurationFile, JsonSerializer.Serialize(_launcherConfiguration));
+                    FileInfo fi = new FileInfo(LegacyConfigFile);
+                    fi.CopyTo(LegacyConfigFile + ".legacy");
+                    fi.Delete();
+                }
             }
             else
             {
                 _launcherConfiguration = new LauncherConfiguration();
-            }
-            try
-            {
-                _launcherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default) ?? new LauncherConfiguration());
-            }
-            catch (DirectoryNotFoundException e)
-            {
-                errors.Add((LogLevel.Warning, $"Launcher configuration file \"{LauncherConfigurationFile}\" does not exist, using command line parameters only.", e));
-            }
-            catch (Exception e)
-            {
-                errors.Add((LogLevel.Critical, $"Could not read launcher configuration file \"{LauncherConfigurationFile}\"", e));
-                if (!UseLegacyConfig)
+                try
                 {
-                    _launcherConfiguration = await LegacyConfigFileReader.ReadLegacyConfigFile(errors, LegacyConfigFile);
+                    _launcherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default) ?? new LauncherConfiguration());
+                }
+                catch (DirectoryNotFoundException e)
+                {
+                    errors.Add((LogLevel.Warning, $"Launcher configuration file \"{LauncherConfigurationFile}\" does not exist, using command line parameters only.", e));
+                }
+                catch (Exception e)
+                {
+                    errors.Add((LogLevel.Critical, $"Could not read launcher configuration file \"{LauncherConfigurationFile}\"", e));
                 }
             }
 
