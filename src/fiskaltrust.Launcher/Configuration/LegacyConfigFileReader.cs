@@ -39,7 +39,8 @@ namespace fiskaltrust.Launcher.Configuration
             if(key == "cashboxid")
             {
                 launcherConfiguration.CashboxId = Guid.Parse(value);
-            }else if (key == "accesstoken")
+            }
+            else if (key == "accesstoken")
             {
                 launcherConfiguration.AccessToken = value;
             }
