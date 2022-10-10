@@ -22,7 +22,8 @@ namespace fiskaltrust.Launcher.Configuration
                     var value = item.Attribute("value")?.Value;
                     SetProperies(launcherConfiguration, key, value);
                 }
-            }catch(Exception e)
+            }
+            catch(Exception e)
             {
                 errors.Add((LogLevel.Error, $"Error when reading legacy config file {path}.", e));
             }
