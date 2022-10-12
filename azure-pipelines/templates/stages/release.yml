@@ -22,7 +22,7 @@ stages:
     displayName: Release ${{ stage.templateContext.environment }}
 
     ${{ if eq(stage.templateContext.environment, 'production') }}:
-      condition: startsWith(variables.branch, 'refs/tags/v')
+      condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
 
     jobs:
     - deployment: Release

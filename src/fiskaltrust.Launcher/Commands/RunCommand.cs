@@ -8,6 +8,7 @@ using fiskaltrust.Launcher.Download;
 using System.Diagnostics;
 using Serilog.Context;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
+using fiskaltrust.Launcher.Extensions;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -32,11 +33,11 @@ namespace fiskaltrust.Launcher.Commands
     public class RunCommandHandler : CommonCommandHandler
     {
         private bool _updatePending = false;
-        private readonly CancellationToken _cancellationToken;
+        private readonly Lifetime _lifetime;
 
-        public RunCommandHandler(IHostApplicationLifetime lifetime)
+        public RunCommandHandler(Lifetime lifetime)
         {
-            _cancellationToken = lifetime.ApplicationStopping;
+            _lifetime = lifetime;
         }
 
         public new async Task<int> InvokeAsync(InvocationContext context)
@@ -53,6 +54,7 @@ namespace fiskaltrust.Launcher.Commands
                 {
                     services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => _launcherConfiguration);
+                    services.AddSingleton(_ => _lifetime);
                     services.AddSingleton(_ => _cashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
                     services.AddSingleton<PackageDownloader>();
@@ -69,26 +71,41 @@ namespace fiskaltrust.Launcher.Commands
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 
-            if (_launcherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null && Common.Constants.Version.CurrentVersion.ComparePrecedenceTo(_launcherConfiguration.LauncherVersion) < 0)
+            if (_launcherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null)
             {
-                Log.Information("A new Launcher version is configured. Downloading new version {new}.", _launcherConfiguration.LauncherVersion);
+                var packageDownloader = app.Services.GetRequiredService<PackageDownloader>();
+                SemanticVersioning.Version? launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, _launcherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
 
-                try
+                if (launcherVersion is not null && Common.Constants.Version.CurrentVersion < launcherVersion)
                 {
-                    await app.Services.GetRequiredService<PackageDownloader>().DownloadLauncherAsync();
-                    _updatePending = true;
-                    Log.Information("Launcher will be updated to version {new} on shutdown.", _launcherConfiguration.LauncherVersion);
+                    if (_launcherConfiguration.LauncherVersion.ToString() == launcherVersion.ToString())
+                    {
+                        Log.Information("A new Launcher version is set.");
+                    }
+                    else
+                    {
+                        Log.Information("A new Launcher version is found for configured range \"{range}\".", _launcherConfiguration.LauncherVersion);
+                    }
+                    Log.Information("Downloading new version {new}.", launcherVersion);
 
+                    try
+                    {
+                        await packageDownloader.DownloadLauncherAsync(launcherVersion);
+                        _updatePending = true;
+                        Log.Information("Launcher will be updated to version {new} on shutdown.", launcherVersion);
+
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, "Could not download new Launcher version.");
+                    }
                 }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Could not download new Launcher version.");
-                }
+
             }
 
             try
             {
-                await app.RunAsync(_cancellationToken);
+                await app.RunAsync(_lifetime.ApplicationLifetime.ApplicationStopping);
 
                 if (_updatePending)
                 {
