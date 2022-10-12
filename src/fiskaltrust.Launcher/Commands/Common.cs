@@ -54,44 +54,65 @@ namespace fiskaltrust.Launcher.Commands
                 .WriteTo.Sink(collectionSink)
                 .CreateLogger();
 
-            if (MergeLegacyConfigIfExists && File.Exists(LegacyConfigFile))
+            _launcherConfiguration = new LauncherConfiguration();
+
+            try
             {
-                _launcherConfiguration = await LegacyConfigFileReader.ReadLegacyConfigFile(errors, LegacyConfigFile);
-                if (_launcherConfiguration != null)
+                _launcherConfiguration = Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default);
+            }
+            catch (Exception e)
+            {
+                if (!(MergeLegacyConfigIfExists && File.Exists(LegacyConfigFile)))
                 {
-                    await File.WriteAllTextAsync(LauncherConfigurationFile, JsonSerializer.Serialize(_launcherConfiguration));
-                    FileInfo fi = new FileInfo(LegacyConfigFile);
-                    fi.CopyTo(LegacyConfigFile + ".legacy");
-                    fi.Delete();
+                    if (File.Exists(LegacyConfigFile))
+                    {
+                        Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".", LauncherConfigurationFile);
+                    }
+                    else
+                    {
+                        Log.Warning("Launcher configuration file \"{LauncherConfigurationFile}\" does not exist.", LauncherConfigurationFile);
+                    }
+                    Log.Warning("Using command line parameters only.", LauncherConfigurationFile);
                 }
             }
-            else
+
+            if (MergeLegacyConfigIfExists && File.Exists(LegacyConfigFile))
             {
-                _launcherConfiguration = new LauncherConfiguration();
-                try
+                _launcherConfiguration.OverwriteWith(await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigFile));
+
+                var configFileDirectory = Path.GetDirectoryName(LauncherConfigurationFile);
+                if (configFileDirectory is not null)
                 {
-                    _launcherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default) ?? new LauncherConfiguration());
+                    Directory.CreateDirectory(configFileDirectory);
                 }
-                catch (DirectoryNotFoundException e)
-                {
-                    errors.Add((LogLevel.Warning, $"Launcher configuration file \"{LauncherConfigurationFile}\" does not exist, using command line parameters only.", e));
-                }
-                catch (Exception e)
-                {
-                    errors.Add((LogLevel.Critical, $"Could not read launcher configuration file \"{LauncherConfigurationFile}\"", e));
-                }
+
+                await File.WriteAllTextAsync(LauncherConfigurationFile, JsonSerializer.Serialize(_launcherConfiguration));
+
+                var fi = new FileInfo(LegacyConfigFile);
+                fi.CopyTo(LegacyConfigFile + ".legacy");
+                fi.Delete();
             }
 
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
 
+            _launcherConfiguration.EnableDefaults();
+
+            if (!_launcherConfiguration.UseOffline!.Value && (_launcherConfiguration.CashboxId is null || _launcherConfiguration.AccessToken is null))
+            {
+                Log.Error("CashBoxId and AccessToken are not provided.");
+            }
+
             try
             {
-                var cashboxDirectory = Path.GetDirectoryName(_launcherConfiguration.CashboxConfigurationFile);
-                Directory.CreateDirectory(cashboxDirectory!);
+                var configFileDirectory = Path.GetDirectoryName(_launcherConfiguration.CashboxConfigurationFile);
+                if (configFileDirectory is not null)
+                {
+                    Directory.CreateDirectory(configFileDirectory);
+                }
             }
             catch (Exception e)
             {
-                Log.Error(e, "Could not create Cashbox directory.");
+                Log.Error(e, "Could not create cashbox-configuration-file folder.");
             }
 
             try
