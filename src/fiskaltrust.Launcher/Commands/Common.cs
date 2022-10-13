@@ -9,8 +9,11 @@ using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
+using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
+using Serilog.Events;
+using Serilog.Extensions.Logging;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -45,52 +48,81 @@ namespace fiskaltrust.Launcher.Commands
         public async Task<int> InvokeAsync(InvocationContext context)
         {
             _clientEcdh = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
-            List<(LogLevel logLevel, string message, Exception? e)> errors = new();
+
+            var collectionSink = new CollectionSink();
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Sink(collectionSink)
+                .CreateLogger();
+
+            _launcherConfiguration = new LauncherConfiguration();
+
+            try
+            {
+                _launcherConfiguration = Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default);
+            }
+            catch (Exception e)
+            {
+                if (!(MergeLegacyConfigIfExists && File.Exists(LegacyConfigFile)))
+                {
+                    if (File.Exists(LegacyConfigFile))
+                    {
+                        Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".", LauncherConfigurationFile);
+                    }
+                    else
+                    {
+                        Log.Warning("Launcher configuration file \"{LauncherConfigurationFile}\" does not exist.", LauncherConfigurationFile);
+                    }
+                    Log.Warning("Using command line parameters only.", LauncherConfigurationFile);
+                }
+            }
 
             if (MergeLegacyConfigIfExists && File.Exists(LegacyConfigFile))
             {
-                _launcherConfiguration = await LegacyConfigFileReader.ReadLegacyConfigFile(errors, LegacyConfigFile);
-                if (_launcherConfiguration != null)
+                _launcherConfiguration.OverwriteWith(await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigFile));
+
+                var configFileDirectory = Path.GetDirectoryName(LauncherConfigurationFile);
+                if (configFileDirectory is not null)
                 {
-                    await File.WriteAllTextAsync(LauncherConfigurationFile, JsonSerializer.Serialize(_launcherConfiguration));
-                    FileInfo fi = new FileInfo(LegacyConfigFile);
-                    fi.CopyTo(LegacyConfigFile + ".legacy");
-                    fi.Delete();
+                    Directory.CreateDirectory(configFileDirectory);
                 }
-            }
-            else
-            {
-                _launcherConfiguration = new LauncherConfiguration();
-                try
-                {
-                    _launcherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default) ?? new LauncherConfiguration());
-                }
-                catch (DirectoryNotFoundException e)
-                {
-                    errors.Add((LogLevel.Warning, $"Launcher configuration file \"{LauncherConfigurationFile}\" does not exist, using command line parameters only.", e));
-                }
-                catch (Exception e)
-                {
-                    errors.Add((LogLevel.Critical, $"Could not read launcher configuration file \"{LauncherConfigurationFile}\"", e));
-                }
+
+                await File.WriteAllTextAsync(LauncherConfigurationFile, JsonSerializer.Serialize(_launcherConfiguration));
+
+                var fi = new FileInfo(LegacyConfigFile);
+                fi.CopyTo(LegacyConfigFile + ".legacy");
+                fi.Delete();
             }
 
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
 
+            _launcherConfiguration.EnableDefaults();
+
+            if (!_launcherConfiguration.UseOffline!.Value && (_launcherConfiguration.CashboxId is null || _launcherConfiguration.AccessToken is null))
+            {
+                Log.Error("CashBoxId and AccessToken are not provided.");
+            }
+
             try
             {
-                var cashboxDirectory = Path.GetDirectoryName(_launcherConfiguration.CashboxConfigurationFile);
-                Directory.CreateDirectory(cashboxDirectory!);
+                var configFileDirectory = Path.GetDirectoryName(_launcherConfiguration.CashboxConfigurationFile);
+                if (configFileDirectory is not null)
+                {
+                    Directory.CreateDirectory(configFileDirectory);
+                }
             }
             catch (Exception e)
             {
-                errors.Add((LogLevel.Error, "Could not create Cashbox directory.", e));
+                Log.Error(e, "Could not create cashbox-configuration-file folder.");
             }
 
             try
             {
                 using var downloader = new ConfigurationDownloader(_launcherConfiguration);
-                await downloader.DownloadConfigurationAsync(_clientEcdh);
+                var exists = await downloader.DownloadConfigurationAsync(_clientEcdh);
+                if (_launcherConfiguration.UseOffline!.Value && !exists)
+                {
+                    Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
+                }
             }
             catch (Exception e)
             {
@@ -101,7 +133,7 @@ namespace fiskaltrust.Launcher.Commands
                     message += " Did you forget the --sandbox flag?";
                 }
                 message += ")";
-                errors.Add((LogLevel.Error, message, e));
+                Log.Error(e, message);
             }
 
             try
@@ -110,7 +142,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                errors.Add((LogLevel.Critical, "Could not read Cashbox configuration file.", e));
+                Log.Fatal(e, "Could not read Cashbox configuration file.");
             }
 
             try
@@ -120,7 +152,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                errors.Add((LogLevel.Critical, "Could not parse Cashbox configuration.", e));
+                Log.Fatal(e, "Could not parse Cashbox configuration.");
             }
 
             Log.Logger = new LoggerConfiguration()
@@ -128,19 +160,12 @@ namespace fiskaltrust.Launcher.Commands
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
-            foreach (var (logLevel, message, e) in errors.AsEnumerable())
+            foreach (var logEvent in collectionSink.Events)
             {
-                if (logLevel == LogLevel.Warning)
-                {
-                    Log.Warning(e, message);
-                }
-                else
-                {
-                    Log.Error(e, message);
-                }
+                Log.Write(logEvent);
             }
 
-            if (errors.Where(e => e.logLevel == LogLevel.Critical).Any())
+            if (collectionSink.Events.Where(e => e.Level == LogEventLevel.Fatal).Any())
             {
                 return 1;
             }

@@ -34,7 +34,7 @@ namespace fiskaltrust.Launcher.Commands
                 installer = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
             }
 
-            if(installer is not null)
+            if (installer is not null)
             {
                 return await installer.UninstallService().ConfigureAwait(false);
             }

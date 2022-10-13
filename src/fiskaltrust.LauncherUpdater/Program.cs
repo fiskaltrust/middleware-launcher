@@ -1,6 +1,5 @@
 ﻿using System.CommandLine;
 using System.Diagnostics;
-using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;

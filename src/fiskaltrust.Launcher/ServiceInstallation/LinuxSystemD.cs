@@ -39,7 +39,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             Log.Information("Stop service on systemd.");
             await RunProcess("systemctl", new[] { "stop ", _serviceName });
             Log.Information("Disable service.");
-            await RunProcess("systemctl", new[] { "disable ", _serviceName, "-q"});
+            await RunProcess("systemctl", new[] { "disable ", _serviceName, "-q" });
             Log.Information("Remove service.");
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
             await RunProcess("rm", new[] { serviceFilePath });

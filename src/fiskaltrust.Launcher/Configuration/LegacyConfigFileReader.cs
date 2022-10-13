@@ -1,43 +1,47 @@
 ﻿using fiskaltrust.Launcher.Common.Configuration;
 using Newtonsoft.Json.Linq;
+using Serilog;
 using System.Xml.Linq;
 
 namespace fiskaltrust.Launcher.Configuration
 {
     public class LegacyConfigFileReader
     {
-        public static async Task<LauncherConfiguration> ReadLegacyConfigFile(List<(LogLevel logLevel, string message, Exception? e)> errors, string path)
+        public static async Task<LauncherConfiguration> ReadLegacyConfigFile(string path)
         {
-            using FileStream fsSource = new FileStream(path, FileMode.Open, FileAccess.Read);
+            using var fsSource = new FileStream(path, FileMode.Open, FileAccess.Read);
             var launcherConfiguration = new LauncherConfiguration(true);
             try
             {
                 XElement purchaseOrder = await XElement.LoadAsync(fsSource, LoadOptions.None, CancellationToken.None);
                 var appSettings = from item in purchaseOrder.Descendants("appSettings").DescendantsAndSelf("add")
                                   select item;
-                
+
                 foreach (var item in appSettings)
                 {
                     var key = item.Attribute("key")?.Value;
                     var value = item.Attribute("value")?.Value;
-                    SetProperies(launcherConfiguration, key, value);
+                    if (key is not null && value is not null)
+                    {
+                        SetProperies(launcherConfiguration, key!, value!);
+                    }
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                errors.Add((LogLevel.Error, $"Error when reading legacy config file {path}.", e));
+                Log.Error(e, "Error when reading legacy config file {path}.", path);
             }
             finally
             {
                 fsSource.Close();
             }
-            errors.Add((LogLevel.Information, $"Read legacy config file {path}.", null));
+            Log.Information("Read legacy config file {path}.", path);
             return launcherConfiguration;
         }
 
-        private static void SetProperies(LauncherConfiguration launcherConfiguration, string? key, string? value)
+        private static void SetProperies(LauncherConfiguration launcherConfiguration, string key, string value)
         {
-            if(key == "cashboxid")
+            if (key == "cashboxid")
             {
                 launcherConfiguration.CashboxId = Guid.Parse(value);
             }

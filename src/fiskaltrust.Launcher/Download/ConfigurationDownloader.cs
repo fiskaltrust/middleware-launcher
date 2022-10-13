@@ -21,9 +21,12 @@ namespace fiskaltrust.Launcher.Download
             }
         }
 
-        public async Task DownloadConfigurationAsync(ECDiffieHellman clientEcdh)
+        public async Task<bool> DownloadConfigurationAsync(ECDiffieHellman clientEcdh)
         {
-            if (_configuration.UseOffline!.Value) { return; }
+            if (_configuration.UseOffline!.Value)
+            {
+                return File.Exists(_configuration.CashboxConfigurationFile!);
+            }
 
             var clientPublicKey = Convert.ToBase64String(clientEcdh.PublicKey.ExportSubjectPublicKeyInfo());
 
@@ -35,8 +38,9 @@ namespace fiskaltrust.Launcher.Download
             response.EnsureSuccessStatusCode();
 
             var cashboxConfiguration = await response.Content.ReadFromJsonAsync<ftCashBoxConfiguration>();
-
             await File.WriteAllTextAsync(_configuration.CashboxConfigurationFile!, JsonSerializer.Serialize(cashboxConfiguration));
+
+            return true;
         }
 
         public void Dispose()
