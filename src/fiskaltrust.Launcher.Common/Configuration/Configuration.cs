@@ -1,10 +1,24 @@
+using System.Dynamic;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Common.Constants;
+using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace fiskaltrust.Launcher.Common.Configuration
 {
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
+    public class AlternateNameAttribute : Attribute
+    {
+        public string Name { get; init; }
+
+        public AlternateNameAttribute(string name)
+        {
+            Name = name;
+        }
+    }
+
     public record LauncherConfiguration
     {
         private bool _useDefaults;
@@ -46,7 +60,8 @@ namespace fiskaltrust.Launcher.Common.Configuration
         }
 
         private Guid? _cashboxId;
-        [JsonPropertyName("ftCashBoxId")]
+        [JsonPropertyName("cashboxId")]
+        [AlternateName("ftCashBoxId")]
         public Guid? CashboxId { get => _cashboxId; set => _cashboxId = value; }
 
         private string? _accessToken;
@@ -141,11 +156,63 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
             return redacted;
         }
+
+        public static LauncherConfiguration Deserialize(string text)
+        {
+            var configuration = JsonSerializer.Deserialize(text, typeof(LauncherConfiguration), SerializerContext.Default) as LauncherConfiguration ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
+            configuration.SetAlternateNames(text);
+            return configuration;
+        }
+
+        public string Serialize() => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), SerializerContext.Default);
+
+        internal void SetAlternateNames(string text)
+        {
+            using var configuration = JsonDocument.Parse(text);
+            if (configuration is null) { return; }
+
+            foreach (var property in GetType().GetProperties())
+            {
+                if (property.GetValue(this) is not null)
+                {
+                    continue;
+                }
+
+                var alternateNames = property.GetCustomAttributes<AlternateNameAttribute>().Select(a => a.Name);
+
+                var values = configuration.RootElement.EnumerateObject().Where(property => alternateNames.Contains(property.Name)).Select(property => property.Value).ToList();
+
+                if (values.Count == 0)
+                {
+                    continue;
+                }
+
+                if (values.Count > 1)
+                {
+                    throw new Exception($"{nameof(LauncherConfiguration)} contained multiple keys which could be use for {property.Name}");
+                }
+
+                var type = property.PropertyType;
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    type = Nullable.GetUnderlyingType(type) ?? type;
+                }
+
+                property.SetValue(this, values[0].Deserialize(type, SerializerContext.Default));
+            }
+        }
     }
 
     public record LauncherConfigurationInCashBoxConfiguration
     {
         [JsonPropertyName("launcher")]
         public LauncherConfiguration? LauncherConfiguration { get; set; }
+
+        public static LauncherConfiguration? Deserialize(string text)
+        {
+            var configuration = (JsonSerializer.Deserialize(text, typeof(LauncherConfigurationInCashBoxConfiguration), SerializerContext.Default) as LauncherConfigurationInCashBoxConfiguration ?? throw new Exception($"Could not deserialize {nameof(LauncherConfigurationInCashBoxConfiguration)}")).LauncherConfiguration;
+            configuration?.SetAlternateNames(text);
+            return configuration;
+        }
     }
 }
