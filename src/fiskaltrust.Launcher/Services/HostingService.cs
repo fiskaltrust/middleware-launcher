@@ -10,6 +10,8 @@ using System.Reflection;
 using fiskaltrust.Launcher.Common.Configuration;
 using Microsoft.AspNetCore.HttpLogging;
 using fiskaltrust.Launcher.Services.Interfaces;
+using Microsoft.AspNetCore.Http.Json;
+using fiskaltrust.Launcher.Helpers;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -82,6 +84,12 @@ namespace fiskaltrust.Launcher.Services
 
         private static WebApplication CreateHttpHost(WebApplicationBuilder builder, Uri uri, Action<WebApplication> addEndpoints)
         {
+            builder.Services.Configure<JsonOptions>(options =>
+            {
+                options.SerializerOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
+                options.SerializerOptions.Converters.Add(new NumberToStringConverter());
+            });
+
             var app = builder.Build();
 
             var url = new Uri(uri.ToString().Replace("rest://", "http://"));
