@@ -18,9 +18,8 @@ using fiskaltrust.Launcher.Constants;
 using System.Diagnostics;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.Launcher.Services.Interfaces;
-using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
+using fiskaltrust.Launcher.Services.Interfaces;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -59,12 +58,12 @@ namespace fiskaltrust.Launcher.Commands
                 }
             }
 
-            var launcherConfiguration = Serializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration)), SerializerContext.Default) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
+            var launcherConfiguration = Common.Configuration.LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration)));
             launcherConfiguration.EnableDefaults();
 
-            var plebianConfiguration = Serializer.Deserialize<PlebianConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration)), Helpers.Serialization.SerializerContext.Default) ?? throw new Exception($"Could not deserialize {nameof(PlebianConfiguration)}");
+            var plebianConfiguration = Configuration.PlebianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration)));
 
-            var cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!)) ?? throw new Exception($"Could not deserialize {nameof(ftCashBoxConfiguration)}");
+            var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
 
             var packageConfiguration = (plebianConfiguration.PackageType switch
             {
@@ -174,7 +173,7 @@ namespace fiskaltrust.Launcher.Commands
                 { "accesstoken", launcherConfiguration.AccessToken! },
                 { "useoffline", launcherConfiguration.UseOffline!.Value },
                 { "sandbox", launcherConfiguration.Sandbox! },
-                { "configuration", JsonSerializer.Serialize(cashboxConfiguration) },
+                { "configuration", cashboxConfiguration.Serialize() },
                 { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder!, "service") },
             };
 

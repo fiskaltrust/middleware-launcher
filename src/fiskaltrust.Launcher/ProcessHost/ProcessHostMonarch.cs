@@ -171,8 +171,8 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _process.StartInfo.Arguments = string.Join(" ", new string[] {
                 "host",
-                "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(new PlebianConfiguration { PackageType = packageType, PackageId = packageConfiguration.Id }, Helpers.Serialization.SerializerContext.Default)))}\"",
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(launcherConfiguration, SerializerContext.Default)))}\"",
+                "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(new PlebianConfiguration { PackageType = packageType, PackageId = packageConfiguration.Id }.Serialize()))}\"",
+                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize()))}\"",
             });
 
             // if (Debugger.IsAttached)

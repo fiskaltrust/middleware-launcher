@@ -141,7 +141,7 @@ namespace fiskaltrust.Launcher.Commands
                 "--launcher-process-id", Environment.ProcessId.ToString(),
                 "--from", $"\"{Path.Combine(executablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
                 "--to", $"\"{Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")}\"",
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(_launcherConfiguration, SerializerContext.Default)))}\"",
+                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(_launcherConfiguration.Serialize()))}\"",
             });
 
             process.StartInfo.RedirectStandardError = true;

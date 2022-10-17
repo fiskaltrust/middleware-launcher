@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Constants;
 
@@ -7,5 +8,9 @@ namespace fiskaltrust.Launcher.Configuration
     {
         public PackageType PackageType { get; set; }
         public Guid PackageId { get; set; }
+
+        public static PlebianConfiguration Deserialize(string text) => JsonSerializer.Deserialize(text, typeof(PlebianConfiguration), Helpers.Serialization.SerializerContext.Default) as PlebianConfiguration ?? throw new Exception($"Could not deserialize {nameof(PlebianConfiguration)}");
+
+        public string Serialize() => JsonSerializer.Serialize(this, typeof(PlebianConfiguration), Helpers.Serialization.SerializerContext.Default);
     }
 }

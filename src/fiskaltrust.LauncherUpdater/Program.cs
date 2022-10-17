@@ -34,7 +34,7 @@ return await rootCommand.InvokeAsync(args);
 
 async static Task<int> RootCommandHandler(int processId, string from, string to, string launcherConfigurationBase64, CancellationToken cancellationToken)
 {
-    var launcherConfiguration = Serializer.Deserialize<LauncherConfiguration>(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(launcherConfigurationBase64)), SerializerContext.Default) ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
+    var launcherConfiguration = LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(launcherConfigurationBase64)));
     launcherConfiguration.EnableDefaults();
 
     Log.Logger = new LoggerConfiguration()

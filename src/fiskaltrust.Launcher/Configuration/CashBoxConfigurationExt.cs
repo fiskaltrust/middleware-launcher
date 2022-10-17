@@ -2,6 +2,7 @@
 using System.Text;
 using fiskaltrust.storage.serialization.V0;
 using fiskaltrust.Launcher.Common.Configuration;
+using System.Text.Json;
 
 namespace fiskaltrust.Launcher.Configuration
 {
@@ -58,5 +59,9 @@ namespace fiskaltrust.Launcher.Configuration
             var decrypted = aes.DecryptCbc(encrypted, iv);
             return Encoding.UTF8.GetString(decrypted);
         }
+
+        public static ftCashBoxConfiguration Deserialize(string text) => JsonSerializer.Deserialize<ftCashBoxConfiguration>(text) ?? throw new Exception($"Could not deserialize {nameof(ftCashBoxConfiguration)}");
+
+        public static string Serialize(this ftCashBoxConfiguration cashboxConfiguration) => JsonSerializer.Serialize(cashboxConfiguration);
     }
 }
