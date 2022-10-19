@@ -15,7 +15,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
         [Fact]
         public async Task DownloadPackageAsync_ValidDownload_DownloadedFiles()
         {
-            var launcherConfiguration = TestLauncherConfig();
+            var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig();
             var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration);
 
             var httpClient = new HttpClient();
@@ -50,7 +50,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
         [Fact]
         public async Task DownloadLauncherAsync_ActualLauncherVersion_DownloadedFiles()
         {
-            var launcherConfiguration = TestLauncherConfig();
+            var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig();
             var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration);
             var platforms = new string[] {
                 "win-x86",
@@ -99,7 +99,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
         [Fact]
         public async Task GetConcreteVersionFromRange_()
         {
-            var launcherConfiguration = TestLauncherConfig();
+            var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig();
             launcherConfiguration.LauncherVersion = new SemanticVersioning.Range(">= 2.0.0-preview3");
             var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration);
 
@@ -108,15 +108,6 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
             var launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, launcherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
 
             //ToDo comparison - Version nameing
-        }
-        private static LauncherConfiguration TestLauncherConfig()
-        {
-            var launcherConfiguration = new LauncherConfiguration(true);
-            launcherConfiguration.ServiceFolder = AppDomain.CurrentDomain.BaseDirectory;
-            launcherConfiguration.CashboxId = Guid.Parse("f3661e3c-5101-4d77-9396-c6cfc5d01a2c");
-            launcherConfiguration.AccessToken = "BOQoYvuEFULhg/NFfkQ3kzrwOGdZRxgFYhjH59c8Fk93kA8EJeVRef013g3XZUq1cxJx6dDOGyi9QodBTDLHGpo=";
-            launcherConfiguration.Sandbox = true;
-            return launcherConfiguration;
         }
 
 
