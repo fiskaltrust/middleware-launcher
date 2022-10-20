@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsolePlaceholder", "test\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testabort", "test\Testabort\Testabort.csproj", "{5B9EC99E-FB24-40E1-9651-2F57C73C8D80}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fiskaltrust.Launcher.UnitTests", "test\fiskaltrust.Launcher.UnitTests\fiskaltrust.Launcher.UnitTests.csproj", "{E05B25F6-5B98-4C91-9614-5CB7755FE0FE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,10 @@ Global
 		{5B9EC99E-FB24-40E1-9651-2F57C73C8D80}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B9EC99E-FB24-40E1-9651-2F57C73C8D80}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B9EC99E-FB24-40E1-9651-2F57C73C8D80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E05B25F6-5B98-4C91-9614-5CB7755FE0FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E05B25F6-5B98-4C91-9614-5CB7755FE0FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E05B25F6-5B98-4C91-9614-5CB7755FE0FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E05B25F6-5B98-4C91-9614-5CB7755FE0FE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -59,6 +65,7 @@ Global
 		{F90BE105-2B84-4CEC-8E9C-C8671E011F21} = {84733EDD-4700-4F1C-967E-8F802013304D}
 		{FF1A6C2B-F24D-4D79-AEBB-DAA379F4CCF6} = {84733EDD-4700-4F1C-967E-8F802013304D}
 		{5B9EC99E-FB24-40E1-9651-2F57C73C8D80} = {84733EDD-4700-4F1C-967E-8F802013304D}
+		{E05B25F6-5B98-4C91-9614-5CB7755FE0FE} = {84733EDD-4700-4F1C-967E-8F802013304D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {80A5E550-1883-43C4-A7BE-9ABD328C8CC4}

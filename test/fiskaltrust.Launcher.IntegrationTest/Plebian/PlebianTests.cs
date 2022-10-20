@@ -115,7 +115,9 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 PackageType = packageType
             };
 
+            var started = new TaskCompletionSource();
             var monarch = Mock.Of<IProcessHostMonarch>();
+            Mock.Get(monarch).Setup(x => x.Started()).Callback(() => started.SetResult());
             var processHostService = new ProcessHostService(new Dictionary<Guid, IProcessHostMonarch> { { packageConfiguration.Id, monarch } }, Mock.Of<Serilog.ILogger>());
 
             var services = new ServiceCollection();
@@ -128,6 +130,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
             var plebian = new ProcessHostPlebian(Mock.Of<ILogger<ProcessHostPlebian>>(), hostingService, launcherConfiguration, packageConfiguration, plebianConfiguration, services.BuildServiceProvider(), lifetime, processHostService);
 
             await plebian.StartAsync(new CancellationToken());
+
+            await started.Task;
 
             await checks();
         }
