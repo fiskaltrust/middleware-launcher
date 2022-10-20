@@ -14,7 +14,7 @@ namespace fiskaltrust.Launcher.ProcessHost
     {
         public class AlreadyLoggedException : Exception { }
 
-        private readonly Dictionary<Guid, ProcessHostMonarch> _hosts;
+        private readonly Dictionary<Guid, IProcessHostMonarch> _hosts;
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ftCashBoxConfiguration _cashBoxConfiguration;
         private readonly PackageDownloader _downloader;
@@ -22,7 +22,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly ILoggerFactory _loggerFactory;
         private readonly Lifetime _lifetime;
 
-        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, ProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, Lifetime lifetime)
+        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, IProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, Lifetime lifetime)
         {
             _loggerFactory = loggerFactory;
             _logger = logger;
@@ -151,7 +151,16 @@ namespace fiskaltrust.Launcher.ProcessHost
         }
     }
 
-    public class ProcessHostMonarch
+    public interface IProcessHostMonarch
+    {
+        public Task Start(CancellationToken cancellationToken);
+
+        public void Started();
+
+        public Task Stopped();
+    }
+
+    public class ProcessHostMonarch : IProcessHostMonarch
     {
         private readonly Process _process;
         private readonly TaskCompletionSource _started;
