@@ -1,7 +1,6 @@
 using FluentAssertions;
 using fiskaltrust.Launcher.Services;
 using fiskaltrust.storage.serialization.V0;
-using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.ProcessHost;
 using Moq;
@@ -9,12 +8,13 @@ using Microsoft.Extensions.Logging;
 using fiskaltrust.Launcher.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using fiskaltrust.Launcher.IntegrationTest.Helpers;
-using Microsoft.Extensions.Hosting;
 using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.ifPOS.v1;
 using fiskaltrust.Launcher.Clients;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.Launcher.Constants;
+using fiskaltrust.Middleware.Interface.Client.Http;
+using fiskaltrust.Middleware.Interface.Client;
 
 namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 {
@@ -44,7 +44,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 var grpcClient = new DESSCDClientFactory().CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[0],
-                    UrlType = "grpc"
+                    UrlType = "grpc",
+                    RetryCount = 0
                 });
 
                 (await grpcClient.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().Match<ScuDeEchoResponse>(r => r.Message == "test");
@@ -52,10 +53,12 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 var restClient = new DESSCDClientFactory().CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[1],
-                    UrlType = "rest"
+                    UrlType = "rest",
+                    RetryCount = 0,
+                    Timeout = TimeSpan.FromSeconds(30)
                 });
 
-                (await restClient.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().Match<ScuDeEchoResponse>(r => r.Message == "test");
+                (await restClient.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().NotBeNull().And.Match<ScuDeEchoResponse>(r => r.Message == "test");
             });
         }
 
@@ -83,7 +86,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 var grpcClient = new POSClientFactory().CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[0],
-                    UrlType = "grpc"
+                    UrlType = "grpc",
+                    RetryCount = null
                 });
 
                 (await grpcClient.EchoAsync(new EchoRequest { Message = "test" })).Should().Match<EchoResponse>(r => r.Message == "test");
@@ -91,10 +95,12 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 var restClient = new POSClientFactory().CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[1],
-                    UrlType = "rest"
+                    UrlType = "rest",
+                    RetryCount = null
                 });
 
                 (await restClient.EchoAsync(new EchoRequest { Message = "test" })).Should().Match<EchoResponse>(r => r.Message == "test");
+
             });
         }
 

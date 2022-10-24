@@ -3,12 +3,9 @@ using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.Middleware.Interface.Client;
 using fiskaltrust.Middleware.Interface.Client.Grpc;
 using fiskaltrust.Middleware.Interface.Client.Http;
-using Grpc.Core;
-using Grpc.Net.Client;
 
 namespace fiskaltrust.Launcher.Clients
 {
-
     public class POSClientFactory : IClientFactory<IPOS>
     {
         public IPOS CreateClient(ClientConfiguration configuration)
