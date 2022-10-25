@@ -36,31 +36,31 @@ namespace fiskaltrust.Launcher.Commands
                 return 1;
             }
 
-            _launcherConfiguration.DisableDefaults();
+            LauncherConfiguration.DisableDefaults();
 
-            _launcherConfiguration.CashboxConfigurationFile = MakeAbsolutePath(_launcherConfiguration.CashboxConfigurationFile);
-            _launcherConfiguration.ServiceFolder = MakeAbsolutePath(_launcherConfiguration.ServiceFolder);
-            _launcherConfiguration.LogFolder = MakeAbsolutePath(_launcherConfiguration.LogFolder);
+            LauncherConfiguration.CashboxConfigurationFile = MakeAbsolutePath(LauncherConfiguration.CashboxConfigurationFile);
+            LauncherConfiguration.ServiceFolder = MakeAbsolutePath(LauncherConfiguration.ServiceFolder);
+            LauncherConfiguration.LogFolder = MakeAbsolutePath(LauncherConfiguration.LogFolder);
             LauncherConfigurationFile = MakeAbsolutePath(LauncherConfigurationFile)!;
 
-            _launcherConfiguration.EnableDefaults();
+            LauncherConfiguration.EnableDefaults();
 
             var commandArgs = "run ";
             commandArgs += string.Join(" ", new[] {
-                "--cashbox-id", _launcherConfiguration.CashboxId!.Value.ToString(),
-                "--access-token", _launcherConfiguration.AccessToken!,
-                "--sandbox", _launcherConfiguration.Sandbox!.Value.ToString(),
+                "--cashbox-id", LauncherConfiguration.CashboxId!.Value.ToString(),
+                "--access-token", LauncherConfiguration.AccessToken!,
+                "--sandbox", LauncherConfiguration.Sandbox!.Value.ToString(),
                 "--launcher-configuration-file", LauncherConfigurationFile,
             }.Concat(_subArguments.Args));
 
             ServiceInstaller? installer = null;
             if (OperatingSystem.IsLinux())
             {
-                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
+                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{LauncherConfiguration.CashboxId}");
             }
             if (OperatingSystem.IsWindows())
             {
-                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
+                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{LauncherConfiguration.CashboxId}");
             }
 
             if (installer is not null)

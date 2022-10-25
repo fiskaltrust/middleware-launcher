@@ -33,11 +33,17 @@ namespace fiskaltrust.Launcher.Extensions
         }
     }
 
-    public class Lifetime : WindowsServiceLifetime, IHostLifetime
+    public interface ILifetime : IHostLifetime
+    {
+        public IHostApplicationLifetime ApplicationLifetime { get; init; }
+    }
+
+    public class Lifetime : WindowsServiceLifetime, ILifetime
     {
         private readonly CancellationTokenSource _starting = new();
         private readonly ManualResetEventSlim _started = new();
-        public IHostApplicationLifetime ApplicationLifetime { get; init; }
+
+        public IHostApplicationLifetime ApplicationLifetime { get => throw new NotImplementedException(); init => throw new NotImplementedException(); }
 
         public Lifetime(
             IHostEnvironment environment,

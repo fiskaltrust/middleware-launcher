@@ -27,11 +27,11 @@ namespace fiskaltrust.Launcher.Commands
             ServiceInstaller? installer = null;
             if (OperatingSystem.IsLinux())
             {
-                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
+                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{LauncherConfiguration.CashboxId}");
             }
             if (OperatingSystem.IsWindows())
             {
-                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}");
+                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{LauncherConfiguration.CashboxId}");
             }
 
             if (installer is not null)

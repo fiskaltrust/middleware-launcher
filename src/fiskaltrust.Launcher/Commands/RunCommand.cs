@@ -33,9 +33,9 @@ namespace fiskaltrust.Launcher.Commands
     public class RunCommandHandler : CommonCommandHandler
     {
         private bool _updatePending = false;
-        private readonly Lifetime _lifetime;
+        private readonly ILifetime _lifetime;
 
-        public RunCommandHandler(Lifetime lifetime)
+        public RunCommandHandler(ILifetime lifetime)
         {
             _lifetime = lifetime;
         }
@@ -53,7 +53,7 @@ namespace fiskaltrust.Launcher.Commands
                 .ConfigureServices((_, services) =>
                 {
                     services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
-                    services.AddSingleton(_ => _launcherConfiguration);
+                    services.AddSingleton(_ => LauncherConfiguration);
                     services.AddSingleton(_ => _lifetime);
                     services.AddSingleton(_ => _cashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
@@ -62,7 +62,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => Log.Logger);
                 });
 
-            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{_launcherConfiguration.LauncherPort}")));
+            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{LauncherConfiguration.LauncherPort}")));
 
             builder.Services.AddCodeFirstGrpc();
 
@@ -71,20 +71,20 @@ namespace fiskaltrust.Launcher.Commands
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 
-            if (_launcherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null)
+            if (LauncherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null)
             {
                 var packageDownloader = app.Services.GetRequiredService<PackageDownloader>();
-                SemanticVersioning.Version? launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, _launcherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
+                SemanticVersioning.Version? launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, LauncherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
 
                 if (launcherVersion is not null && Common.Constants.Version.CurrentVersion < launcherVersion)
                 {
-                    if (_launcherConfiguration.LauncherVersion.ToString() == launcherVersion.ToString())
+                    if (LauncherConfiguration.LauncherVersion.ToString() == launcherVersion.ToString())
                     {
                         Log.Information("A new Launcher version is set.");
                     }
                     else
                     {
-                        Log.Information("A new Launcher version is found for configured range \"{range}\".", _launcherConfiguration.LauncherVersion);
+                        Log.Information("A new Launcher version is found for configured range \"{range}\".", LauncherConfiguration.LauncherVersion);
                     }
                     Log.Information("Downloading new version {new}.", launcherVersion);
 
@@ -129,9 +129,10 @@ namespace fiskaltrust.Launcher.Commands
             return 0;
         }
 
-        private async Task StartLauncherUpdate()
+        public async Task StartLauncherUpdate(string? targetDir = null)
         {
-            var executablePath = Path.Combine(_launcherConfiguration.ServiceFolder!, "service", _launcherConfiguration.CashboxId?.ToString()!, "fiskaltrust.Launcher");
+            targetDir ??= Environment.ProcessPath;
+            var executablePath = Path.Combine(LauncherConfiguration.ServiceFolder!, "service", LauncherConfiguration.CashboxId?.ToString()!, "fiskaltrust.Launcher");
             var process = new Process();
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.FileName = Path.Combine(executablePath, $"fiskaltrust.LauncherUpdater{(OperatingSystem.IsWindows() ? ".exe" : "")}");
@@ -140,8 +141,8 @@ namespace fiskaltrust.Launcher.Commands
             process.StartInfo.Arguments = string.Join(" ", new string[] {
                 "--launcher-process-id", Environment.ProcessId.ToString(),
                 "--from", $"\"{Path.Combine(executablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
-                "--to", $"\"{Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")}\"",
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(_launcherConfiguration, SerializerContext.Default)))}\"",
+                "--to", $"\"{targetDir  ?? throw new Exception("Could not find launcher executable")}\"",
+                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(LauncherConfiguration, SerializerContext.Default)))}\"",
             });
 
             process.StartInfo.RedirectStandardError = true;
@@ -155,7 +156,7 @@ namespace fiskaltrust.Launcher.Commands
 
             if (process.HasExited)
             {
-                Log.Error("Launcher Update failed. See {LogFolder} for the update log.", _launcherConfiguration.LogFolder);
+                Log.Error("Launcher Update failed. See {LogFolder} for the update log.", LauncherConfiguration.LogFolder);
                 var withEnrichedContext = (Action log) =>
                 {
                     var enrichedContext = LogContext.PushProperty("EnrichedContext", " LauncherUpdater");
