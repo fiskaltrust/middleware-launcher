@@ -5,6 +5,7 @@ using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
+using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.Extensions.Hosting.WindowsServices;
 
@@ -20,9 +21,10 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly PackageDownloader _downloader;
         private readonly ILogger _logger;
         private readonly ILoggerFactory _loggerFactory;
-        private readonly Lifetime _lifetime;
+        private readonly ILifetime _lifetime;
+        private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, IProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, Lifetime lifetime)
+        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, IProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, ILifetime lifetime, LauncherExecutablePath launcherExecutablePath)
         {
             _loggerFactory = loggerFactory;
             _logger = logger;
@@ -31,6 +33,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             _cashBoxConfiguration = cashBoxConfiguration;
             _downloader = downloader;
             _lifetime = lifetime;
+            _launcherExecutablePath = launcherExecutablePath;
         }
 
 
@@ -106,7 +109,8 @@ namespace fiskaltrust.Launcher.ProcessHost
                 _loggerFactory.CreateLogger<ProcessHostMonarch>(),
                 _launcherConfiguration,
                 configuration,
-                packageType);
+                packageType,
+                _launcherExecutablePath);
 
             if (!cancellationToken.IsCancellationRequested)
             {
@@ -168,14 +172,14 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly PackageConfiguration _packageConfiguration;
         private readonly ILogger<ProcessHostMonarch> _logger;
 
-        public ProcessHostMonarch(ILogger<ProcessHostMonarch> logger, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PackageType packageType)
+        public ProcessHostMonarch(ILogger<ProcessHostMonarch> logger, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PackageType packageType, LauncherExecutablePath launcherExecutablePath)
         {
             _packageConfiguration = packageConfiguration;
             _logger = logger;
 
             _process = new Process();
             _process.StartInfo.UseShellExecute = false;
-            _process.StartInfo.FileName = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable");
+            _process.StartInfo.FileName = launcherExecutablePath.Path;
             _process.StartInfo.CreateNoWindow = false;
 
             _process.StartInfo.Arguments = string.Join(" ", new string[] {

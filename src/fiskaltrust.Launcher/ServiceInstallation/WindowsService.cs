@@ -1,6 +1,5 @@
+using fiskaltrust.Launcher.Helpers;
 using Serilog;
-using Serilog.Context;
-using System.Diagnostics;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
 {
@@ -8,7 +7,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
     {
         private readonly string _serviceName;
 
-        public WindowsService(string serviceName)
+        public WindowsService(string serviceName, LauncherExecutablePath launcherExecutablePath) : base(launcherExecutablePath)
         {
             _serviceName = serviceName;
         }
@@ -30,7 +29,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 return 1;
             }
 
-            var processPath = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable");
+            var processPath = _launcherExecutablePath;
 
             var arguments = new List<string> {
                 "create",

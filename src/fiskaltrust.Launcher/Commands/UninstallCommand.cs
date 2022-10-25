@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using Serilog;
 using fiskaltrust.Launcher.ServiceInstallation;
+using fiskaltrust.Launcher.Helpers;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -17,6 +18,13 @@ namespace fiskaltrust.Launcher.Commands
     {
         public string? ServiceName { get; set; }
 
+        private readonly LauncherExecutablePath _launcherExecutablePath;
+
+        public UninstallCommandHandler(LauncherExecutablePath launcherExecutablePath)
+        {
+            _launcherExecutablePath = launcherExecutablePath;
+        }
+
         public new async Task<int> InvokeAsync(InvocationContext context)
         {
             if (await base.InvokeAsync(context) != 0)
@@ -27,11 +35,11 @@ namespace fiskaltrust.Launcher.Commands
             ServiceInstaller? installer = null;
             if (OperatingSystem.IsLinux())
             {
-                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{LauncherConfiguration.CashboxId}");
+                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}", _launcherExecutablePath);
             }
             if (OperatingSystem.IsWindows())
             {
-                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{LauncherConfiguration.CashboxId}");
+                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}", _launcherExecutablePath);
             }
 
             if (installer is not null)

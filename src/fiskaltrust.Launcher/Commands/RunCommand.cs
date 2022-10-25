@@ -5,10 +5,8 @@ using fiskaltrust.Launcher.Services;
 using Serilog;
 using ProtoBuf.Grpc.Server;
 using fiskaltrust.Launcher.Download;
-using System.Diagnostics;
-using Serilog.Context;
-using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Extensions;
+using fiskaltrust.Launcher.Helpers;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -34,10 +32,14 @@ namespace fiskaltrust.Launcher.Commands
     {
         private bool _updatePending = false;
         private readonly ILifetime _lifetime;
+        private readonly SelfUpdater _selfUpdater;
+        private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public RunCommandHandler(ILifetime lifetime)
+        public RunCommandHandler(ILifetime lifetime, SelfUpdater selfUpdater, LauncherExecutablePath launcherExecutablePath)
         {
             _lifetime = lifetime;
+            _selfUpdater = selfUpdater;
+            _launcherExecutablePath = launcherExecutablePath;
         }
 
         public new async Task<int> InvokeAsync(InvocationContext context)
@@ -53,16 +55,17 @@ namespace fiskaltrust.Launcher.Commands
                 .ConfigureServices((_, services) =>
                 {
                     services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
-                    services.AddSingleton(_ => LauncherConfiguration);
+                    services.AddSingleton(_ => _launcherConfiguration);
                     services.AddSingleton(_ => _lifetime);
                     services.AddSingleton(_ => _cashboxConfiguration);
-                    services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
+                    services.AddSingleton(_ => new Dictionary<Guid, IProcessHostMonarch>());
                     services.AddSingleton<PackageDownloader>();
                     services.AddHostedService<ProcessHostMonarcStartup>();
                     services.AddSingleton(_ => Log.Logger);
+                    services.AddSingleton(_ => _launcherExecutablePath);
                 });
 
-            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{LauncherConfiguration.LauncherPort}")));
+            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{_launcherConfiguration.LauncherPort}")));
 
             builder.Services.AddCodeFirstGrpc();
 
@@ -71,20 +74,20 @@ namespace fiskaltrust.Launcher.Commands
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 
-            if (LauncherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null)
+            if (_launcherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null)
             {
                 var packageDownloader = app.Services.GetRequiredService<PackageDownloader>();
-                SemanticVersioning.Version? launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, LauncherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
+                SemanticVersioning.Version? launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, _launcherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
 
                 if (launcherVersion is not null && Common.Constants.Version.CurrentVersion < launcherVersion)
                 {
-                    if (LauncherConfiguration.LauncherVersion.ToString() == launcherVersion.ToString())
+                    if (_launcherConfiguration.LauncherVersion.ToString() == launcherVersion.ToString())
                     {
                         Log.Information("A new Launcher version is set.");
                     }
                     else
                     {
-                        Log.Information("A new Launcher version is found for configured range \"{range}\".", LauncherConfiguration.LauncherVersion);
+                        Log.Information("A new Launcher version is found for configured range \"{range}\".", _launcherConfiguration.LauncherVersion);
                     }
                     Log.Information("Downloading new version {new}.", launcherVersion);
 
@@ -109,7 +112,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (_updatePending)
                 {
-                    await StartLauncherUpdate();
+                    await _selfUpdater.StartSelfUpdate(Log.Logger, _launcherConfiguration);
                 }
             }
             catch (TaskCanceledException)
@@ -127,54 +130,6 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             return 0;
-        }
-
-        public async Task StartLauncherUpdate(string? targetDir = null)
-        {
-            targetDir ??= Environment.ProcessPath;
-            var executablePath = Path.Combine(LauncherConfiguration.ServiceFolder!, "service", LauncherConfiguration.CashboxId?.ToString()!, "fiskaltrust.Launcher");
-            var process = new Process();
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.FileName = Path.Combine(executablePath, $"fiskaltrust.LauncherUpdater{(OperatingSystem.IsWindows() ? ".exe" : "")}");
-            process.StartInfo.CreateNoWindow = false;
-
-            process.StartInfo.Arguments = string.Join(" ", new string[] {
-                "--launcher-process-id", Environment.ProcessId.ToString(),
-                "--from", $"\"{Path.Combine(executablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
-                "--to", $"\"{targetDir  ?? throw new Exception("Could not find launcher executable")}\"",
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(LauncherConfiguration, SerializerContext.Default)))}\"",
-            });
-
-            process.StartInfo.RedirectStandardError = true;
-            process.StartInfo.RedirectStandardOutput = true;
-
-            process.Start();
-
-            Log.Information("Launcher update starting in the background.");
-
-            Thread.Sleep(10_000);
-
-            if (process.HasExited)
-            {
-                Log.Error("Launcher Update failed. See {LogFolder} for the update log.", LauncherConfiguration.LogFolder);
-                var withEnrichedContext = (Action log) =>
-                {
-                    var enrichedContext = LogContext.PushProperty("EnrichedContext", " LauncherUpdater");
-                    log();
-                    enrichedContext.Dispose();
-                };
-
-                var stdOut = await process.StandardOutput.ReadToEndAsync();
-                if (!string.IsNullOrEmpty(stdOut))
-                {
-                    withEnrichedContext(() => Log.Information(stdOut));
-                }
-                var stdErr = await process.StandardError.ReadToEndAsync();
-                if (!string.IsNullOrEmpty(stdErr))
-                {
-                    withEnrichedContext(() => Log.Error(stdErr));
-                }
-            }
         }
     }
 }

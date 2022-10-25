@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using Serilog;
 using fiskaltrust.Launcher.ServiceInstallation;
+using fiskaltrust.Launcher.Helpers;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -23,10 +24,12 @@ namespace fiskaltrust.Launcher.Commands
         public string? ServiceDescription { get; set; }
         public bool DelayedStart { get; set; }
         private readonly SubArguments _subArguments;
+        private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public InstallCommandHandler(SubArguments subArguments)
+        public InstallCommandHandler(SubArguments subArguments, LauncherExecutablePath launcherExecutablePath)
         {
             _subArguments = subArguments;
+            _launcherExecutablePath = launcherExecutablePath;
         }
 
         public new async Task<int> InvokeAsync(InvocationContext context)
@@ -36,31 +39,31 @@ namespace fiskaltrust.Launcher.Commands
                 return 1;
             }
 
-            LauncherConfiguration.DisableDefaults();
+            _launcherConfiguration.DisableDefaults();
 
-            LauncherConfiguration.CashboxConfigurationFile = MakeAbsolutePath(LauncherConfiguration.CashboxConfigurationFile);
-            LauncherConfiguration.ServiceFolder = MakeAbsolutePath(LauncherConfiguration.ServiceFolder);
-            LauncherConfiguration.LogFolder = MakeAbsolutePath(LauncherConfiguration.LogFolder);
+            _launcherConfiguration.CashboxConfigurationFile = MakeAbsolutePath(_launcherConfiguration.CashboxConfigurationFile);
+            _launcherConfiguration.ServiceFolder = MakeAbsolutePath(_launcherConfiguration.ServiceFolder);
+            _launcherConfiguration.LogFolder = MakeAbsolutePath(_launcherConfiguration.LogFolder);
             LauncherConfigurationFile = MakeAbsolutePath(LauncherConfigurationFile)!;
 
-            LauncherConfiguration.EnableDefaults();
+            _launcherConfiguration.EnableDefaults();
 
             var commandArgs = "run ";
             commandArgs += string.Join(" ", new[] {
-                "--cashbox-id", LauncherConfiguration.CashboxId!.Value.ToString(),
-                "--access-token", LauncherConfiguration.AccessToken!,
-                "--sandbox", LauncherConfiguration.Sandbox!.Value.ToString(),
+                "--cashbox-id", _launcherConfiguration.CashboxId!.Value.ToString(),
+                "--access-token", _launcherConfiguration.AccessToken!,
+                "--sandbox", _launcherConfiguration.Sandbox!.Value.ToString(),
                 "--launcher-configuration-file", LauncherConfigurationFile,
             }.Concat(_subArguments.Args));
 
             ServiceInstaller? installer = null;
             if (OperatingSystem.IsLinux())
             {
-                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{LauncherConfiguration.CashboxId}");
+                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}", _launcherExecutablePath);
             }
             if (OperatingSystem.IsWindows())
             {
-                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{LauncherConfiguration.CashboxId}");
+                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}", _launcherExecutablePath);
             }
 
             if (installer is not null)

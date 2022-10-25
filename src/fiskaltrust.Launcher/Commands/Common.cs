@@ -41,7 +41,7 @@ namespace fiskaltrust.Launcher.Commands
         public string LegacyConfigFile { get; set; } = null!;
         public bool MergeLegacyConfigIfExists { get; set; }
 
-        public LauncherConfiguration LauncherConfiguration = null!;
+        protected LauncherConfiguration _launcherConfiguration = null!;
         protected ftCashBoxConfiguration _cashboxConfiguration = null!;
         protected ECDiffieHellman _clientEcdh = null!;
 
@@ -54,11 +54,11 @@ namespace fiskaltrust.Launcher.Commands
                 .WriteTo.Sink(collectionSink)
                 .CreateLogger();
 
-            LauncherConfiguration = new LauncherConfiguration();
+            _launcherConfiguration = new LauncherConfiguration();
 
             try
             {
-                LauncherConfiguration = Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default);
+                _launcherConfiguration = Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default);
             }
             catch (Exception e)
             {
@@ -78,7 +78,7 @@ namespace fiskaltrust.Launcher.Commands
 
             if (MergeLegacyConfigIfExists && File.Exists(LegacyConfigFile))
             {
-                LauncherConfiguration.OverwriteWith(await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigFile));
+                _launcherConfiguration.OverwriteWith(await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigFile));
 
                 var configFileDirectory = Path.GetDirectoryName(LauncherConfigurationFile);
                 if (configFileDirectory is not null)
@@ -86,25 +86,25 @@ namespace fiskaltrust.Launcher.Commands
                     Directory.CreateDirectory(configFileDirectory);
                 }
 
-                await File.WriteAllTextAsync(LauncherConfigurationFile, JsonSerializer.Serialize(LauncherConfiguration));
+                await File.WriteAllTextAsync(LauncherConfigurationFile, JsonSerializer.Serialize(_launcherConfiguration));
 
                 var fi = new FileInfo(LegacyConfigFile);
                 fi.CopyTo(LegacyConfigFile + ".legacy");
                 fi.Delete();
             }
 
-            LauncherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
+            _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
 
-            LauncherConfiguration.EnableDefaults();
+            _launcherConfiguration.EnableDefaults();
 
-            if (!LauncherConfiguration.UseOffline!.Value && (LauncherConfiguration.CashboxId is null || LauncherConfiguration.AccessToken is null))
+            if (!_launcherConfiguration.UseOffline!.Value && (_launcherConfiguration.CashboxId is null || _launcherConfiguration.AccessToken is null))
             {
                 Log.Error("CashBoxId and AccessToken are not provided.");
             }
 
             try
             {
-                var configFileDirectory = Path.GetDirectoryName(LauncherConfiguration.CashboxConfigurationFile);
+                var configFileDirectory = Path.GetDirectoryName(_launcherConfiguration.CashboxConfigurationFile);
                 if (configFileDirectory is not null)
                 {
                     Directory.CreateDirectory(configFileDirectory);
@@ -117,9 +117,9 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                using var downloader = new ConfigurationDownloader(LauncherConfiguration);
+                using var downloader = new ConfigurationDownloader(_launcherConfiguration);
                 var exists = await downloader.DownloadConfigurationAsync(_clientEcdh);
-                if (LauncherConfiguration.UseOffline!.Value && !exists)
+                if (_launcherConfiguration.UseOffline!.Value && !exists)
                 {
                     Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
                 }
@@ -127,8 +127,8 @@ namespace fiskaltrust.Launcher.Commands
             catch (Exception e)
             {
                 var message = "Could not download Cashbox configuration. ";
-                message += $"(Launcher is running in {(LauncherConfiguration.Sandbox!.Value ? "sandbox" : "production")} mode.";
-                if (!LauncherConfiguration.Sandbox!.Value)
+                message += $"(Launcher is running in {(_launcherConfiguration.Sandbox!.Value ? "sandbox" : "production")} mode.";
+                if (!_launcherConfiguration.Sandbox!.Value)
                 {
                     message += " Did you forget the --sandbox flag?";
                 }
@@ -138,7 +138,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                LauncherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(LauncherConfiguration.CashboxConfigurationFile!), SerializerContext.Default)?.LauncherConfiguration);
+                _launcherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!), SerializerContext.Default)?.LauncherConfiguration);
             }
             catch (Exception e)
             {
@@ -147,8 +147,8 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                _cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(LauncherConfiguration.CashboxConfigurationFile!)) ?? throw new Exception("Invalid Configuration File");
-                _cashboxConfiguration.Decrypt(_clientEcdh, LauncherConfiguration);
+                _cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!)) ?? throw new Exception("Invalid Configuration File");
+                _cashboxConfiguration.Decrypt(_clientEcdh, _launcherConfiguration);
             }
             catch (Exception e)
             {
@@ -156,7 +156,7 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             Log.Logger = new LoggerConfiguration()
-                .AddLoggingConfiguration(LauncherConfiguration, LauncherConfiguration.CashboxId.HasValue ? new[] { "fiskaltrust.Launcher", LauncherConfiguration.CashboxId.Value.ToString() } : null)
+                .AddLoggingConfiguration(_launcherConfiguration, _launcherConfiguration.CashboxId.HasValue ? new[] { "fiskaltrust.Launcher", _launcherConfiguration.CashboxId.Value.ToString() } : null)
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
@@ -171,8 +171,8 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             Log.Debug("Launcher Configuration File: {LauncherConfigurationFile}", LauncherConfigurationFile);
-            Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", LauncherConfiguration.CashboxConfigurationFile);
-            Log.Debug("Launcher Configuration: {@LauncherConfiguration}", LauncherConfiguration.Redacted());
+            Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", _launcherConfiguration.CashboxConfigurationFile);
+            Log.Debug("Launcher Configuration: {@LauncherConfiguration}", _launcherConfiguration.Redacted());
 
             return 0;
         }

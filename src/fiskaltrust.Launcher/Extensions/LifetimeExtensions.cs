@@ -20,13 +20,13 @@ namespace fiskaltrust.Launcher.Extensions
                         services.Remove(lifetime);
                     }
 
-                    services.AddSingleton<Lifetime>();
+                    services.AddSingleton<ILifetime, Lifetime>();
                     services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<Lifetime>());
                 });
             }
             else
             {
-                builder.ConfigureServices(services => services.AddSingleton<Lifetime>());
+                builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
                 builder.UseConsoleLifetime();
                 return builder;
             }
@@ -36,6 +36,8 @@ namespace fiskaltrust.Launcher.Extensions
     public interface ILifetime : IHostLifetime
     {
         public IHostApplicationLifetime ApplicationLifetime { get; init; }
+
+        public void ServiceStartupCompleted();
     }
 
     public class Lifetime : WindowsServiceLifetime, ILifetime
