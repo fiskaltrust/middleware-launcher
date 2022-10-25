@@ -28,7 +28,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             else
             {
                 dummyProcess.StartInfo.FileName = "sh";
-                dummyProcess.StartInfo.Arguments = "-c \"while true; do sleep 2; done\"";
+                dummyProcess.StartInfo.Arguments = "-c \"while true; do sleep 10; done\"";
             }
 
             dummyProcess.Start();
