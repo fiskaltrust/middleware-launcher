@@ -1,110 +1,85 @@
-﻿using fiskaltrust.Launcher.Common.Configuration;
+﻿using fiskaltrust.Launcher.Commands;
+using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Download;
+using fiskaltrust.Launcher.Extensions;
+using fiskaltrust.Launcher.IntegrationTest.Download;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
 using Moq;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+using System.Net.Http.Json;
 
 namespace fiskaltrust.Launcher.IntegrationTest
 {
     public class SelfUpdate
     {
-        internal const int CTRL_C_EVENT = 0;
-        [DllImport("kernel32.dll")]
-        internal static extern bool GenerateConsoleCtrlEvent(uint dwCtrlEvent, uint dwProcessGroupId);
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool AttachConsole(uint dwProcessId);
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        internal static extern bool FreeConsole();
-        [DllImport("kernel32.dll")]
-        static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate HandlerRoutine, bool Add);
-        // Delegate type to be used as the Handler Routine for SCCH
-        delegate Boolean ConsoleCtrlDelegate(uint CtrlType);
-
         [Fact]
         public async Task TestSelfUpdate_SpecificVersion_Updated()
         {
-            /*
-
             var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig();
-            launcherConfiguration.LauncherVersion = new SemanticVersioning.Range("2.0.0-preview3");
-            await File.WriteAllTextAsync(Path.Combine(launcherConfiguration.ServiceFolder, "launcher.configuration.json"), JsonSerializer.Serialize(launcherConfiguration));
-            var launcherExePath = Path.Combine(launcherConfiguration.ServiceFolder,PackageDownloader.LAUNCHER_NAME + ".exe");
+            var targetDir = Path.Combine(launcherConfiguration.ServiceFolder, "service", launcherConfiguration.CashboxId.ToString(), PackageDownloader.LAUNCHER_NAME);
 
-            var process = new Process();
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.FileName = launcherExePath;
-            process.StartInfo.Arguments = $"run --cashbox-id {launcherConfiguration.CashboxId} --access-token {launcherConfiguration.AccessToken}";
-            process.StartInfo.RedirectStandardInput = true;
-            process.StartInfo.RedirectStandardError = true;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.Start();
-
-
-            var output = new List<string>();
-            var read = process.StandardOutput.ReadLine();
-            var linesRead = 0;
-            while (!read.Contains("Press CTRL+C to exit.")) 
+            var httpClient = new HttpClient();
+            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"https://packages-2-0-sandbox.fiskaltrust.cloud/api/packages/{PackageDownloader.LAUNCHER_NAME}?platform={Constants.Runtime.Identifier}"));
+            var response = await httpClient!.SendAsync(request);
+            var versions = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
+            if (versions == null || !versions.Any() || versions.Count() <= 1)
             {
-                output.Add(read);
-                read = process.StandardOutput.ReadLine();
-                linesRead++;
+                return;
+            }
+            var secondLastVerion = versions.ToList()[versions.Count() - 2];
+            await DownloadVersions(launcherConfiguration, targetDir, secondLastVerion);
+            var chacheDir = Path.Combine(targetDir,"cache");
+            await DownloadVersions(launcherConfiguration, chacheDir, versions.Last());
+
+            var executionPath = Path.Combine(targetDir, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}");
+            var fvi = FileVersionInfo.GetVersionInfo(executionPath);
+            fvi.ProductVersion.Should().Be(secondLastVerion);
+
+            var runCommandHandler = new RunCommandHandler(Mock.Of<ILifetime>());
+            launcherConfiguration.LauncherVersion = new SemanticVersioning.Range(versions.Last());
+            runCommandHandler.LauncherConfiguration = launcherConfiguration;
+            await runCommandHandler.StartLauncherUpdate(targetDir);
+
+            while (Process.GetProcessesByName($"{PackageDownloader.LAUNCHER_NAME}Updater.exe").Any())
+            {
+                await Task.Delay(1000);
             }
 
-            output[0].Should().Contain("A new Launcher version is set.");
+            fvi = FileVersionInfo.GetVersionInfo(executionPath);
 
-            FreeConsole();
-            if (AttachConsole((uint)process.Id))
+            fvi.ProductVersion.Should().Be(versions.Last());
+
+        }
+
+        private static async Task DownloadVersions(LauncherConfiguration launcherConfiguration, string targetDir, string version)
+        {
+            var executionPath = Path.Combine(targetDir, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}");
+            var updaterPath = Path.Combine(targetDir, $"fiskaltrust.LauncherUpdater{(OperatingSystem.IsWindows() ? ".exe" : "")}");
+            if (File.Exists(executionPath))
             {
-                SetConsoleCtrlHandler(null, true);
-                try
-                {
-                    if (GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0))
-                    {
-                        process.WaitForExit();
-                    }
-                }
-                finally
-                {
-                    SetConsoleCtrlHandler(null, false);
-                    FreeConsole();
-                }
+                File.Delete(executionPath);
             }
-            */
-
-            var consolePlaceholder = new Process();
-            var consolePrj = AppDomain.CurrentDomain.BaseDirectory.Replace("fiskaltrust.Launcher.IntegrationTest", "ConsolePlaceholder");
-            var placeholderExe = Path.Combine(consolePrj, "ConsolePlaceholder.exe");
-            consolePlaceholder.StartInfo.FileName = placeholderExe;
-            consolePlaceholder.Start();
-
-            consolePlaceholder.WaitForExit();
-
-
-            await Task.Delay(1000);
-
-            while (Process.GetProcessesByName("fiskaltrust.Launcher").Length > 0)
+            if (File.Exists(updaterPath))
             {
-                await Task.Delay(500);
+                File.Delete(updaterPath);
             }
 
-            while (Process.GetProcessesByName("fiskaltrust.LauncherUpdater.exe").Length > 0)
+            try
             {
-                await Task.Delay(500);
+                var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration);
+                await packageDownloader.DownloadAsync(PackageDownloader.LAUNCHER_NAME, version, Constants.Runtime.Identifier, targetDir, new[]{
+                        $"{PackageDownloader.LAUNCHER_NAME}.exe",
+                        $"{PackageDownloader.LAUNCHER_NAME}Updater.exe"
+                    });
+            }
+            catch (HttpRequestException e)
+            {
+                throw new HttpRequestException($"Download of {PackageDownloader.LAUNCHER_NAME} version : {version} failed!", e);
             }
 
-            var fvi = FileVersionInfo.GetVersionInfo(Path.Combine("C:\\source\\repos\\middleware-launcher\\test\\Result", PackageDownloader.LAUNCHER_NAME + ".exe"));
-
-            fvi.ProductVersion.Should().Be("2.0.0-preview3");
-
+            _ = File.Exists(executionPath).Should().BeTrue($"File missing {executionPath}");
+            _ = File.Exists(updaterPath).Should().BeTrue($"File missing {updaterPath}");
         }
     }
 }
