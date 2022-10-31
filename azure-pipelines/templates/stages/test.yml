@@ -1,8 +1,3 @@
-parameters:
-- name: config
-  type: string
-  default: debug
-
 stages:
 - stage: Test
 
@@ -14,11 +9,9 @@ stages:
 
     steps:
     - template: ../restore.yml
-      parameters:
-        config: ${{ parameters.config }}
 
-    - pwsh: dotnet build -c ${{ parameters.config }}
+    - pwsh: dotnet build
       displayName: Build
   
-    - pwsh: dotnet test -c ${{ parameters.config }}
+    - pwsh: dotnet test
       displayName: Test

@@ -10,11 +10,6 @@ variables:
 
 stages:
   - template: templates/stages/test.yml
-    parameters:
-      ${{ if startsWith(variables.branch, 'refs/tags/v')}}:
-        config: release
-      ${{ else }}:
-        config: debug
 
   - template: templates/stages/build.yml
     parameters:
