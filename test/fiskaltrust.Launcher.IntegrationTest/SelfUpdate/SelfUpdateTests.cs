@@ -58,6 +58,10 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                     throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)));
                 }
 
+                lifetime.ApplicationLifetimeSource.StopApplication();
+                await command;
+                throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)));
+
                 foreach (string file in Directory.GetFiles("fiskaltrust.LauncherUpdater"))
                 {
                     File.Copy(file, Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher", Path.GetFileName(file)), true);
@@ -67,10 +71,6 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 
                 var exitCode = await command;
                 if (exitCode != 0) { throw new Exception($"Exitcode {exitCode}"); }
-            }
-            catch
-            {
-                throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)));
             }
             finally
             {
