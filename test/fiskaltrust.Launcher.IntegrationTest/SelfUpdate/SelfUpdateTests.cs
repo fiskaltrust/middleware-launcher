@@ -53,7 +53,12 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 
                 await lifetime.WaitForStartAsync(new CancellationToken());
 
-                foreach (string file in Directory.GetFiles("fiskaltrust.LauncherUpdater", "*", SearchOption.AllDirectories))
+                if (command.IsCompleted)
+                {
+                    throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)));
+                }
+
+                foreach (string file in Directory.GetFiles("fiskaltrust.LauncherUpdater"))
                 {
                     File.Copy(file, Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher", Path.GetFileName(file)), true);
                 }

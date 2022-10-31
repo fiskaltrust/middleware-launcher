@@ -15,5 +15,5 @@ steps:
 
 - task: NuGetAuthenticate@0
 
-- pwsh: dotnet restore
+- pwsh: dotnet restore -c ${{ parameters.config }}
   displayName: Restore
