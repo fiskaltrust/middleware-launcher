@@ -58,6 +58,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                     throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)));
                 }
 
+                Directory.CreateDirectory(Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher"));
                 foreach (string file in Directory.GetFiles("fiskaltrust.LauncherUpdater"))
                 {
                     File.Copy(file, Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher", Path.GetFileName(file)), true);

@@ -16,5 +16,5 @@ stages:
     - pwsh: dotnet test
       displayName: Test
 
-    - pwsh: ls -Depth 6 | select fullname
+    - pwsh: ls -Depth 8 | select fullname | where { $_.fullname.conatins("log_") }
       condition: always()
