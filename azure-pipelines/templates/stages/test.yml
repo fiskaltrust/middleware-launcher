@@ -16,5 +16,5 @@ stages:
     - pwsh: dotnet test
       displayName: Test
 
-    - pwsh: ls -Depth 2 test\fiskaltrust.Launcher.IntegrationTest\bin\Debug\net6.0 | select fullname
+    - pwsh: ls -Depth 6 | select fullname
       condition: always()
