@@ -68,6 +68,10 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                 var exitCode = await command;
                 if (exitCode != 0) { throw new Exception($"Exitcode {exitCode}"); }
             }
+            catch
+            {
+                throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)));
+            }
             finally
             {
                 dummyProcess.Kill();
@@ -82,15 +86,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             catch { }
 
             var fvi = FileVersionInfo.GetVersionInfo($"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}");
-            try
-            {
 
-                new SemanticVersioning.Version(fvi.ProductVersion).Should().BeGreaterThanOrEqualTo(new SemanticVersioning.Version("2.0.0-preview1"));
-            }
-            catch
-            {
-                throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)));
-            }
+            new SemanticVersioning.Version(fvi.ProductVersion).Should().BeGreaterThanOrEqualTo(new SemanticVersioning.Version("2.0.0-preview1"));
         }
     }
 }
