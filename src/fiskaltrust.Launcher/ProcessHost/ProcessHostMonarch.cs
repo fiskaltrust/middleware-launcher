@@ -75,6 +75,11 @@ namespace fiskaltrust.Launcher.ProcessHost
                 _lifetime.ServiceStartupCompleted();
             }
 
+            if (_hosts.Count == 0)
+            {
+                await new TaskCompletionSource().Task; // wait for shutdown
+            }
+
             try
             {
                 await Task.WhenAll(_hosts.Select(h => h.Value.Stopped()));

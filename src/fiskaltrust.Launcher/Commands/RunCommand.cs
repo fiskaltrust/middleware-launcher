@@ -115,10 +115,6 @@ namespace fiskaltrust.Launcher.Commands
                     await _selfUpdater.StartSelfUpdate(Log.Logger, _launcherConfiguration);
                 }
             }
-            catch (TaskCanceledException)
-            {
-                return 1;
-            }
             catch (Exception e)
             {
                 Log.Error(e, "An unhandled exception occured.");

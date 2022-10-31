@@ -28,4 +28,11 @@
     <ProjectReference Include="..\..\src\fiskaltrust.Launcher\fiskaltrust.Launcher.csproj" />
   </ItemGroup>
 
+  <Target Name="CopyLauncherUpdater" AfterTargets="Build">
+    <ItemGroup>
+      <LauncherUpdater Include="..\..\src\fiskaltrust.LauncherUpdater\bin\$(Configuration)\$(TargetFramework)\*"/>
+    </ItemGroup>
+    <Copy SourceFiles="@(LauncherUpdater)" DestinationFiles="$(OutputPath)/fiskaltrust.LauncherUpdater/%(Filename)%(Extension)" ContinueOnError="false" />
+  </Target>
+
 </Project>

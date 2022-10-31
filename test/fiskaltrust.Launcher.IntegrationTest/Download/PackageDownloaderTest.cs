@@ -23,7 +23,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
             var response = await httpClient!.SendAsync(request);
             var packages = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
 
-            foreach (var package in packages)
+            foreach (var package in packages!)
             {
                 request = new HttpRequestMessage(HttpMethod.Get, new Uri($"https://packages-2-0-sandbox.fiskaltrust.cloud/api/packages/{package}"));
                 response = await httpClient!.SendAsync(request);
@@ -32,16 +32,17 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                 {
                     Id = Guid.NewGuid(),
                     Package = package,
-                    Version = versions.Last()
+                    Version = versions!.Last()
                 };
                 try
                 {
                     await packageDownloader.DownloadPackageAsync(packageConfiguration);
                 }
-                catch (HttpRequestException e)  {
-                    throw new HttpRequestException($"Download of {package} version : {versions.Last()} failed!", e);
+                catch (HttpRequestException e)
+                {
+                    throw new HttpRequestException($"Download of {package} version : {versions!.Last()} failed!", e);
                 }
-                var path = Path.Combine(launcherConfiguration.ServiceFolder, "service", launcherConfiguration.CashboxId.ToString(), packageConfiguration.Id.ToString(), $"{package}.dll");
+                var path = Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId.ToString()!, packageConfiguration.Id.ToString(), $"{package}.dll");
                 _ = File.Exists(path).Should().BeTrue();
 
             }
@@ -68,7 +69,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
             {
                 var platformPath = Path.Combine(targetPath, platform);
 
-                if (Directory.Exists(platformPath)) {
+                if (Directory.Exists(platformPath))
+                {
                     Directory.Delete(platformPath, true);
                 }
 

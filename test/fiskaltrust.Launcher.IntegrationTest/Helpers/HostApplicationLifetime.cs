@@ -25,17 +25,17 @@ namespace fiskaltrust.Launcher.IntegrationTest.Helpers
 
             ApplicationLifetimeSource.ApplicationStartedSource.Token.Register(() =>
             {
-                source.SetResult();
+                source.TrySetResult();
             });
 
             ApplicationLifetimeSource.ApplicationStoppedSource.Token.Register(() =>
             {
-                source.SetResult();
+                source.TrySetResult();
             });
 
             ApplicationLifetimeSource.ApplicationStoppingSource.Token.Register(() =>
             {
-                source.SetResult();
+                source.TrySetResult();
             });
 
             await source.Task;

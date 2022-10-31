@@ -52,6 +52,12 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                 var command = runCommand.InvokeAsync(null!);
 
                 await lifetime.WaitForStartAsync(new CancellationToken());
+
+                foreach (string file in Directory.GetFiles("fiskaltrust.LauncherUpdater", "*", SearchOption.AllDirectories))
+                {
+                    File.Copy(file, Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher", Path.GetFileName(file)), true);
+                }
+
                 lifetime.ApplicationLifetimeSource.StopApplication();
 
                 var exitCode = await command;
