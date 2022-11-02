@@ -34,7 +34,7 @@ namespace fiskaltrust.Launcher.Helpers
                 "--launcher-process-id", _processId.Id.ToString(),
                 "--from", $"\"{Path.Combine(newExecutablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
                 "--to", _executablePath.Path,
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(launcherConfiguration, SerializerContext.Default)))}\"",
+                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize()))}\"",
             });
 
             process.StartInfo.RedirectStandardError = true;
