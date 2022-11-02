@@ -7,7 +7,7 @@ namespace fiskaltrust.Launcher.Extensions
 {
     public static class WebApplicationExtensions
     {
-        private static readonly string[] _prefixes = new[] { "", "json/", "v1/", "json/v1/" };
+        private static readonly string[] _prefixes = new[] { "", "json/", "v1/", "json/v1/", "v0/", "json/v0/" };
         private static IEnumerable<RouteHandlerBuilder> MapMultiple(this WebApplication app, IEnumerable<string> urls, Func<IEndpointRouteBuilder, string, Delegate, RouteHandlerBuilder> method, Delegate callback) =>
             urls.Select(url => method(app, url, callback)).ToList();
 

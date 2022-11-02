@@ -1,7 +1,5 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Diagnostics;
-using System.IO;
 using System.Security.Cryptography;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
@@ -13,7 +11,6 @@ using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
 using Serilog.Events;
-using Serilog.Extensions.Logging;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -58,13 +55,13 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                _launcherConfiguration = Serializer.Deserialize<LauncherConfiguration>(await File.ReadAllTextAsync(LauncherConfigurationFile), SerializerContext.Default);
+                _launcherConfiguration = LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(LauncherConfigurationFile));
             }
             catch (Exception e)
             {
                 if (!(MergeLegacyConfigIfExists && File.Exists(LegacyConfigFile)))
                 {
-                    if (File.Exists(LegacyConfigFile))
+                    if (File.Exists(LauncherConfigurationFile))
                     {
                         Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".", LauncherConfigurationFile);
                     }
@@ -86,7 +83,7 @@ namespace fiskaltrust.Launcher.Commands
                     Directory.CreateDirectory(configFileDirectory);
                 }
 
-                await File.WriteAllTextAsync(LauncherConfigurationFile, JsonSerializer.Serialize(_launcherConfiguration));
+                await File.WriteAllTextAsync(LauncherConfigurationFile, _launcherConfiguration.Serialize());
 
                 var fi = new FileInfo(LegacyConfigFile);
                 fi.CopyTo(LegacyConfigFile + ".legacy");
@@ -138,7 +135,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                _launcherConfiguration.OverwriteWith(Serializer.Deserialize<LauncherConfigurationInCashBoxConfiguration>(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!), SerializerContext.Default)?.LauncherConfiguration);
+                _launcherConfiguration.OverwriteWith(LauncherConfigurationInCashBoxConfiguration.Deserialize(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!)));
             }
             catch (Exception e)
             {
@@ -147,7 +144,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                _cashboxConfiguration = JsonSerializer.Deserialize<ftCashBoxConfiguration>(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!)) ?? throw new Exception("Invalid Configuration File");
+                _cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!));
                 _cashboxConfiguration.Decrypt(_clientEcdh, _launcherConfiguration);
             }
             catch (Exception e)

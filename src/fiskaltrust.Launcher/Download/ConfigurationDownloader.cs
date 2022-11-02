@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
+using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.Download
@@ -38,7 +39,7 @@ namespace fiskaltrust.Launcher.Download
             response.EnsureSuccessStatusCode();
 
             var cashboxConfiguration = await response.Content.ReadFromJsonAsync<ftCashBoxConfiguration>();
-            await File.WriteAllTextAsync(_configuration.CashboxConfigurationFile!, JsonSerializer.Serialize(cashboxConfiguration));
+            await File.WriteAllTextAsync(_configuration.CashboxConfigurationFile!, cashboxConfiguration?.Serialize());
 
             return true;
         }
