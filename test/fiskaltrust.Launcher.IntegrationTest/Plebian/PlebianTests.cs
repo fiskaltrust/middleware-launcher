@@ -13,8 +13,6 @@ using fiskaltrust.ifPOS.v1;
 using fiskaltrust.Launcher.Clients;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.Launcher.Constants;
-using fiskaltrust.Middleware.Interface.Client.Http;
-using fiskaltrust.Middleware.Interface.Client;
 
 namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 {

@@ -51,9 +51,8 @@ namespace fiskaltrust.Launcher.Helpers
                 logger.Error("Launcher Update failed. See {LogFolder} for the update log.", launcherConfiguration.LogFolder);
                 var withEnrichedContext = (Action log) =>
                 {
-                    var enrichedContext = LogContext.PushProperty("EnrichedContext", " LauncherUpdater");
+                    using var enrichedContext = LogContext.PushProperty("EnrichedContext", " LauncherUpdater");
                     log();
-                    enrichedContext.Dispose();
                 };
 
                 var stdOut = await process.StandardOutput.ReadToEndAsync();
