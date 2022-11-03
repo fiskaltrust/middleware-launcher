@@ -75,7 +75,9 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             if (_hosts.Count == 0)
             {
-                await new TaskCompletionSource().Task; // wait for shutdown
+                // Wait for shutdown of the launcher (ctrl+c or windows service stop)
+                // if we dont have this and the ProcessHostMonarcStartup BackgroundService finished the Launcher shuts down with a TaskCancelledException
+                await new TaskCompletionSource().Task;
             }
 
             try
