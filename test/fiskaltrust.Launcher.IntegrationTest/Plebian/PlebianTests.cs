@@ -131,7 +131,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
             var lifetime = new HostApplicationLifetime();
 
             var hostingService = new HostingService(Mock.Of<ILogger<HostingService>>(), packageConfiguration, launcherConfiguration, processHostService);
-            var plebian = new ProcessHostPlebian(Mock.Of<ILogger<ProcessHostPlebian>>(), hostingService, launcherConfiguration, packageConfiguration, plebianConfiguration, services.BuildServiceProvider(), lifetime, processHostService);
+            using var plebian = new ProcessHostPlebian(Mock.Of<ILogger<ProcessHostPlebian>>(), hostingService, launcherConfiguration, packageConfiguration, plebianConfiguration, services.BuildServiceProvider(), lifetime, processHostService);
 
             await plebian.StartAsync(new CancellationToken());
 
