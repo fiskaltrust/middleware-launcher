@@ -45,7 +45,7 @@ namespace fiskaltrust.Launcher.Extensions
         private readonly CancellationTokenSource _starting = new();
         private readonly ManualResetEventSlim _started = new();
 
-        public IHostApplicationLifetime ApplicationLifetime { get => throw new NotImplementedException(); init => throw new NotImplementedException(); }
+        public IHostApplicationLifetime ApplicationLifetime { get; init; }
 
         public Lifetime(
             IHostEnvironment environment,
