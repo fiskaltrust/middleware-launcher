@@ -44,7 +44,7 @@ namespace fiskaltrust.Launcher.Helpers
 
             logger.Information("Launcher update starting in the background.");
 
-            Thread.Sleep(TimeSpan.FromSeconds(10));
+            await Task.Delay(TimeSpan.FromSeconds(3));
 
             if (process.HasExited)
             {
