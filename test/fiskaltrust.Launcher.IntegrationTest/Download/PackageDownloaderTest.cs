@@ -44,7 +44,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                 }
                 var path = Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId.ToString()!, packageConfiguration.Id.ToString(), $"{package}.dll");
                 _ = File.Exists(path).Should().BeTrue();
-
+                new FileInfo(path).Length.Should().BeGreaterThan(0);
+                Directory.Delete(Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId.ToString()!, packageConfiguration.Id.ToString()), true);
             }
         }
 
@@ -104,8 +105,6 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
             var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig();
             launcherConfiguration.LauncherVersion = new SemanticVersioning.Range(">= 2.0.0-preview3");
             var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration);
-
-            // ["2.0.0-beta.1.22185.54759","2.0.0-beta.1.22187.54788","2.0.0-beta.1.22187.54789","2.0.0-beta.1.22188.54846","2.0.0-beta.1.22189.54864","2.0.0-beta.1.22189.54870","2.0.0-beta.1.22189.54875","2.0.0-preview2","2.0.0-preview3.22248.55973","2.0.0-preview3.22249.56004","2.0.0-preview3"]
 
             var launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, launcherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
 
