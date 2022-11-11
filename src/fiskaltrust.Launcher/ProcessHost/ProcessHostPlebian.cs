@@ -102,27 +102,26 @@ namespace fiskaltrust.Launcher.ProcessHost
         {
             var hostingFailedCompletely = uris.Length > 0;
 
-            (object instance, Type type) = _plebianConfiguration.PackageType switch
+            object instance = _plebianConfiguration.PackageType switch
             {
-                PackageType.Queue => ((object)_services.GetRequiredService<IPOS>(), typeof(IPOS)),
-                PackageType.SCU => (_services.GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
-                PackageType.Helper => (_services.GetRequiredService<IHelper>(), typeof(IHelper)),
+                PackageType.Queue => _services.GetRequiredService<IPOS>(),
+                PackageType.SCU => _services.GetRequiredService<IDESSCD>(),
+                PackageType.Helper => _services.GetRequiredService<IHelper>(),
                 _ => throw new NotImplementedException()
             };
 
             foreach (var uri in uris)
             {
                 var url = new Uri(uri);
+                var hostingType = GetHostingType(url);
 
-                var hostingType = Enum.Parse<HostingType>(url.Scheme.ToUpper());
-
-                Action<WebApplication>? addEndpoints = hostingType switch
+                Action<WebApplication, object>? addEndpoints = hostingType switch
                 {
                     HostingType.REST => _plebianConfiguration.PackageType switch
                     {
-                        PackageType.Queue => app => app.AddQueueEndpoints((IPOS)instance),
-                        PackageType.SCU => app => app.AddScuEndpoints((IDESSCD)instance),
-                        PackageType.Helper => _ => { }
+                        PackageType.Queue => (app, instance) => app.AddQueueEndpoints((IPOS)instance),
+                        PackageType.SCU => (app, instance) => app.AddScuEndpoints((IDESSCD)instance),
+                        PackageType.Helper => (_, _) => { }
                         ,
                         _ => throw new NotImplementedException()
                     },
@@ -131,12 +130,23 @@ namespace fiskaltrust.Launcher.ProcessHost
 
                 try
                 {
-                    await _hosting.HostService(type, url, hostingType, instance, addEndpoints);
-                    if (_plebianConfiguration.PackageType == PackageType.Helper)
+                    switch (_plebianConfiguration.PackageType)
                     {
-                        ((IHelper)instance).StartBegin();
-                        ((IHelper)instance).StartEnd();
+                        case PackageType.SCU:
+                            await _hosting.HostService<IDESSCD>(url, hostingType, (IDESSCD)instance, addEndpoints);
+                            break;
+                        case PackageType.Queue:
+                            await _hosting.HostService<IPOS>(url, hostingType, (IPOS)instance, addEndpoints);
+                            break;
+                        case PackageType.Helper:
+                            await _hosting.HostService<IHelper>(url, hostingType, (IHelper)instance, addEndpoints);
+                            ((IHelper)instance).StartBegin();
+                            ((IHelper)instance).StartEnd();
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
+
                     hostingFailedCompletely = false;
                 }
                 catch (Exception e)
@@ -149,6 +159,17 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 throw new Exception("No host could be started.");
             }
+        }
+
+        private static HostingType GetHostingType(Uri url)
+        {
+            return url.Scheme.ToLowerInvariant() switch
+            {
+                "grpc" => HostingType.GRPC,
+                "rest" => HostingType.REST,
+                "http" or "https" or "net.tcp" => HostingType.SOAP,
+                _ => throw new NotImplementedException($"The hosting type for the URL {url} is currently not supported.")
+            };
         }
     }
 }

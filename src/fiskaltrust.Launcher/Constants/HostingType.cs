@@ -4,5 +4,6 @@ namespace fiskaltrust.Launcher.Constants
     {
         GRPC,
         REST,
+        SOAP
     }
 }

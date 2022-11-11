@@ -12,6 +12,11 @@ using Microsoft.AspNetCore.HttpLogging;
 using fiskaltrust.Launcher.Services.Interfaces;
 using Microsoft.AspNetCore.Http.Json;
 using fiskaltrust.Launcher.Helpers;
+using CoreWCF.Configuration;
+using CoreWCF;
+using fiskaltrust.ifPOS.v1;
+using CoreWCF.Channels;
+using CoreWCF.Description;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -21,6 +26,12 @@ namespace fiskaltrust.Launcher.Services
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly IProcessHostService? _processHostService;
         private readonly ILogger<HostingService> _logger;
+
+        // TODO Make this configurable/read it from package configuration
+        private long _messageSize = 16 * 1024 * 1024;
+        private TimeSpan _sendTimeout = TimeSpan.FromSeconds(15);
+        private TimeSpan _receiveTimeout = TimeSpan.FromDays(20);
+
         public HostingService(ILogger<HostingService> logger, PackageConfiguration packageConfiguration, LauncherConfiguration launcherConfiguration, IProcessHostService? processHostService = null)
         {
             _packageConfiguration = packageConfiguration;
@@ -29,7 +40,8 @@ namespace fiskaltrust.Launcher.Services
             _logger = logger;
         }
 
-        public async Task<WebApplication> HostService(Type T, Uri uri, HostingType hostingType, object instance, Action<WebApplication>? addEndpoints = null)
+
+        public async Task<WebApplication> HostService<T>(Uri uri, HostingType hostingType, T instance, Action<WebApplication, object> addEndpoints) where T : class
         {
             var builder = WebApplication.CreateBuilder();
 
@@ -59,10 +71,13 @@ namespace fiskaltrust.Launcher.Services
                     {
                         throw new ArgumentNullException(nameof(addEndpoints));
                     }
-                    app = CreateHttpHost(builder, uri, addEndpoints);
+                    app = CreateHttpHost(builder, uri, instance, addEndpoints);
                     break;
                 case HostingType.GRPC:
-                    app = (WebApplication)typeof(HostingService).GetTypeInfo().GetDeclaredMethod("CreateGrpcHost")!.MakeGenericMethod(new[] { T }).Invoke(this, new[] { builder, uri, instance })!;
+                    app = CreateGrpcHost(builder, uri, instance)!;
+                    break;
+                case HostingType.SOAP:
+                    app = CreateSoapHost(builder, uri, instance)!;
                     break;
                 default:
                     throw new NotImplementedException();
@@ -79,10 +94,7 @@ namespace fiskaltrust.Launcher.Services
             return app;
         }
 
-        public Task<WebApplication> HostService<T>(Uri uri, HostingType hostingType, T instance, Action<WebApplication>? addEndpoints = null) where T : class
-            => HostService(typeof(T), uri, hostingType, instance, addEndpoints);
-
-        private static WebApplication CreateHttpHost(WebApplicationBuilder builder, Uri uri, Action<WebApplication> addEndpoints)
+        private static WebApplication CreateHttpHost<T>(WebApplicationBuilder builder, Uri uri, T instance, Action<WebApplication, object> addEndpoints)
         {
             builder.Services.Configure<JsonOptions>(options =>
             {
@@ -97,9 +109,85 @@ namespace fiskaltrust.Launcher.Services
             app.Urls.Add(url.GetLeftPart(UriPartial.Authority));
 
             app.UseRouting();
-            addEndpoints(app);
+            addEndpoints(app, instance);
 
             return app;
+        }
+
+        private WebApplication CreateSoapHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
+        {
+            builder.WebHost.ConfigureKestrel((context, options) =>
+            {
+                options.AllowSynchronousIO = true;
+            });
+            // Add WSDL support
+            builder.Services.AddServiceModelServices().AddServiceModelMetadata();
+
+            // Instance will automatically be pulled from the DI container
+            builder.Services.AddSingleton<T>(_ => instance);
+
+            var app = builder.Build();
+
+            app.UseServiceModel(builder =>
+            {
+                builder.AddService(instance.GetType());
+
+                switch (uri.Scheme)
+                {
+                    case "http":
+                        builder.AddServiceEndpoint<T>(instance.GetType(), CreateBasicHttpBinding(BasicHttpSecurityMode.None), uri);
+                        break;
+                    case "https":
+                        builder.AddServiceEndpoint<T>(instance.GetType(), CreateBasicHttpBinding(BasicHttpSecurityMode.Transport), uri);
+                        break;
+                    case "net.tcp":
+                        builder.AddServiceEndpoint<T>(instance.GetType(), CreateNetTcpBinding(), uri);
+                        break;
+                    default:
+                        throw new Exception();
+                };
+            });
+
+            // Enable clients to request the WSDL file
+            var serviceMetadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
+            serviceMetadataBehavior.HttpGetEnabled = true;
+
+            return app;
+        }
+
+
+        private NetTcpBinding CreateNetTcpBinding()
+        {
+            var binding = new NetTcpBinding(SecurityMode.None);
+            if (_messageSize == 0)
+            {
+                binding.TransferMode = TransferMode.Streamed;
+                binding.MaxReceivedMessageSize = long.MaxValue;
+            }
+            else
+            {
+                binding.MaxReceivedMessageSize = _messageSize;
+            }
+            binding.SendTimeout = _sendTimeout;
+            binding.ReceiveTimeout = _receiveTimeout;
+            return binding;
+        }
+
+        private BasicHttpBinding CreateBasicHttpBinding(BasicHttpSecurityMode securityMode)
+        {
+            var binding = new BasicHttpBinding(securityMode);
+            if (_messageSize == 0)
+            {
+                binding.TransferMode = TransferMode.Streamed;
+                binding.MaxReceivedMessageSize = long.MaxValue;
+            }
+            else
+            {
+                binding.MaxReceivedMessageSize = _messageSize;
+            }
+            binding.SendTimeout = _sendTimeout;
+            binding.ReceiveTimeout = _receiveTimeout;
+            return binding;
         }
 
         internal static WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
