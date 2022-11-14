@@ -102,13 +102,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         {
             var hostingFailedCompletely = uris.Length > 0;
 
-            (object instance, Type type) = _plebianConfiguration.PackageType switch
-            {
-                PackageType.Queue => ((object)_services.GetRequiredService<IPOS>(), typeof(IPOS)),
-                PackageType.SCU => (_services.GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
-                PackageType.Helper => (_services.GetRequiredService<IHelper>(), typeof(IHelper)),
-                _ => throw new NotImplementedException()
-            };
+            (object instance, Type type)  = GetObjectAndInstance();
 
             foreach (var uri in uris)
             {
@@ -148,6 +142,30 @@ namespace fiskaltrust.Launcher.ProcessHost
             if (hostingFailedCompletely)
             {
                 throw new Exception("No host could be started.");
+            }
+        }
+
+        private (object instance, Type type) GetObjectAndInstance()
+        {
+            if (_launcherConfiguration.EnableBus)
+            {
+                return _plebianConfiguration.PackageType switch
+                {
+                    PackageType.Queue => ((object)new MessageBusPOSWrapper(_services.GetRequiredService<MessageBusClient>(), _services.GetRequiredService<IPOS>()), typeof(IPOS)),
+                    PackageType.SCU => (_services.GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
+                    PackageType.Helper => (_services.GetRequiredService<IHelper>(), typeof(IHelper)),
+                    _ => throw new NotImplementedException()
+                };
+            }
+            else
+            {
+                return _plebianConfiguration.PackageType switch
+                {
+                    PackageType.Queue => ((object)_services.GetRequiredService<IPOS>(), typeof(IPOS)),
+                    PackageType.SCU => (_services.GetRequiredService<IDESSCD>(), typeof(IDESSCD)),
+                    PackageType.Helper => (_services.GetRequiredService<IHelper>(), typeof(IHelper)),
+                    _ => throw new NotImplementedException()
+                };
             }
         }
     }

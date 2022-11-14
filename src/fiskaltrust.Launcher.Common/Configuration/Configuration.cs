@@ -133,6 +133,10 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonConverter(typeof(SemVersionConverter))]
         public SemanticVersioning.Range? LauncherVersion { get => _launcherVersion; set => _launcherVersion = (value is null || value == new SemanticVersioning.Range("")) ? null : value; }
 
+        private bool _enablebus = false;
+        [JsonPropertyName("enablebus")]
+        public bool EnableBus { get => _enablebus; set => _enablebus = value; }
+
         public void OverwriteWith(LauncherConfiguration? source)
         {
             if (source is null) { return; }

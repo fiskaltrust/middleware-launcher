@@ -28,6 +28,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
             AddOption(new Option<string>("--legacy-config-file", getDefaultValue: () => "fiskaltrust.exe.config"));
             AddOption(new Option<bool>("--merge-legacy-config-if-exists", getDefaultValue: () => true));
+            AddOption(new Option<bool>("--enable-bus", getDefaultValue: () => false));
         }
     }
 

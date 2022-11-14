@@ -10,7 +10,6 @@ namespace fiskaltrust.Launcher.Services
     {
         private readonly LauncherConfiguration _launcherConfiguration;
         private readonly ILogger<MessageBusService> _logger;
-        private MqttServer? _mqttServer;
 
         public MessageBusService(ILogger<MessageBusService> logger, LauncherConfiguration launcherConfiguration)
         {
@@ -18,7 +17,7 @@ namespace fiskaltrust.Launcher.Services
             _logger = logger;
         }
 
-        public async Task<IHost> StartMQQTServer()
+        public async Task<IHost> StartMQQTServer(CancellationToken token = default)
         {
             var builder = Host.CreateDefaultBuilder(Array.Empty<string>());
             builder.ConfigureWebHostDefaults(
@@ -79,20 +78,9 @@ namespace fiskaltrust.Launcher.Services
                         });
                     });
             var app = builder.Build();
-            await app.StartAsync();
-
-            _mqttServer = app.Services.GetService<MqttServer>();
+            await app.RunAsync(token);
             _logger.LogInformation("Started mqqt hosting. http://localhost:5000/mqqt ");
             return app;
-        }
-
-        public async Task PublishForCashBoxAsync(string cashboxid, string queueid, ifPOS.v1.ReceiptResponse response)
-        {
-            var applicationMessage = new MqttApplicationMessageBuilder()
-             .WithTopic($"{cashboxid}/{queueid}/sign/response")
-             .WithPayload(JsonSerializer.Serialize(response))
-             .Build();
-            await _mqttServer.InjectApplicationMessage(new InjectedMqttApplicationMessage(applicationMessage));
         }
     }
 }

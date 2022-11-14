@@ -85,6 +85,10 @@ namespace fiskaltrust.Launcher.Configuration
             {
                 launcherConfiguration.Proxy = value;
             }
+            else if (key == "enablebus")
+            {
+                launcherConfiguration.EnableBus = bool.Parse(value);
+            }
         }
     }
 }

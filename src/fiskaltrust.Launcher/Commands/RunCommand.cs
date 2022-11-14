@@ -59,6 +59,12 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => new Dictionary<Guid, ProcessHostMonarch>());
                     services.AddSingleton<PackageDownloader>();
                     services.AddHostedService<ProcessHostMonarcStartup>();
+
+                    if (_launcherConfiguration.EnableBus)
+                    {
+                        var messageBusService = new MessageBusService(services.BuildServiceProvider().GetRequiredService<ILogger<MessageBusService>>(), _launcherConfiguration);
+                        services.AddSingleton(messageBusService);
+                    }
                     services.AddSingleton(_ => Log.Logger);
                 });
 
@@ -100,14 +106,15 @@ namespace fiskaltrust.Launcher.Commands
                         Log.Error(e, "Could not download new Launcher version.");
                     }
                 }
-
             }
-
             try
             {
-                var messageBusService = new MessageBusService(app.Services.GetService<ILogger<MessageBusService>>(), _launcherConfiguration);
-                await messageBusService.StartMQQTServer();
 
+                if (_launcherConfiguration.EnableBus)
+                {
+                    var result = app.Services.GetRequiredService<MessageBusService>();
+                    await result.StartMQQTServer(_lifetime.ApplicationLifetime.ApplicationStopping);
+                }
                 await app.RunAsync(_lifetime.ApplicationLifetime.ApplicationStopping);
 
                 if (_updatePending)

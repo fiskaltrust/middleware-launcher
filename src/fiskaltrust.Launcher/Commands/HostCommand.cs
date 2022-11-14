@@ -104,6 +104,11 @@ namespace fiskaltrust.Launcher.Commands
                         services.AddSingleton(_ => processHostService);
                     }
 
+                    if (launcherConfiguration.EnableBus)
+                    {
+                        services.AddSingleton(new MessageBusClient($"{packageConfiguration.Id}"));
+                    }
+
                     services.AddSingleton<HostingService>();
                     services.AddHostedService<ProcessHostPlebian>();
 
@@ -149,9 +154,12 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 var app = builder.Build();
-                var messageBusService = new MessageBusService(app.Services.GetService<ILogger<MessageBusService>>(), launcherConfiguration);
-                await messageBusService.StartMQQTServer();
 
+                if (launcherConfiguration.EnableBus)
+                {
+                    var service = app.Services.GetRequiredService<MessageBusClient>();
+                    await service.StartClientAsync();
+                }
                 await app.RunAsync(_cancellationToken);
             }
             catch (Exception e)
