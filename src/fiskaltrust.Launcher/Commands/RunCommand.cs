@@ -105,6 +105,9 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
+                var messageBusService = new MessageBusService(app.Services.GetService<ILogger<MessageBusService>>(), _launcherConfiguration);
+                await messageBusService.StartMQQTServer();
+
                 await app.RunAsync(_lifetime.ApplicationLifetime.ApplicationStopping);
 
                 if (_updatePending)

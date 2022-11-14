@@ -149,6 +149,9 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 var app = builder.Build();
+                var messageBusService = new MessageBusService(app.Services.GetService<ILogger<MessageBusService>>(), launcherConfiguration);
+                await messageBusService.StartMQQTServer();
+
                 await app.RunAsync(_cancellationToken);
             }
             catch (Exception e)
