@@ -71,7 +71,7 @@ namespace fiskaltrust.Launcher.Services
                     {
                         throw new ArgumentNullException(nameof(addEndpoints));
                     }
-                    app = CreateHttpHost(builder, uri, instance, addEndpoints);
+                    app = CreateRestHost(builder, uri, instance, addEndpoints);
                     break;
                 case HostingType.GRPC:
                     app = CreateGrpcHost(builder, uri, instance)!;
@@ -94,7 +94,7 @@ namespace fiskaltrust.Launcher.Services
             return app;
         }
 
-        private static WebApplication CreateHttpHost<T>(WebApplicationBuilder builder, Uri uri, T instance, Action<WebApplication, object> addEndpoints)
+        private static WebApplication CreateRestHost<T>(WebApplicationBuilder builder, Uri uri, T instance, Action<WebApplication, object> addEndpoints)
         {
             builder.Services.Configure<JsonOptions>(options =>
             {
@@ -122,9 +122,10 @@ namespace fiskaltrust.Launcher.Services
             });
             // Add WSDL support
             builder.Services.AddServiceModelServices().AddServiceModelMetadata();
+            builder.Services.AddSingleton<IServiceBehavior, UseRequestHeadersForMetadataAddressBehavior>();
 
             // Instance will automatically be pulled from the DI container
-            builder.Services.AddSingleton<T>(_ => instance);
+            builder.Services.AddSingleton(_ => instance);
 
             var app = builder.Build();
 
@@ -135,13 +136,13 @@ namespace fiskaltrust.Launcher.Services
                 switch (uri.Scheme)
                 {
                     case "http":
-                        builder.AddServiceEndpoint<T>(instance.GetType(), CreateBasicHttpBinding(BasicHttpSecurityMode.None), uri);
+                        builder.AddServiceEndpoint(instance.GetType(), typeof(T), CreateBasicHttpBinding(BasicHttpSecurityMode.None), uri, null);
                         break;
                     case "https":
-                        builder.AddServiceEndpoint<T>(instance.GetType(), CreateBasicHttpBinding(BasicHttpSecurityMode.Transport), uri);
+                        builder.AddServiceEndpoint(instance.GetType(), typeof(T), CreateBasicHttpBinding(BasicHttpSecurityMode.Transport), uri, null);
                         break;
                     case "net.tcp":
-                        builder.AddServiceEndpoint<T>(instance.GetType(), CreateNetTcpBinding(), uri);
+                        builder.AddServiceEndpoint(instance.GetType(), typeof(T), CreateNetTcpBinding(), uri, null);
                         break;
                     default:
                         throw new Exception();
