@@ -91,7 +91,7 @@ namespace fiskaltrust.Launcher.Download
             }
         }
 
-        private async Task DownloadAsync(string name, string version, string platform, string targetPath, IEnumerable<string> targetNames)
+        public async Task DownloadAsync(string name, string version, string platform, string targetPath, IEnumerable<string> targetNames)
         {
             var combinedName = $"{name}-{version}";
             var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{combinedName}.zip");
