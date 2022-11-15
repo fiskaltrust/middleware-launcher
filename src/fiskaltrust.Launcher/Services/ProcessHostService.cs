@@ -11,11 +11,11 @@ namespace fiskaltrust.Launcher.Services
     [ServiceContract]
     public class ProcessHostService : IProcessHostService
     {
-        private readonly Dictionary<Guid, ProcessHostMonarch> _hosts;
+        private readonly Dictionary<Guid, IProcessHostMonarch> _hosts;
         private readonly Serilog.ILogger _logger;
         private readonly Mutex _logMutex;
 
-        public ProcessHostService(Dictionary<Guid, ProcessHostMonarch> hosts, Serilog.ILogger logger)
+        public ProcessHostService(Dictionary<Guid, IProcessHostMonarch> hosts, Serilog.ILogger logger)
         {
             _hosts = hosts;
             _logger = logger;

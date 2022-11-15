@@ -82,7 +82,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 {
                     while (true)
                     {
-                        Thread.Sleep(_launcherConfiguration.ProcessHostPingPeriodSec!.Value * 1000);
+                        await Task.Delay(_launcherConfiguration.ProcessHostPingPeriodSec!.Value * 1000);
                         try
                         {
                             await (_processHostService?.Ping() ?? Task.CompletedTask);

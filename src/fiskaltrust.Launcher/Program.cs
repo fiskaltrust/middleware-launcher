@@ -4,6 +4,7 @@ using fiskaltrust.Launcher.Commands;
 using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using fiskaltrust.Launcher.Extensions;
+using fiskaltrust.Launcher.Helpers;
 
 var command = new RootCommand {
   new RunCommand(),
@@ -27,7 +28,11 @@ await new CommandLineBuilder(command)
 
       host.ConfigureServices(services => services
         .Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(45))
-        .AddSingleton(_ => subArguments));
+        .AddSingleton(_ => subArguments)
+        .AddSingleton(_ => new LauncherProcessId(Environment.ProcessId))
+        .AddSingleton(_ => new LauncherExecutablePath(Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")))
+        .AddSingleton<SelfUpdater>()
+      );
 
       host
         .UseCommandHandler<HostCommand, HostCommandHandler>()

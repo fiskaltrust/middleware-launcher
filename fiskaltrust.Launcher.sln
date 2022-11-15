@@ -1,23 +1,24 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30114.105
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fiskaltrust.Launcher", "src\fiskaltrust.Launcher\fiskaltrust.Launcher.csproj", "{44D54860-C3A5-4E24-AF06-1DFD6ADD8B1B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fiskaltrust.Launcher", "src\fiskaltrust.Launcher\fiskaltrust.Launcher.csproj", "{44D54860-C3A5-4E24-AF06-1DFD6ADD8B1B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{07DBDA43-B1C9-4A50-8721-8A2D3CC3506F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fiskaltrust.LauncherUpdater", "src\fiskaltrust.LauncherUpdater\fiskaltrust.LauncherUpdater.csproj", "{9250B3D3-AB87-4CFA-9454-48E264C413DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fiskaltrust.LauncherUpdater", "src\fiskaltrust.LauncherUpdater\fiskaltrust.LauncherUpdater.csproj", "{9250B3D3-AB87-4CFA-9454-48E264C413DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fiskaltrust.Launcher.Common", "src\fiskaltrust.Launcher.Common\fiskaltrust.Launcher.Common.csproj", "{341FBE24-AE72-47BA-ACB6-FC3CA85544E9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fiskaltrust.Launcher.Common", "src\fiskaltrust.Launcher.Common\fiskaltrust.Launcher.Common.csproj", "{341FBE24-AE72-47BA-ACB6-FC3CA85544E9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{84733EDD-4700-4F1C-967E-8F802013304D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fiskaltrust.Launcher.IntegrationTest", "test\fiskaltrust.Launcher.IntegrationTest\fiskaltrust.Launcher.IntegrationTest.csproj", "{F90BE105-2B84-4CEC-8E9C-C8671E011F21}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{44D54860-C3A5-4E24-AF06-1DFD6ADD8B1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -32,9 +33,20 @@ Global
 		{341FBE24-AE72-47BA-ACB6-FC3CA85544E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{341FBE24-AE72-47BA-ACB6-FC3CA85544E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{341FBE24-AE72-47BA-ACB6-FC3CA85544E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F90BE105-2B84-4CEC-8E9C-C8671E011F21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F90BE105-2B84-4CEC-8E9C-C8671E011F21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F90BE105-2B84-4CEC-8E9C-C8671E011F21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F90BE105-2B84-4CEC-8E9C-C8671E011F21}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{9250B3D3-AB87-4CFA-9454-48E264C413DB} = {07DBDA43-B1C9-4A50-8721-8A2D3CC3506F}
 		{341FBE24-AE72-47BA-ACB6-FC3CA85544E9} = {07DBDA43-B1C9-4A50-8721-8A2D3CC3506F}
+		{F90BE105-2B84-4CEC-8E9C-C8671E011F21} = {84733EDD-4700-4F1C-967E-8F802013304D}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {80A5E550-1883-43C4-A7BE-9ABD328C8CC4}
 	EndGlobalSection
 EndGlobal

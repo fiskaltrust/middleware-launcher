@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using fiskaltrust.Launcher.Helpers;
+using Serilog;
 using System.Diagnostics;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
@@ -8,7 +9,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         private static readonly string _servicePath = "/etc/systemd/system/";
         private readonly string _serviceName = "fiskaltrustLauncher";
 
-        public LinuxSystemD(string? serviceName)
+        public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath) : base(launcherExecutablePath)
         {
             _serviceName = serviceName ?? _serviceName;
         }
@@ -60,9 +61,9 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             return true;
         }
 
-        private static string[] GetServiceFileContent(string serviceDescription, string commandArgs)
+        private string[] GetServiceFileContent(string serviceDescription, string commandArgs)
         {
-            var processPath = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable");
+            var processPath = _launcherExecutablePath.Path;
 
             var command = $"{processPath} {commandArgs}";
             return new[]

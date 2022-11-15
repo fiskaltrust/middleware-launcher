@@ -1,8 +1,3 @@
-parameters:
-- name: config
-  type: string
-  default: debug
-
 steps:
 - task: yavt@1
   inputs:
