@@ -6,11 +6,20 @@ using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.IntegrationTest.Helpers;
 using FluentAssertions;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 {
     public class SelfUpdateTests
     {
+        private readonly ITestOutputHelper output;
+
+        public SelfUpdateTests(ITestOutputHelper output)
+        {
+            this.output = output;
+        }
+
         [Fact]
         public async Task Test()
         {
@@ -82,9 +91,28 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             }
             catch { }
 
-            var fvi = FileVersionInfo.GetVersionInfo($"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}");
 
-            new SemanticVersioning.Version(fvi.ProductVersion).Should().BeGreaterThanOrEqualTo(new SemanticVersioning.Version("2.0.0-preview1"));
+            var versionProcess = new Process();
+
+            versionProcess.StartInfo.FileName = $"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}";
+            versionProcess.StartInfo.Arguments = "--version";
+            versionProcess.StartInfo.UseShellExecute = false;
+            versionProcess.StartInfo.RedirectStandardOutput = true;
+            versionProcess.StartInfo.CreateNoWindow = true;
+
+            versionProcess.Start();
+            try
+            {
+                await versionProcess.WaitForExitAsync(new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
+            }
+            catch (OperationCanceledException)
+            {
+                versionProcess.Kill();
+            }
+
+            var version = versionProcess.StandardOutput.ReadLine();
+
+            new SemanticVersioning.Version(version).Should().BeGreaterThanOrEqualTo(new SemanticVersioning.Version("2.0.0-preview1"));
         }
     }
 }
