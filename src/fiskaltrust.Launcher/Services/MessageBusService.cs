@@ -78,7 +78,7 @@ namespace fiskaltrust.Launcher.Services
                         });
                     });
             var app = builder.Build();
-            await app.RunAsync(token);
+            await app.StartAsync(token);
             _logger.LogInformation("Started mqqt hosting. http://localhost:5000/mqqt ");
             return app;
         }
