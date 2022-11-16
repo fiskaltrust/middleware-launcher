@@ -124,10 +124,12 @@ namespace fiskaltrust.Launcher.Services
 
         private WebApplication CreateSoapHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
-            builder.WebHost.ConfigureKestrel((context, options) =>
+            builder.WebHost.ConfigureKestrel(options =>
             {
+                ConfigureKestrel(options, uri);
                 options.AllowSynchronousIO = true;
             });
+
             // Add WSDL support
             builder.Services.AddServiceModelServices().AddServiceModelMetadata();
             builder.Services.AddSingleton<IServiceBehavior, UseRequestHeadersForMetadataAddressBehavior>();
