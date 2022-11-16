@@ -126,7 +126,7 @@ namespace fiskaltrust.Launcher.Services
         {
             builder.WebHost.ConfigureKestrel(options =>
             {
-                ConfigureKestrel(options, uri);
+                ConfigureKestrel(options, uri, _ => { });
                 options.AllowSynchronousIO = true;
             });
 
@@ -135,13 +135,13 @@ namespace fiskaltrust.Launcher.Services
             builder.Services.AddSingleton<IServiceBehavior, UseRequestHeadersForMetadataAddressBehavior>();
 
             // Instance will automatically be pulled from the DI container
-            builder.Services.AddSingleton(_ => instance);
+            builder.Services.AddSingleton(instance.GetType(), _ => instance);
 
             var app = builder.Build();
 
             app.UseServiceModel(builder =>
             {
-                builder.AddService(instance.GetType());
+                builder.AddService(instance.GetType(), serviceOptions => serviceOptions.DebugBehavior.IncludeExceptionDetailInFaults = true);
 
                 switch (uri.Scheme)
                 {
@@ -203,7 +203,7 @@ namespace fiskaltrust.Launcher.Services
 
         internal static WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
-            builder.WebHost.ConfigureKestrel(options => ConfigureKestrel(options, uri));
+            builder.WebHost.ConfigureKestrel(options => ConfigureKestrelForGrpc(options, uri));
             builder.Services.AddCodeFirstGrpc();
             builder.Services.AddSingleton(instance);
 
@@ -214,30 +214,26 @@ namespace fiskaltrust.Launcher.Services
 
             return app;
         }
-
-        public static void ConfigureKestrel(KestrelServerOptions options, Uri uri)
+        
+        private static void ConfigureKestrel(KestrelServerOptions options, Uri uri, Action<ListenOptions> configureListeners)
         {
             if (uri.IsLoopback && uri.Port != 0)
             {
-                options.ListenLocalhost(uri.Port, listenOptions =>
-                {
-                    listenOptions.Protocols = HttpProtocols.Http2;
-                });
+                options.ListenLocalhost(uri.Port, configureListeners);
             }
             else if (IPAddress.TryParse(uri.Host, out var ip))
             {
-                options.Listen(new IPEndPoint(ip, uri.Port), listenOptions =>
-                {
-                    listenOptions.Protocols = HttpProtocols.Http2;
-                });
+                options.Listen(new IPEndPoint(ip, uri.Port), configureListeners);
             }
             else
             {
-                options.ListenAnyIP(uri.Port, listenOptions =>
-                {
-                    listenOptions.Protocols = HttpProtocols.Http2;
-                });
+                options.ListenAnyIP(uri.Port, configureListeners);
             }
         }
+
+        public static void ConfigureKestrelForGrpc(KestrelServerOptions options, Uri uri) => ConfigureKestrel(options, uri, listenOptions =>
+        {
+            listenOptions.Protocols = HttpProtocols.Http2;
+        });
     }
 }
