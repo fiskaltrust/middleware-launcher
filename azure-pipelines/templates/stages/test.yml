@@ -25,6 +25,11 @@ stages:
       vmImage: ubuntu-latest
 
     steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: sdk
+        version: 6.0.x
+
     - template: ../restore.yml
 
     - pwsh: dotnet build -c ${{ parameters.config }}
