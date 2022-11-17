@@ -210,7 +210,34 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         public void Encrypt(Guid? cashboxId = null, string? accessToken = null)
         {
+            var cashboxIdInner = cashboxId.HasValue ? cashboxId.Value : CashboxId;
+            if (cashboxIdInner is null)
+            {
+                throw new Exception("No CashboxId provided.");
+            }
 
+            var accessTokenInner = accessToken ?? AccessToken;
+            if (accessTokenInner is null)
+            {
+                throw new Exception("No AccessToken provided.");
+            }
+
+            var encryptionHelper = new Encryption(cashboxIdInner.Value, accessTokenInner);
+
+            foreach (var field in GetType().GetFields())
+            {
+                var value = field.GetValue(this);
+
+                if (value is null)
+                {
+                    continue;
+                }
+
+                if (field.GetCustomAttributes<EnctyptAttribute>().Any())
+                {
+                    field.SetValue(this, encryptionHelper.Encrypt((string)value));
+                }
+            }
         }
 
         public void Decrypt(Guid? cashboxId = null, string? accessToken = null)
@@ -242,7 +269,6 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 {
                     field.SetValue(this, encryptionHelper.Decrypt((string)value));
                 }
-
             }
         }
     }
