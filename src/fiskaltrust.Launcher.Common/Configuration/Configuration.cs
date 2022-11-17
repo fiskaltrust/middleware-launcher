@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Common.Constants;
+using fiskaltrust.Launcher.Common.Helpers;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
 
@@ -18,6 +19,9 @@ namespace fiskaltrust.Launcher.Common.Configuration
             Name = name;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Field)]
+    public class EnctyptAttribute : Attribute { }
 
     public record LauncherConfiguration
     {
@@ -116,6 +120,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("sslValidation")]
         public bool? SslValidation { get => WithDefault<bool?>(_sslValidation.GetValueOrDefault(false) ? true : null, true); set => _sslValidation = value; } // TODO implement
 
+        [Enctypt]
         private string? _proxy = null;
         [JsonPropertyName("proxy")]
         public string? Proxy { get => _proxy; set => _proxy = value; }
@@ -153,6 +158,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             var redacted = (LauncherConfiguration)MemberwiseClone();
 
             redacted.AccessToken = "<redacted>";
+            redacted.Proxy = redacted.Proxy is null ? null : "<redacted>";
 
             return redacted;
         }
@@ -164,7 +170,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             return configuration;
         }
 
-        public string Serialize() => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), SerializerContext.Default);
+        public string Serialize(bool writeIndented = false) => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), new SerializerContext(new JsonSerializerOptions { WriteIndented = writeIndented }));
 
         internal void SetAlternateNames(string text)
         {
@@ -199,6 +205,44 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 }
 
                 property.SetValue(this, values[0].Deserialize(type, SerializerContext.Default));
+            }
+        }
+
+        public void Encrypt(Guid? cashboxId = null, string? accessToken = null)
+        {
+
+        }
+
+        public void Decrypt(Guid? cashboxId = null, string? accessToken = null)
+        {
+            var cashboxIdInner = cashboxId.HasValue ? cashboxId.Value : CashboxId;
+            if (cashboxIdInner is null)
+            {
+                throw new Exception("No CashboxId provided.");
+            }
+
+            var accessTokenInner = accessToken ?? AccessToken;
+            if (accessTokenInner is null)
+            {
+                throw new Exception("No AccessToken provided.");
+            }
+
+            var encryptionHelper = new Encryption(cashboxIdInner.Value, accessTokenInner);
+
+            foreach (var field in GetType().GetFields())
+            {
+                var value = field.GetValue(this);
+
+                if (value is null)
+                {
+                    continue;
+                }
+
+                if (field.GetCustomAttributes<EnctyptAttribute>().Any())
+                {
+                    field.SetValue(this, encryptionHelper.Decrypt((string)value));
+                }
+
             }
         }
     }
