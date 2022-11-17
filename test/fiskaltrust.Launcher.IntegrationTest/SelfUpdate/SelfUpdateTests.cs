@@ -15,19 +15,14 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 {
     public class SelfUpdateTests
     {
-        private readonly ITestOutputHelper output;
-
-        public SelfUpdateTests(ITestOutputHelper output)
-        {
-            this.output = output;
-        }
-
         [Fact]
         public async Task Test()
         {
-            using var writer = new CallbackWriter(value => output.WriteLine(value));
+            var buffer = "";
+            using var writer = new CallbackWriter(value => buffer += value);
 
             Console.SetOut(writer);
+
             LauncherConfiguration launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(Guid.Parse("c813ffc2-e129-45aa-8b51-9f2342bdfa08"), "BFHGxJScfQz7OJwIfH4QSYpVJj7mDkC4UYZQDiINXW6PED34hdJQ791wlFXKL+q3vPg/vYgaBSeB9oqyolQgtkE=");
             launcherConfiguration.LauncherVersion = new SemanticVersioning.Range("2.*.* || >=2.0.0-preview1");
             File.WriteAllText(Path.Combine(launcherConfiguration.ServiceFolder!, "launcher.configuration.json"), JsonSerializer.Serialize(launcherConfiguration));
@@ -69,7 +64,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 
                 if (command.IsCompleted)
                 {
-                    throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)));
+                    throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)) + $"\n---\n{buffer}");
                 }
 
                 Directory.CreateDirectory(Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher"));
@@ -81,7 +76,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                 lifetime.ApplicationLifetimeSource.StopApplication();
 
                 var exitCode = await command;
-                if (exitCode != 0) { throw new Exception($"Exitcode {exitCode}\n{Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file))}"); }
+                if (exitCode != 0) { throw new Exception($"Exitcode {exitCode}\n{Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file))}\n---\n{buffer}"); }
             }
             finally
             {
@@ -117,11 +112,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 
             var version = versionProcess.StandardOutput.ReadLine();
 
-            // The test is currently broken on linux 🥲
-            if (!OperatingSystem.IsLinux())
-            {
-                new SemanticVersioning.Version(version).Should().BeGreaterThanOrEqualTo(new SemanticVersioning.Version("2.0.0-preview1"));
-            }
+            new SemanticVersioning.Version(version).Should().BeGreaterThanOrEqualTo(new SemanticVersioning.Version("2.0.0-preview1"));
         }
     }
 }
