@@ -37,18 +37,22 @@ namespace fiskaltrust.Launcher.Common.Helpers
 
         public static ECDiffieHellman CreateCurve() => ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
 
-        public string Decrypt(string value)
+        public string Decrypt(string valueBase64)
         {
-            var encrypted = Convert.FromBase64String(value);
+            var encrypted = Convert.FromBase64String(valueBase64);
             using var aes = Aes.Create();
             aes.Key = _clientSharedSecret;
             var decrypted = aes.DecryptCbc(encrypted, _iv);
             return Encoding.UTF8.GetString(decrypted);
         }
 
-        private string Encrypt(string value, string clientPublicKeyX509, string serverPrivateKeyD, Guid cashBoxId)
+        public string Encrypt(string value)
         {
-            throw new NotImplementedException();
+            using var aes = Aes.Create();
+            aes.Key = _clientSharedSecret;
+            var encrypted = aes.EncryptCbc(Encoding.UTF8.GetBytes(value), _iv);
+
+            return Convert.ToBase64String(encrypted);
         }
     }
 }
