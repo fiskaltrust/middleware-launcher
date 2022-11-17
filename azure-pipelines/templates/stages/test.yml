@@ -15,7 +15,7 @@ stages:
     steps:
     - template: ../restore.yml
 
-    - pwsh: dotnet build -c ${{ parameters.config }} --self-contained false
+    - pwsh: dotnet build -c ${{ parameters.config }}
       displayName: Build
   
     - pwsh: dotnet test -c ${{ parameters.config }}

@@ -354,3 +354,4 @@ tmp
 
 src/**/Properties/**.json
 .fleet
+/test/Result

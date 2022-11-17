@@ -34,8 +34,6 @@ stages:
 
     steps:
     - template: ../restore.yml
-      parameters:
-        config: ${{ parameters.config }}
 
     - ${{ each project in parameters.projects }}:
       - pwsh: |

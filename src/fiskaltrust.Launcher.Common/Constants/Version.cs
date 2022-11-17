@@ -8,7 +8,7 @@ namespace fiskaltrust.Launcher.Common.Constants
         {
             get
             {
-                var version = Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+                var version = Assembly.GetExecutingAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
                 return version is not null ? new SemanticVersioning.Version(version) : null;
             }
         }

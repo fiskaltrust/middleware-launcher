@@ -7,7 +7,6 @@ using fiskaltrust.Middleware.Interface.Client.Soap;
 
 namespace fiskaltrust.Launcher.Clients
 {
-
     public class POSClientFactory : IClientFactory<IPOS>
     {
         public IPOS CreateClient(ClientConfiguration configuration)
