@@ -25,10 +25,7 @@ stages:
       vmImage: ubuntu-latest
 
     steps:
-    - task: UseDotNet@2
-      inputs:
-        packageType: sdk
-        version: 6.0.x
+    - bash: sudo apt-get install aspnetcore-runtime-6.0 -y
 
     - template: ../restore.yml
 
