@@ -18,12 +18,6 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
         [Fact]
         public async Task Test()
         {
-            var buffer = "";
-            using var writer = new CallbackWriter(value => buffer += value);
-
-            Console.SetOut(writer);
-            Console.SetError(writer);
-
             LauncherConfiguration launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(Guid.Parse("c813ffc2-e129-45aa-8b51-9f2342bdfa08"), "BFHGxJScfQz7OJwIfH4QSYpVJj7mDkC4UYZQDiINXW6PED34hdJQ791wlFXKL+q3vPg/vYgaBSeB9oqyolQgtkE=");
             launcherConfiguration.LauncherVersion = new SemanticVersioning.Range("2.*.* || >=2.0.0-preview1");
             File.WriteAllText(Path.Combine(launcherConfiguration.ServiceFolder!, "launcher.configuration.json"), JsonSerializer.Serialize(launcherConfiguration));
@@ -65,7 +59,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 
                 if (command.IsCompleted)
                 {
-                    throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)) + $"\n---\n{buffer}");
+                    throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)));
                 }
 
                 Directory.CreateDirectory(Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher"));
@@ -77,7 +71,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                 lifetime.ApplicationLifetimeSource.StopApplication();
 
                 var exitCode = await command;
-                if (exitCode != 0) { throw new Exception($"Exitcode {exitCode}\n{Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file))}\n---\n{buffer}"); }
+                if (exitCode != 0) { throw new Exception($"Exitcode {exitCode}\n{Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file))}"); }
             }
             finally
             {
@@ -114,14 +108,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 
             var version = versionProcess.StandardOutput.ReadLine();
 
-            try
-            {
-                new SemanticVersioning.Version(version).Should().BeGreaterThanOrEqualTo(new SemanticVersioning.Version("2.0.0-preview1"));
-            }
-            catch
-            {
-                throw new Exception(buffer + $"\n---\n{versionProcess.StandardError.ReadLine()}");
-            }
+            new SemanticVersioning.Version(version).Should().BeGreaterThanOrEqualTo(new SemanticVersioning.Version("2.0.0-preview1"));
         }
     }
 }
