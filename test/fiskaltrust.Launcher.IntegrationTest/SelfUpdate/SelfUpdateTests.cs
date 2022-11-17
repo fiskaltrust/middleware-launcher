@@ -22,6 +22,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             using var writer = new CallbackWriter(value => buffer += value);
 
             Console.SetOut(writer);
+            Console.SetError(writer);
 
             LauncherConfiguration launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(Guid.Parse("c813ffc2-e129-45aa-8b51-9f2342bdfa08"), "BFHGxJScfQz7OJwIfH4QSYpVJj7mDkC4UYZQDiINXW6PED34hdJQ791wlFXKL+q3vPg/vYgaBSeB9oqyolQgtkE=");
             launcherConfiguration.LauncherVersion = new SemanticVersioning.Range("2.*.* || >=2.0.0-preview1");
@@ -97,6 +98,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             versionProcess.StartInfo.FileName = $"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}";
             versionProcess.StartInfo.Arguments = "--version";
             versionProcess.StartInfo.UseShellExecute = false;
+            versionProcess.StartInfo.RedirectStandardError = true;
             versionProcess.StartInfo.RedirectStandardOutput = true;
             versionProcess.StartInfo.CreateNoWindow = true;
 
@@ -118,7 +120,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             }
             catch
             {
-                throw new Exception(buffer);
+                throw new Exception(buffer + $"\n---\n{versionProcess.StandardError.ReadLine()}");
             }
         }
     }
