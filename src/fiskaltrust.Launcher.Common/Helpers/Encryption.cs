@@ -46,7 +46,7 @@ namespace fiskaltrust.Launcher.Common.Helpers
             return Encoding.UTF8.GetString(decrypted);
         }
 
-        private string Encrypt(string value, string clientPublicKeyX509, string serverPrivateKeyD, Guid cashBoxId)
+        public string Encrypt(string value)
         {
             throw new NotImplementedException();
         }
