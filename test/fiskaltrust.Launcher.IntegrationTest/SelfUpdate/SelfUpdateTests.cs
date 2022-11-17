@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json;
 using fiskaltrust.Launcher.Commands;
 using fiskaltrust.Launcher.Common.Configuration;
@@ -23,6 +25,9 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
         [Fact]
         public async Task Test()
         {
+            using var writer = new CallbackWriter(value => output.WriteLine(value));
+
+            Console.SetOut(writer);
             LauncherConfiguration launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(Guid.Parse("c813ffc2-e129-45aa-8b51-9f2342bdfa08"), "BFHGxJScfQz7OJwIfH4QSYpVJj7mDkC4UYZQDiINXW6PED34hdJQ791wlFXKL+q3vPg/vYgaBSeB9oqyolQgtkE=");
             launcherConfiguration.LauncherVersion = new SemanticVersioning.Range("2.*.* || >=2.0.0-preview1");
             File.WriteAllText(Path.Combine(launcherConfiguration.ServiceFolder!, "launcher.configuration.json"), JsonSerializer.Serialize(launcherConfiguration));
@@ -76,7 +81,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                 lifetime.ApplicationLifetimeSource.StopApplication();
 
                 var exitCode = await command;
-                if (exitCode != 0) { throw new Exception($"Exitcode {exitCode}"); }
+                if (exitCode != 0) { throw new Exception($"Exitcode {exitCode}\n{Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file))}"); }
             }
             finally
             {
