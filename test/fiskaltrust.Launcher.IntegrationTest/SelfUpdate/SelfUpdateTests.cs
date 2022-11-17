@@ -112,7 +112,14 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 
             var version = versionProcess.StandardOutput.ReadLine();
 
-            new SemanticVersioning.Version(version).Should().BeGreaterThanOrEqualTo(new SemanticVersioning.Version("2.0.0-preview1"));
+            try
+            {
+                new SemanticVersioning.Version(version).Should().BeGreaterThanOrEqualTo(new SemanticVersioning.Version("2.0.0-preview1"));
+            }
+            catch
+            {
+                throw new Exception(buffer);
+            }
         }
     }
 }
