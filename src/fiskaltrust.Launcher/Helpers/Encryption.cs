@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace fiskaltrust.Launcher.Common.Helpers
+namespace fiskaltrust.Launcher.Helpers
 {
     public class Encryption
     {
@@ -35,7 +35,13 @@ namespace fiskaltrust.Launcher.Common.Helpers
             return dh.PublicKey;
         }
 
-        public static ECDiffieHellman CreateCurve() => ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
+        private static ECDiffieHellman? _curve = null;
+
+        public static ECDiffieHellman CreateCurve()
+        {
+            _curve ??= ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
+            return _curve;
+        }
 
         public string Decrypt(string valueBase64)
         {
@@ -46,13 +52,5 @@ namespace fiskaltrust.Launcher.Common.Helpers
             return Encoding.UTF8.GetString(decrypted);
         }
 
-        public string Encrypt(string value)
-        {
-            using var aes = Aes.Create();
-            aes.Key = _clientSharedSecret;
-            var encrypted = aes.EncryptCbc(Encoding.UTF8.GetBytes(value), _iv);
-
-            return Convert.ToBase64String(encrypted);
-        }
     }
 }

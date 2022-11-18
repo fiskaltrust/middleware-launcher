@@ -2,7 +2,7 @@
 using System.Text;
 using fiskaltrust.storage.serialization.V0;
 using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.Launcher.Common.Helpers;
+using fiskaltrust.Launcher.Helpers;
 using System.Text.Json;
 
 namespace fiskaltrust.Launcher.Configuration

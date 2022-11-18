@@ -1,11 +1,12 @@
-using System.Dynamic;
 using System.Reflection;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Common.Constants;
-using fiskaltrust.Launcher.Common.Helpers;
+using fiskaltrust.storage.encryption.V0;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
+using System.Text;
 
 namespace fiskaltrust.Launcher.Common.Configuration
 {
@@ -170,7 +171,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             return configuration;
         }
 
-        public string Serialize(bool writeIndented = false) => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), new SerializerContext(new JsonSerializerOptions { WriteIndented = writeIndented }));
+        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false) => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), new SerializerContext(new JsonSerializerOptions { WriteIndented = writeIndented, Encoder = useUnsafeEncoding ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default, }));
 
         internal void SetAlternateNames(string text)
         {
@@ -249,27 +250,27 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 throw new Exception("No AccessToken provided.");
             }
 
-            var encryptionHelper = new Encryption(cashboxIdInner.Value, accessTokenInner);
-
-            MapFieldsWithAttribute<EnctyptAttribute>((value) => value is not null ? encryptionHelper.Encrypt((string)value) : null);
+            MapFieldsWithAttribute<EnctyptAttribute>(value =>
+            {
+                if (value is null) { return null; }
+                return Convert.ToBase64String(Encryption.Encrypt(Encoding.UTF8.GetBytes((string)value), Convert.FromBase64String(accessTokenInner)));
+            });
         }
 
-        public void Decrypt(Guid? cashboxId = null, string? accessToken = null)
+        public void Decrypt(string? accessToken = null)
         {
-            var cashboxIdInner = cashboxId ?? CashboxId;
-            if (cashboxIdInner is null)
-            {
-                throw new Exception("No CashboxId provided.");
-            }
-
             var accessTokenInner = accessToken ?? AccessToken;
             if (accessTokenInner is null)
             {
                 throw new Exception("No AccessToken provided.");
             }
 
-            var encryptionHelper = new Encryption(cashboxIdInner.Value, accessTokenInner);
-            MapFieldsWithAttribute<EnctyptAttribute>((value) => value is not null ? encryptionHelper.Decrypt((string)value) : null);
+            MapFieldsWithAttribute<EnctyptAttribute>((value) =>
+            {
+                if (value is null) { return null; }
+
+                return Encoding.UTF8.GetString(Encryption.Decrypt(Convert.FromBase64String((string)value), Convert.FromBase64String(accessTokenInner)));
+            });
         }
     }
 
