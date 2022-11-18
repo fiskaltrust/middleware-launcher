@@ -19,7 +19,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
         public async Task Test()
         {
             // Test is not working on linux right now 🥲
-            if (!OperatingSystem.IsLinux())
+            if (OperatingSystem.IsLinux())
             {
                 return;
             }
