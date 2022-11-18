@@ -208,9 +208,36 @@ namespace fiskaltrust.Launcher.Common.Configuration
             }
         }
 
+        private void MapFieldsWithAttribute<T>(Func<object?, object?> action)
+        {
+            var errors = new List<Exception>();
+
+            foreach (var field in GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                var value = field.GetValue(this);
+
+                if (field.GetCustomAttributes(typeof(T)).Any())
+                {
+                    try
+                    {
+                        field.SetValue(this, action(value));
+                    }
+                    catch (Exception e)
+                    {
+                        errors.Add(e);
+                    }
+                }
+            }
+
+            if (errors.Any())
+            {
+                throw new AggregateException(errors);
+            }
+        }
+
         public void Encrypt(Guid? cashboxId = null, string? accessToken = null)
         {
-            var cashboxIdInner = cashboxId.HasValue ? cashboxId.Value : CashboxId;
+            var cashboxIdInner = cashboxId ?? CashboxId;
             if (cashboxIdInner is null)
             {
                 throw new Exception("No CashboxId provided.");
@@ -224,25 +251,12 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
             var encryptionHelper = new Encryption(cashboxIdInner.Value, accessTokenInner);
 
-            foreach (var field in GetType().GetFields())
-            {
-                var value = field.GetValue(this);
-
-                if (value is null)
-                {
-                    continue;
-                }
-
-                if (field.GetCustomAttributes<EnctyptAttribute>().Any())
-                {
-                    field.SetValue(this, encryptionHelper.Encrypt((string)value));
-                }
-            }
+            MapFieldsWithAttribute<EnctyptAttribute>((value) => value is not null ? encryptionHelper.Encrypt((string)value) : null);
         }
 
         public void Decrypt(Guid? cashboxId = null, string? accessToken = null)
         {
-            var cashboxIdInner = cashboxId.HasValue ? cashboxId.Value : CashboxId;
+            var cashboxIdInner = cashboxId ?? CashboxId;
             if (cashboxIdInner is null)
             {
                 throw new Exception("No CashboxId provided.");
@@ -255,21 +269,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             }
 
             var encryptionHelper = new Encryption(cashboxIdInner.Value, accessTokenInner);
-
-            foreach (var field in GetType().GetFields())
-            {
-                var value = field.GetValue(this);
-
-                if (value is null)
-                {
-                    continue;
-                }
-
-                if (field.GetCustomAttributes<EnctyptAttribute>().Any())
-                {
-                    field.SetValue(this, encryptionHelper.Decrypt((string)value));
-                }
-            }
+            MapFieldsWithAttribute<EnctyptAttribute>((value) => value is not null ? encryptionHelper.Decrypt((string)value) : null);
         }
     }
 

@@ -83,7 +83,7 @@ namespace fiskaltrust.Launcher.Configuration
             }
             else if (key == "proxy")
             {
-                launcherConfiguration.Proxy = value;
+                Log.Warning("Encrypted proxy string was not read. Please set the proxy string manually using the \"config set\" command.");
             }
         }
     }

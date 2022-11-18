@@ -173,7 +173,14 @@ namespace fiskaltrust.Launcher.Commands
             Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", _launcherConfiguration.CashboxConfigurationFile);
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", _launcherConfiguration.Redacted());
 
-            _launcherConfiguration.Decrypt();
+            try
+            {
+                _launcherConfiguration.Decrypt();
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Error decrypring launcher configuration file.");
+            }
             return 0;
         }
     }

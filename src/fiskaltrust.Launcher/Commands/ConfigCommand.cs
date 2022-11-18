@@ -52,7 +52,7 @@ namespace fiskaltrust.Launcher.Commands
                 .CreateLogger();
 
             LauncherConfiguration launcherConfiguration;
-            string rawLauncherConfiguration = "{\n}";
+            string rawLauncherConfigurationOld = "{\n}";
 
             if (!File.Exists(LauncherConfigurationFile))
             {
@@ -64,7 +64,22 @@ namespace fiskaltrust.Launcher.Commands
                 try
                 {
                     launcherConfiguration = LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(LauncherConfigurationFile));
-                    rawLauncherConfiguration = launcherConfiguration.Serialize(true);
+                    try
+                    {
+                        try
+                        {
+                            launcherConfiguration.Decrypt(CipyerCashboxId, CipyerAccessToken);
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Warning(e, "Error decrypring launcher configuration file.");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Warning(e, "Error decrypring launcher configuration file.");
+                    }
+                    rawLauncherConfigurationOld = launcherConfiguration.Serialize(true);
                 }
                 catch (Exception e)
                 {
@@ -76,12 +91,19 @@ namespace fiskaltrust.Launcher.Commands
             launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
             launcherConfiguration.DisableDefaults();
 
-            string launcherConfigurationString;
+            string rawLauncherConfigurationNew;
             try
             {
-                launcherConfiguration.Encrypt(CipyerCashboxId, CipyerAccessToken);
-                launcherConfigurationString = launcherConfiguration.Serialize(true);
-                await File.WriteAllTextAsync(LauncherConfigurationFile, launcherConfigurationString);
+                rawLauncherConfigurationNew = launcherConfiguration.Serialize(true);
+                try
+                {
+                    launcherConfiguration.Encrypt(CipyerCashboxId, CipyerAccessToken);
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Error encrypring launcher configuration file.");
+                }
+                await File.WriteAllTextAsync(LauncherConfigurationFile, launcherConfiguration.Serialize(true));
             }
             catch (Exception e)
             {
@@ -92,7 +114,7 @@ namespace fiskaltrust.Launcher.Commands
 
             Log.Information("Set new launcher configuration file values.");
 
-            var diff = InlineDiffBuilder.Diff(rawLauncherConfiguration, launcherConfigurationString);
+            var diff = InlineDiffBuilder.Diff(rawLauncherConfigurationOld, rawLauncherConfigurationNew);
             if (diff.HasDifferences)
             {
                 var savedColor = Console.ForegroundColor;
@@ -153,7 +175,14 @@ namespace fiskaltrust.Launcher.Commands
                 try
                 {
                     localConfiguration = LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(LauncherConfigurationFile));
-                    localConfiguration.Decrypt(CipyerCashboxId, CipyerAccessToken);
+                    try
+                    {
+                        localConfiguration.Decrypt(CipyerCashboxId, CipyerAccessToken);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Warning(e, "Error decrypring launcher configuration file.");
+                    }
                     localConfiguration.DisableDefaults();
                 }
                 catch (Exception e)
@@ -172,9 +201,7 @@ namespace fiskaltrust.Launcher.Commands
                 LauncherConfiguration? legacyConfiguration = null;
                 try
                 {
-
                     legacyConfiguration = await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigFile);
-                    legacyConfiguration.Decrypt(CipyerCashboxId, CipyerAccessToken);
                     legacyConfiguration?.DisableDefaults();
                 }
                 catch (Exception e)
@@ -195,7 +222,14 @@ namespace fiskaltrust.Launcher.Commands
                 try
                 {
                     remoteConfiguration = LauncherConfigurationInCashBoxConfiguration.Deserialize(await File.ReadAllTextAsync(CashBoxConfigurationFile));
-                    remoteConfiguration?.Decrypt(CipyerCashboxId, CipyerAccessToken);
+                    try
+                    {
+                        remoteConfiguration?.Decrypt(CipyerCashboxId, CipyerAccessToken);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Warning(e, "Error decrypring launcher configuration file.");
+                    }
                     remoteConfiguration?.DisableDefaults();
                 }
                 catch (Exception e)
