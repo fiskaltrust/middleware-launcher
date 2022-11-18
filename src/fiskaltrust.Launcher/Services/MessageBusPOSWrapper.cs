@@ -1,13 +1,14 @@
 ﻿using fiskaltrust.ifPOS.v0;
+using Serilog;
 
 namespace fiskaltrust.Launcher.Services
 {
     public class MessageBusPOSWrapper : ifPOS.v1.IPOS
     {
         private readonly MessageBusClient _client;
-        private readonly IPOS _queue;
+        private readonly ifPOS.v1.IPOS _queue;
 
-        public MessageBusPOSWrapper(MessageBusClient messageBusService, IPOS queue)
+        public MessageBusPOSWrapper(MessageBusClient messageBusService, ifPOS.v1.IPOS queue)
         {
             _client = messageBusService;
             _queue = queue;
@@ -35,7 +36,7 @@ namespace fiskaltrust.Launcher.Services
 
         public async Task<ifPOS.v1.EchoResponse> EchoAsync(ifPOS.v1.EchoRequest message)
         {
-            return await EchoAsync(message);
+            return await _queue.EchoAsync(message);
         }
 
         public string EndEcho(IAsyncResult result)
@@ -60,19 +61,19 @@ namespace fiskaltrust.Launcher.Services
 
         public IAsyncEnumerable<ifPOS.v1.JournalResponse> JournalAsync(ifPOS.v1.JournalRequest request)
         {
-            return JournalAsync(request);
+            return _queue.JournalAsync(request);
         }
 
         public ReceiptResponse Sign(ReceiptRequest data)
         {
-            var response = Sign(data);
+            var response = _queue.Sign(data);
             Task.Run(() => _client.PublishSignAsync(data.ftCashBoxID, response.ftQueueID, data, response)).Wait();
             return response;
         }
 
         public async Task<ifPOS.v1.ReceiptResponse> SignAsync(ifPOS.v1.ReceiptRequest request)
         {
-            var response = await SignAsync(request);
+            var response = await _queue.SignAsync(request);
             await _client.PublishSignAsync(request.ftCashBoxID, response.ftQueueID, request, response);
             return response;
         }
