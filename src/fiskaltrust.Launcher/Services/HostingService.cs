@@ -46,8 +46,7 @@ namespace fiskaltrust.Launcher.Services
             {
                 _sendTimeout = TimeSpan.FromSeconds(timeout);
             }
-        }
-
+        }        
 
         public async Task<WebApplication> HostService<T>(Uri uri, HostingType hostingType, T instance, Action<WebApplication, object> addEndpoints) where T : class
         {

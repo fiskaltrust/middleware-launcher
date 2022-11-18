@@ -43,7 +43,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 {
                     Url = packageConfiguration.Url[0],
                     UrlType = "grpc",
-                    RetryCount = 0
+                    RetryCount = 1
                 });
 
                 (await grpcClient.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().Match<ScuDeEchoResponse>(r => r.Message == "test");
@@ -52,7 +52,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 {
                     Url = packageConfiguration.Url[1],
                     UrlType = "rest",
-                    RetryCount = 0,
+                    RetryCount = 1,
                     Timeout = TimeSpan.FromSeconds(30)
                 });
 

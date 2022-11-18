@@ -27,7 +27,7 @@ namespace fiskaltrust.Launcher.Clients
 
             return configuration.UrlType switch
             {
-                "grpc" => GrpcDESSCDFactory.CreateSSCDAsync(new GrpcClientOptions { Url = new Uri(configuration.Url), RetryPolicyOptions = retryPolicyoptions, ChannelOptions = new GrpcChannelOptions { Credentials = ChannelCredentials.Insecure } }).Result,
+                "grpc" => GrpcDESSCDFactory.CreateSSCDAsync(new GrpcClientOptions { Url = new Uri(configuration.Url.Replace("grpc://", "http://")), RetryPolicyOptions = retryPolicyoptions, ChannelOptions = new GrpcChannelOptions { Credentials = ChannelCredentials.Insecure } }).Result,
                 "rest" => HttpDESSCDFactory.CreateSSCDAsync(new ClientOptions { Url = new Uri(configuration.Url.Replace("rest://", "http://")), RetryPolicyOptions = retryPolicyoptions }).Result,
                 "http" or "https" or "net.tcp" => SoapDESSCDFactory.CreateSSCDAsync(new ClientOptions { Url = new Uri(configuration.Url), RetryPolicyOptions = retryPolicyoptions }).Result,
                 _ => throw new ArgumentException("This version of the fiskaltrust Launcher currently only supports gRPC, REST and SOAP communication."),
