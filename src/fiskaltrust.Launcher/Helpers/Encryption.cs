@@ -7,11 +7,13 @@ namespace fiskaltrust.Launcher.Helpers
     {
         private readonly byte[] _clientSharedSecret;
         private readonly byte[] _iv;
+        private readonly ECDiffieHellman _curve;
 
-        public Encryption(Guid cashboxId, string accessToken)
+        public Encryption(Guid cashboxId, string accessToken, ECDiffieHellman curve)
         {
+            _curve = curve;
             using var serverPublicKeyDh = ParsePublicKey(Convert.FromBase64String(accessToken));
-            _clientSharedSecret = CreateCurve().DeriveKeyMaterial(serverPublicKeyDh);
+            _clientSharedSecret = _curve.DeriveKeyMaterial(serverPublicKeyDh);
 
             _iv = cashboxId.ToByteArray();
         }
@@ -35,13 +37,7 @@ namespace fiskaltrust.Launcher.Helpers
             return dh.PublicKey;
         }
 
-        private static ECDiffieHellman? _curve = null;
-
-        public static ECDiffieHellman CreateCurve()
-        {
-            _curve ??= ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
-            return _curve;
-        }
+        public static ECDiffieHellman CreateCurve() => ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
 
         public string Decrypt(string valueBase64)
         {

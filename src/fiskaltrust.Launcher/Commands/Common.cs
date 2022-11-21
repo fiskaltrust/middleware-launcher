@@ -8,6 +8,7 @@ using fiskaltrust.Launcher.Common.Helpers;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
+using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
@@ -45,9 +46,12 @@ namespace fiskaltrust.Launcher.Commands
 
         protected LauncherConfiguration _launcherConfiguration = null!;
         protected ftCashBoxConfiguration _cashboxConfiguration = null!;
+        protected ECDiffieHellman _clientEcdh = null!;
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
+            _clientEcdh = Encryption.CreateCurve();
+
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(collectionSink)
@@ -147,7 +151,7 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 _cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!));
-                _cashboxConfiguration.Decrypt(_launcherConfiguration);
+                _cashboxConfiguration.Decrypt(_launcherConfiguration, _clientEcdh);
             }
             catch (Exception e)
             {

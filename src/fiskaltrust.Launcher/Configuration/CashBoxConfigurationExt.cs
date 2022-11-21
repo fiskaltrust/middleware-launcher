@@ -12,9 +12,9 @@ namespace fiskaltrust.Launcher.Configuration
         private const string ENCRYPTION_SUFFIX = "_encrypted";
         private static readonly List<string> _configKeyToEncrypt = new() { "connectionstring" };
 
-        public static void Decrypt(this ftCashBoxConfiguration cashboxConfiguration, LauncherConfiguration launcherConfiguration)
+        public static void Decrypt(this ftCashBoxConfiguration cashboxConfiguration, LauncherConfiguration launcherConfiguration, ECDiffieHellman curve)
         {
-            var encryptionHelper = new Encryption(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!);
+            var encryptionHelper = new Encryption(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, curve);
 
             foreach (var queue in cashboxConfiguration.ftQueues)
             {
