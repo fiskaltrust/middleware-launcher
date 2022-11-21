@@ -22,7 +22,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
     }
 
     [AttributeUsage(AttributeTargets.Field)]
-    public class EnctyptAttribute : Attribute { }
+    public class EncryptAttribute : Attribute { }
 
     public record LauncherConfiguration
     {
@@ -121,7 +121,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("sslValidation")]
         public bool? SslValidation { get => WithDefault<bool?>(_sslValidation.GetValueOrDefault(false) ? true : null, true); set => _sslValidation = value; } // TODO implement
 
-        [Enctypt]
+        [Encrypt]
         private string? _proxy = null;
         [JsonPropertyName("proxy")]
         public string? Proxy { get => _proxy; set => _proxy = value; }
@@ -236,21 +236,15 @@ namespace fiskaltrust.Launcher.Common.Configuration
             }
         }
 
-        public void Encrypt(Guid? cashboxId = null, string? accessToken = null)
+        public void Encrypt(string? accessToken = null)
         {
-            var cashboxIdInner = cashboxId ?? CashboxId;
-            if (cashboxIdInner is null)
-            {
-                throw new Exception("No CashboxId provided.");
-            }
-
             var accessTokenInner = accessToken ?? AccessToken;
             if (accessTokenInner is null)
             {
                 throw new Exception("No AccessToken provided.");
             }
 
-            MapFieldsWithAttribute<EnctyptAttribute>(value =>
+            MapFieldsWithAttribute<EncryptAttribute>(value =>
             {
                 if (value is null) { return null; }
                 return Convert.ToBase64String(Encryption.Encrypt(Encoding.UTF8.GetBytes((string)value), Convert.FromBase64String(accessTokenInner)));
@@ -265,7 +259,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 throw new Exception("No AccessToken provided.");
             }
 
-            MapFieldsWithAttribute<EnctyptAttribute>((value) =>
+            MapFieldsWithAttribute<EncryptAttribute>((value) =>
             {
                 if (value is null) { return null; }
 

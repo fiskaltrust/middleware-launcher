@@ -1,7 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.Json;
 using fiskaltrust.Launcher.Commands;
 using fiskaltrust.Launcher.Common.Configuration;
@@ -9,8 +6,6 @@ using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.IntegrationTest.Helpers;
 using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 {

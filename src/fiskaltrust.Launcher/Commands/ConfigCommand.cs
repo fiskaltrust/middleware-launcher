@@ -41,8 +41,7 @@ namespace fiskaltrust.Launcher.Commands
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
 
-        public Guid? CipyerCashboxId { get; set; }
-        public string? CipyerAccessToken { get; set; }
+        public string? CipherAccessToken { get; set; }
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
@@ -63,26 +62,29 @@ namespace fiskaltrust.Launcher.Commands
                 try
                 {
                     launcherConfiguration = LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(LauncherConfigurationFile));
-                    try
-                    {
-                        try
-                        {
-                            launcherConfiguration.Decrypt(CipyerAccessToken);
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Warning(e, "Error decrypring launcher configuration file.");
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Warning(e, "Error decrypring launcher configuration file.");
-                    }
-                    rawLauncherConfigurationOld = launcherConfiguration.Serialize(true, true);
                 }
                 catch (Exception e)
                 {
                     Log.Error(e, "Could not read launcher configuration");
+                    return 1;
+                }
+
+                try
+                {
+                    launcherConfiguration.Decrypt(CipherAccessToken);
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Error decrypting launcher configuration file.");
+                }
+
+                try
+                {
+                    rawLauncherConfigurationOld = launcherConfiguration.Serialize(true, true);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error reserializing launcher configuration file.");
                     return 1;
                 }
             }
@@ -91,17 +93,19 @@ namespace fiskaltrust.Launcher.Commands
             launcherConfiguration.DisableDefaults();
 
             string rawLauncherConfigurationNew;
+            rawLauncherConfigurationNew = launcherConfiguration.Serialize(true, true);
+
             try
             {
-                rawLauncherConfigurationNew = launcherConfiguration.Serialize(true, true);
-                try
-                {
-                    launcherConfiguration.Encrypt(CipyerCashboxId, CipyerAccessToken);
-                }
-                catch (Exception e)
-                {
-                    Log.Warning(e, "Error encrypring launcher configuration file.");
-                }
+                launcherConfiguration.Encrypt(CipherAccessToken);
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Error encrypting launcher configuration file.");
+            }
+
+            try
+            {
                 await File.WriteAllTextAsync(LauncherConfigurationFile, launcherConfiguration.Serialize(true));
             }
             catch (Exception e)
@@ -158,8 +162,7 @@ namespace fiskaltrust.Launcher.Commands
         public string? LegacyConfigFile { get; set; }
         public string? CashBoxConfigurationFile { get; set; }
 
-        public Guid? CipyerCashboxId { get; set; }
-        public string? CipyerAccessToken { get; set; }
+        public string? CipherAccessToken { get; set; }
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
@@ -170,23 +173,7 @@ namespace fiskaltrust.Launcher.Commands
             LauncherConfiguration? localConfiguration = null;
             if (LauncherConfigurationFile is not null)
             {
-                try
-                {
-                    localConfiguration = LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(LauncherConfigurationFile));
-                    try
-                    {
-                        localConfiguration.Decrypt(CipyerAccessToken);
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Warning(e, "Error decrypring launcher configuration file.");
-                    }
-                    localConfiguration.DisableDefaults();
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Could not read launcher configuration.");
-                }
+                localConfiguration = await ReadLauncherConfiguration(LauncherConfigurationFile, LauncherConfiguration.Deserialize);
 
                 if (localConfiguration is not null)
                 {
@@ -196,17 +183,7 @@ namespace fiskaltrust.Launcher.Commands
 
             if (LegacyConfigFile is not null)
             {
-                LauncherConfiguration? legacyConfiguration = null;
-                try
-                {
-                    legacyConfiguration = await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigFile);
-                    legacyConfiguration?.Decrypt(CipyerAccessToken);
-                    legacyConfiguration?.DisableDefaults();
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Could not read legacy launcher configuration.");
-                }
+                LauncherConfiguration? legacyConfiguration = await ReadLauncherConfiguration(LegacyConfigFile, LegacyConfigFileReader.ReadLegacyConfigFile!);
 
                 if (legacyConfiguration is not null)
                 {
@@ -217,24 +194,7 @@ namespace fiskaltrust.Launcher.Commands
             CashBoxConfigurationFile ??= localConfiguration?.CashboxConfigurationFile;
             if (CashBoxConfigurationFile is not null)
             {
-                LauncherConfiguration? remoteConfiguration = null;
-                try
-                {
-                    remoteConfiguration = LauncherConfigurationInCashBoxConfiguration.Deserialize(await File.ReadAllTextAsync(CashBoxConfigurationFile));
-                    try
-                    {
-                        remoteConfiguration?.Decrypt(CipyerAccessToken);
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Warning(e, "Error decrypring launcher configuration file.");
-                    }
-                    remoteConfiguration?.DisableDefaults();
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Could not read remote launcher configuration.");
-                }
+                LauncherConfiguration? remoteConfiguration = await ReadLauncherConfiguration(CashBoxConfigurationFile, LauncherConfigurationInCashBoxConfiguration.Deserialize);
 
                 if (remoteConfiguration is not null)
                 {
@@ -244,5 +204,32 @@ namespace fiskaltrust.Launcher.Commands
 
             return 0;
         }
+
+        public async Task<LauncherConfiguration?> ReadLauncherConfiguration(string launcherConfigurationFile, Func<string, Task<LauncherConfiguration?>> deserialize)
+        {
+            LauncherConfiguration? configuration = null;
+            try
+            {
+                configuration = await deserialize(await File.ReadAllTextAsync(launcherConfigurationFile));
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Could not read launcher configuration {file}.", launcherConfigurationFile);
+            }
+
+            try
+            {
+                configuration?.Decrypt(CipherAccessToken);
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Error decrypting launcher configuration file {file}.", launcherConfigurationFile);
+            }
+            configuration?.DisableDefaults();
+
+            return configuration;
+        }
+
+        public Task<LauncherConfiguration?> ReadLauncherConfiguration(string launcherConfigurationFile, Func<string, LauncherConfiguration?> deserialize) => ReadLauncherConfiguration(launcherConfigurationFile, (content) => Task.FromResult(deserialize(content)));
     }
 }
