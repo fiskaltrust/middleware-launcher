@@ -4,9 +4,11 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Extensions;
+using fiskaltrust.Launcher.Common.Helpers;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
+using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
 using Serilog;
@@ -18,16 +20,20 @@ namespace fiskaltrust.Launcher.Commands
 
     public class CommonCommand : Command
     {
-        public CommonCommand(string name) : base(name)
+        public CommonCommand(string name, bool addCliOnlyParameters = true) : base(name)
         {
             AddOption(new Option<Guid?>("--cashbox-id"));
             AddOption(new Option<string?>("--access-token"));
             AddOption(new Option<bool>("--sandbox"));
             AddOption(new Option<string?>("--log-folder"));
             AddOption(new Option<LogLevel?>("--log-level"));
-            AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
-            AddOption(new Option<string>("--legacy-config-file", getDefaultValue: () => "fiskaltrust.exe.config"));
-            AddOption(new Option<bool>("--merge-legacy-config-if-exists", getDefaultValue: () => true));
+
+            if (addCliOnlyParameters)
+            {
+                AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
+                AddOption(new Option<string>("--legacy-config-file", getDefaultValue: () => "fiskaltrust.exe.config"));
+                AddOption(new Option<bool>("--merge-legacy-config-if-exists", getDefaultValue: () => true));
+            }
         }
     }
 
@@ -44,7 +50,7 @@ namespace fiskaltrust.Launcher.Commands
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
-            _clientEcdh = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
+            _clientEcdh = Encryption.CreateCurve();
 
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
@@ -115,7 +121,7 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 using var downloader = new ConfigurationDownloader(_launcherConfiguration);
-                var exists = await downloader.DownloadConfigurationAsync(_clientEcdh);
+                var exists = await downloader.DownloadConfigurationAsync();
                 if (_launcherConfiguration.UseOffline!.Value && !exists)
                 {
                     Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
@@ -145,7 +151,7 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 _cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!));
-                _cashboxConfiguration.Decrypt(_clientEcdh, _launcherConfiguration);
+                _cashboxConfiguration.Decrypt(_launcherConfiguration, _clientEcdh);
             }
             catch (Exception e)
             {
@@ -171,6 +177,14 @@ namespace fiskaltrust.Launcher.Commands
             Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", _launcherConfiguration.CashboxConfigurationFile);
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", _launcherConfiguration.Redacted());
 
+            try
+            {
+                _launcherConfiguration.Decrypt();
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Error decrypring launcher configuration file.");
+            }
             return 0;
         }
     }

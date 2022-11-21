@@ -1,10 +1,12 @@
-using System.Dynamic;
 using System.Reflection;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Common.Constants;
+using fiskaltrust.storage.encryption.V0;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
+using System.Text;
 
 namespace fiskaltrust.Launcher.Common.Configuration
 {
@@ -18,6 +20,9 @@ namespace fiskaltrust.Launcher.Common.Configuration
             Name = name;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Field)]
+    public class EncryptAttribute : Attribute { }
 
     public record LauncherConfiguration
     {
@@ -116,6 +121,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("sslValidation")]
         public bool? SslValidation { get => WithDefault<bool?>(_sslValidation.GetValueOrDefault(false) ? true : null, true); set => _sslValidation = value; } // TODO implement
 
+        [Encrypt]
         private string? _proxy = null;
         [JsonPropertyName("proxy")]
         public string? Proxy { get => _proxy; set => _proxy = value; }
@@ -153,6 +159,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             var redacted = (LauncherConfiguration)MemberwiseClone();
 
             redacted.AccessToken = "<redacted>";
+            redacted.Proxy = redacted.Proxy is null ? null : "<redacted>";
 
             return redacted;
         }
@@ -164,7 +171,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             return configuration;
         }
 
-        public string Serialize() => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), SerializerContext.Default);
+        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false) => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), new SerializerContext(new JsonSerializerOptions { WriteIndented = writeIndented, Encoder = useUnsafeEncoding ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default, }));
 
         internal void SetAlternateNames(string text)
         {
@@ -200,6 +207,64 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
                 property.SetValue(this, values[0].Deserialize(type, SerializerContext.Default));
             }
+        }
+
+        private void MapFieldsWithAttribute<T>(Func<object?, object?> action)
+        {
+            var errors = new List<Exception>();
+
+            foreach (var field in GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                var value = field.GetValue(this);
+
+                if (field.GetCustomAttributes(typeof(T)).Any())
+                {
+                    try
+                    {
+                        field.SetValue(this, action(value));
+                    }
+                    catch (Exception e)
+                    {
+                        errors.Add(e);
+                    }
+                }
+            }
+
+            if (errors.Any())
+            {
+                throw new AggregateException(errors);
+            }
+        }
+
+        public void Encrypt(string? accessToken = null)
+        {
+            var accessTokenInner = accessToken ?? AccessToken;
+            if (accessTokenInner is null)
+            {
+                throw new Exception("No AccessToken provided.");
+            }
+
+            MapFieldsWithAttribute<EncryptAttribute>(value =>
+            {
+                if (value is null) { return null; }
+                return Convert.ToBase64String(Encryption.Encrypt(Encoding.UTF8.GetBytes((string)value), Convert.FromBase64String(accessTokenInner)));
+            });
+        }
+
+        public void Decrypt(string? accessToken = null)
+        {
+            var accessTokenInner = accessToken ?? AccessToken;
+            if (accessTokenInner is null)
+            {
+                throw new Exception("No AccessToken provided.");
+            }
+
+            MapFieldsWithAttribute<EncryptAttribute>((value) =>
+            {
+                if (value is null) { return null; }
+
+                return Encoding.UTF8.GetString(Encryption.Decrypt(Convert.FromBase64String((string)value), Convert.FromBase64String(accessTokenInner)));
+            });
         }
     }
 

@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Options;
 
@@ -20,8 +21,10 @@ namespace fiskaltrust.Launcher.Extensions
                         services.Remove(lifetime);
                     }
 
-                    services.AddSingleton<ILifetime, Lifetime>();
-                    services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<Lifetime>());
+#pragma warning disable CA1416
+                    services.AddSingleton<ILifetime, CustomWindowsServiceLifetime>();
+                    services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<CustomWindowsServiceLifetime>());
+#pragma warning restore CA1416
                 });
             }
             else
@@ -40,14 +43,48 @@ namespace fiskaltrust.Launcher.Extensions
         public void ServiceStartupCompleted();
     }
 
-    public class Lifetime : WindowsServiceLifetime, ILifetime
+
+    public class Lifetime : ILifetime
+    {
+        private readonly TaskCompletionSource _started = new();
+
+        public IHostApplicationLifetime ApplicationLifetime { get; init; }
+
+        public Lifetime(
+            IHostApplicationLifetime applicationLifetime)
+        {
+            ApplicationLifetime = applicationLifetime;
+        }
+
+        public void ServiceStartupCompleted()
+        {
+            ApplicationLifetime.ApplicationStarted.Register(() => _started.SetResult());
+            _started.SetResult();
+        }
+
+        public async Task WaitForStartAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.Register(() => _started.SetResult());
+
+            await _started.Task;
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            ApplicationLifetime.StopApplication();
+            return Task.CompletedTask;
+        }
+    }
+
+    [SupportedOSPlatform("windows")]
+    public class CustomWindowsServiceLifetime : WindowsServiceLifetime, ILifetime
     {
         private readonly CancellationTokenSource _starting = new();
         private readonly ManualResetEventSlim _started = new();
 
         public IHostApplicationLifetime ApplicationLifetime { get; init; }
 
-        public Lifetime(
+        public CustomWindowsServiceLifetime(
             IHostEnvironment environment,
             IHostApplicationLifetime applicationLifetime,
             ILoggerFactory loggerFactory,

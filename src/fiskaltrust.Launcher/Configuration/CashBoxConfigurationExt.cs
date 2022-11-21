@@ -2,6 +2,7 @@
 using System.Text;
 using fiskaltrust.storage.serialization.V0;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Helpers;
 using System.Text.Json;
 
 namespace fiskaltrust.Launcher.Configuration
@@ -11,12 +12,9 @@ namespace fiskaltrust.Launcher.Configuration
         private const string ENCRYPTION_SUFFIX = "_encrypted";
         private static readonly List<string> _configKeyToEncrypt = new() { "connectionstring" };
 
-        public static void Decrypt(this ftCashBoxConfiguration cashboxConfiguration, ECDiffieHellman clientEcdh, LauncherConfiguration launcherConfiguration)
+        public static void Decrypt(this ftCashBoxConfiguration cashboxConfiguration, LauncherConfiguration launcherConfiguration, ECDiffieHellman curve)
         {
-            using var serverPublicKeyDh = ParsePublicKey(Convert.FromBase64String(launcherConfiguration.AccessToken!));
-
-            var sharedSecret = clientEcdh.DeriveKeyMaterial(serverPublicKeyDh);
-            var iv = launcherConfiguration.CashboxId!.Value.ToByteArray();
+            var encryptionHelper = new Encryption(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, curve);
 
             foreach (var queue in cashboxConfiguration.ftQueues)
             {
@@ -27,37 +25,9 @@ namespace fiskaltrust.Launcher.Configuration
                     {
                         continue;
                     }
-                    queue.Configuration[configKey] = DecryptValue(configString, sharedSecret, iv);
+                    queue.Configuration[configKey] = encryptionHelper.Decrypt(configString);
                 }
             }
-        }
-
-        private static ECDiffieHellmanPublicKey ParsePublicKey(byte[] publicKey)
-        {
-            byte[] keyX = new byte[publicKey.Length / 2];
-            byte[] keyY = new byte[keyX.Length];
-            Buffer.BlockCopy(publicKey, 1, keyX, 0, keyX.Length);
-            Buffer.BlockCopy(publicKey, 1 + keyX.Length, keyY, 0, keyY.Length);
-            ECParameters parameters = new()
-            {
-                Curve = ECCurve.NamedCurves.nistP256,
-                Q =
-                {
-                    X = keyX,
-                    Y = keyY,
-                },
-            };
-            using ECDiffieHellman dh = ECDiffieHellman.Create(parameters);
-            return dh.PublicKey;
-        }
-
-        private static string DecryptValue(string value, byte[] clientSharedSecret, byte[] iv)
-        {
-            var encrypted = Convert.FromBase64String(value);
-            using var aes = Aes.Create();
-            aes.Key = clientSharedSecret;
-            var decrypted = aes.DecryptCbc(encrypted, iv);
-            return Encoding.UTF8.GetString(decrypted);
         }
 
         public static ftCashBoxConfiguration Deserialize(string text) => JsonSerializer.Deserialize<ftCashBoxConfiguration>(text) ?? throw new Exception($"Could not deserialize {nameof(ftCashBoxConfiguration)}");

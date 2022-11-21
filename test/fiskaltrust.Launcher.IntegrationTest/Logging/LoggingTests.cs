@@ -85,8 +85,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.Logging
                 logger.Error("testError");
                 logger.Information("testInformation");
 
-                stdout.ToString().Should().MatchRegex("\\[[0-9]{2}:[0-9]{2}:[0-9]{2} INF\\] testInformation\r\n");
-                stderr.ToString().Should().MatchRegex("\\[[0-9]{2}:[0-9]{2}:[0-9]{2} ERR\\] testError\r\n");
+                stdout.ToString().Should().MatchRegex("\\[[0-9]{2}:[0-9]{2}:[0-9]{2} INF\\] testInformation\r?\n");
+                stderr.ToString().Should().MatchRegex("\\[[0-9]{2}:[0-9]{2}:[0-9]{2} ERR\\] testError\r?\n");
             }
 
             var file = Directory.EnumerateFiles("TestLogs").Should().HaveCount(1).And.Subject.First();
@@ -97,9 +97,9 @@ namespace fiskaltrust.Launcher.IntegrationTest.Logging
             .Should()
             .HaveCount(3)
             .And
-            .Contain(l => new Regex("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3} \\+[0-9]{2}:[0-9]{2} \\[ERR\\] testError\r").IsMatch(l))
+            .Contain(l => new Regex("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3} \\+[0-9]{2}:[0-9]{2} \\[ERR\\] testError\r?").IsMatch(l))
             .And
-            .Contain(l => new Regex("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3} \\+[0-9]{2}:[0-9]{2} \\[INF\\] testInformation\r").IsMatch(l));
+            .Contain(l => new Regex("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3} \\+[0-9]{2}:[0-9]{2} \\[INF\\] testInformation\r?").IsMatch(l));
         }
     }
 }

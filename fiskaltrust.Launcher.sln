@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{84733EDD-4
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fiskaltrust.Launcher.IntegrationTest", "test\fiskaltrust.Launcher.IntegrationTest\fiskaltrust.Launcher.IntegrationTest.csproj", "{F90BE105-2B84-4CEC-8E9C-C8671E011F21}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fiskaltrust.Launcher.UnitTest", "test\fiskaltrust.Launcher.UnitTest\fiskaltrust.Launcher.UnitTest.csproj", "{68743F85-31DB-43BA-92AE-72FF634282D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,14 +39,20 @@ Global
 		{F90BE105-2B84-4CEC-8E9C-C8671E011F21}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F90BE105-2B84-4CEC-8E9C-C8671E011F21}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F90BE105-2B84-4CEC-8E9C-C8671E011F21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68743F85-31DB-43BA-92AE-72FF634282D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68743F85-31DB-43BA-92AE-72FF634282D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68743F85-31DB-43BA-92AE-72FF634282D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68743F85-31DB-43BA-92AE-72FF634282D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{44D54860-C3A5-4E24-AF06-1DFD6ADD8B1B} = {07DBDA43-B1C9-4A50-8721-8A2D3CC3506F}
 		{9250B3D3-AB87-4CFA-9454-48E264C413DB} = {07DBDA43-B1C9-4A50-8721-8A2D3CC3506F}
 		{341FBE24-AE72-47BA-ACB6-FC3CA85544E9} = {07DBDA43-B1C9-4A50-8721-8A2D3CC3506F}
 		{F90BE105-2B84-4CEC-8E9C-C8671E011F21} = {84733EDD-4700-4F1C-967E-8F802013304D}
+		{68743F85-31DB-43BA-92AE-72FF634282D0} = {84733EDD-4700-4F1C-967E-8F802013304D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {80A5E550-1883-43C4-A7BE-9ABD328C8CC4}

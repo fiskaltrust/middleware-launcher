@@ -11,6 +11,7 @@ var command = new RootCommand {
   new HostCommand() { IsHidden = true },
   new InstallCommand(),
   new UninstallCommand(),
+  new ConfigCommand(),
 };
 
 command.Handler = System.CommandLine.Invocation.CommandHandler.Create(() =>
@@ -38,7 +39,9 @@ await new CommandLineBuilder(command)
         .UseCommandHandler<HostCommand, HostCommandHandler>()
         .UseCommandHandler<RunCommand, RunCommandHandler>()
         .UseCommandHandler<InstallCommand, InstallCommandHandler>()
-        .UseCommandHandler<UninstallCommand, UninstallCommandHandler>();
+        .UseCommandHandler<UninstallCommand, UninstallCommandHandler>()
+        .UseCommandHandler<ConfigGetCommand, ConfigGetCommandHandler>()
+        .UseCommandHandler<ConfigSetCommand, ConfigSetCommandHandler>();
   })
   .UseHelp()
   .UseVersionOption()
