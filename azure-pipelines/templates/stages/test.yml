@@ -6,11 +6,36 @@ parameters:
 stages:
 - stage: Test
 
-  pool:
-    vmImage: windows-latest
-
   jobs:
-  - job: Test
+  - job: TestWindows
+    pool:
+      vmImage: windows-latest
+    
+    steps:
+    - template: ../restore.yml
+
+    - pwsh: dotnet build -c ${{ parameters.config }}
+      displayName: Build
+  
+    - pwsh: dotnet test -c ${{ parameters.config }}
+      displayName: Test
+
+  - job: TestLinux
+    pool:
+      vmImage: ubuntu-latest
+
+    steps:
+    - template: ../restore.yml
+
+    - pwsh: dotnet build -c ${{ parameters.config }}
+      displayName: Build
+  
+    - pwsh: dotnet test -c ${{ parameters.config }}
+      displayName: Test
+
+  - job: TestMacOS
+    pool:
+      vmImage: macos-latest
 
     steps:
     - template: ../restore.yml

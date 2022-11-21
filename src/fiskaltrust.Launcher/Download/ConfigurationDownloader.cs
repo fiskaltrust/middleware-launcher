@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.storage.serialization.V0;
@@ -22,14 +23,14 @@ namespace fiskaltrust.Launcher.Download
             }
         }
 
-        public async Task<bool> DownloadConfigurationAsync(ECDiffieHellman clientEcdh)
+        public async Task<bool> DownloadConfigurationAsync()
         {
             if (_configuration.UseOffline!.Value)
             {
                 return File.Exists(_configuration.CashboxConfigurationFile!);
             }
 
-            var clientPublicKey = Convert.ToBase64String(clientEcdh.PublicKey.ExportSubjectPublicKeyInfo());
+            var clientPublicKey = Convert.ToBase64String(Encryption.CreateCurve().PublicKey.ExportSubjectPublicKeyInfo());
 
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.ConfigurationUrl}api/configuration/{_configuration.CashboxId}"));
             request.Headers.Add("accesstoken", _configuration.AccessToken);
