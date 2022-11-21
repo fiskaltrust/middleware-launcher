@@ -177,7 +177,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (localConfiguration is not null)
                 {
-                    Log.Information("Local configuration {LauncherConfigurationFile}\n{localConfiguration}", LauncherConfigurationFile, localConfiguration.Serialize(true, true));
+                    Log.Information($"Local configuration {{LauncherConfigurationFile}}\n{localConfiguration.Serialize(true, true)}", LauncherConfigurationFile);
                 }
             }
 
@@ -187,7 +187,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (legacyConfiguration is not null)
                 {
-                    Log.Information("Legacy configuration {LegacyConfigFile}\n{legacyConfiguration}", LegacyConfigFile, legacyConfiguration.Serialize(true, true));
+                    Log.Information($"Legacy configuration {{LegacyConfigFile}}\n{legacyConfiguration.Serialize(true, true)}", LegacyConfigFile);
                 }
             }
 
@@ -198,7 +198,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (remoteConfiguration is not null)
                 {
-                    Log.Information("Remote configuration from {CashBoxConfigurationFile}\n{remoteConfiguration}", CashBoxConfigurationFile, remoteConfiguration.Serialize(true, true));
+                    Log.Information($"Remote configuration from {{CashBoxConfigurationFile}}\n{remoteConfiguration.Serialize(true, true)}", CashBoxConfigurationFile);
                 }
             }
 
