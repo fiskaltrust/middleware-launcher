@@ -66,7 +66,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => _launcherExecutablePath);
                 });
 
-            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrel(options, new Uri($"http://[::1]:{_launcherConfiguration.LauncherPort}")));
+            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrelForGrpc(options, new Uri($"http://[::1]:{_launcherConfiguration.LauncherPort}")));
 
             builder.Services.AddCodeFirstGrpc();
 

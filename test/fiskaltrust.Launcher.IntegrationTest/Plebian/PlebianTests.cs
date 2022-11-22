@@ -19,31 +19,24 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
     public class PlebianTests
     {
         [Fact]
-        public async Task PlebianScu_WithGrpcAndRestShouldRespond()
+        public async Task PlebianScu_WithGrpcAndRestAndSoapShouldRespond()
         {
             var packageConfiguration = new PackageConfiguration
             {
                 Configuration = new(),
                 Id = Guid.NewGuid(),
                 Package = "test",
-                Url = new[] { "grpc://localhost:1500", "rest://localhost:1501" },
+                Url = new[] { "grpc://localhost:1500", "rest://localhost:1501", "http://localhost:1502" },
                 Version = "1.0.0"
             };
 
-            var sscd = Mock.Of<IDESSCD>();
-
-            Mock.Get(sscd).Setup(x => x.EchoAsync(It.IsAny<ScuDeEchoRequest>())).ReturnsAsync((ScuDeEchoRequest r) =>
-            {
-                return new ScuDeEchoResponse { Message = r.Message };
-            });
-
-            await RunTest(sscd, PackageType.SCU, packageConfiguration, async () =>
+            await RunTest<IDESSCD>(new DummyDeSscd(), PackageType.SCU, packageConfiguration, async () =>
             {
                 var grpcClient = new DESSCDClientFactory().CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[0],
                     UrlType = "grpc",
-                    RetryCount = 0
+                    RetryCount = 1
                 });
 
                 (await grpcClient.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().Match<ScuDeEchoResponse>(r => r.Message == "test");
@@ -52,34 +45,38 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 {
                     Url = packageConfiguration.Url[1],
                     UrlType = "rest",
-                    RetryCount = 0,
+                    RetryCount = 1,
                     Timeout = TimeSpan.FromSeconds(30)
                 });
 
                 (await restClient.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().NotBeNull().And.Match<ScuDeEchoResponse>(r => r.Message == "test");
+
+                var soapClientHttp = new DESSCDClientFactory().CreateClient(new ClientConfiguration
+                {
+                    Url = packageConfiguration.Url[2],
+                    UrlType = "http",
+                    RetryCount = 1,
+                    Timeout = TimeSpan.FromSeconds(30)
+                });
+
+                (await soapClientHttp.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().NotBeNull().And.Match<ScuDeEchoResponse>(r => r.Message == "test");
             });
         }
 
+
         [Fact]
-        public async Task PlebianQueue_WithGrpcAndRestShouldRespond()
+        public async Task PlebianQueue_WithGrpcAndRestAndSoapShouldRespond()
         {
             var packageConfiguration = new PackageConfiguration
             {
                 Configuration = new(),
                 Id = Guid.NewGuid(),
                 Package = "test",
-                Url = new[] { "grpc://localhost:1502", "rest://localhost:1503" },
+                Url = new[] { "grpc://localhost:1505", "rest://localhost:1506", "http://localhost:1507" },
                 Version = "1.0.0"
             };
 
-            var pos = Mock.Of<IPOS>();
-
-            Mock.Get(pos).Setup(x => x.EchoAsync(It.IsAny<EchoRequest>())).ReturnsAsync((EchoRequest r) =>
-            {
-                return new EchoResponse { Message = r.Message };
-            });
-
-            await RunTest(pos, PackageType.Queue, packageConfiguration, async () =>
+            await RunTest<IPOS>(new DummyPos(), PackageType.Queue, packageConfiguration, async () =>
             {
                 var grpcClient = new POSClientFactory().CreateClient(new ClientConfiguration
                 {
@@ -99,6 +96,14 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 
                 (await restClient.EchoAsync(new EchoRequest { Message = "test" })).Should().Match<EchoResponse>(r => r.Message == "test");
 
+                var soapClientHttp = new POSClientFactory().CreateClient(new ClientConfiguration
+                {
+                    Url = packageConfiguration.Url[2],
+                    UrlType = "http",
+                    RetryCount = null,
+                });
+
+                (await soapClientHttp.EchoAsync(new EchoRequest { Message = "test" })).Should().NotBeNull().And.Match<EchoResponse>(r => r.Message == "test");
             });
         }
 

@@ -3,8 +3,9 @@ using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.Middleware.Interface.Client;
 using fiskaltrust.Middleware.Interface.Client.Grpc;
 using fiskaltrust.Middleware.Interface.Client.Http;
+using fiskaltrust.Middleware.Interface.Client.Soap;
+using Grpc.Core;
 using Grpc.Net.Client;
-using ProtoBuf.Grpc.Client;
 
 namespace fiskaltrust.Launcher.Clients
 {
@@ -17,19 +18,20 @@ namespace fiskaltrust.Launcher.Clients
                 throw new ArgumentNullException(nameof(configuration));
             }
 
-            switch (configuration.UrlType)
+            var retryPolicyoptions = new RetryPolicyOptions
             {
-                case "grpc":
-                    var proxy = GrpcDESSCDFactory.CreateSSCDAsync(new GrpcClientOptions { Url = new Uri(configuration.Url), RetryPolicyOptions = RetryPolicyOptions.Default }).Result;
+                DelayBetweenRetries = configuration.DelayBetweenRetries != default ? configuration.DelayBetweenRetries : RetryPolicyOptions.Default.DelayBetweenRetries,
+                Retries = configuration.RetryCount ?? RetryPolicyOptions.Default.Retries,
+                ClientTimeout = configuration.Timeout != default ? configuration.Timeout : RetryPolicyOptions.Default.ClientTimeout
+            };
 
-                    proxy.EchoAsync(new ScuDeEchoRequest { Message = "Hello SCU!" }).Wait();
-                    return proxy;
-                case "rest":
-                    var url = configuration.Url.Replace("rest://", "http://");
-                    return HttpDESSCDFactory.CreateSSCDAsync(new ClientOptions { Url = new Uri(url), RetryPolicyOptions = RetryPolicyOptions.Default }).Result;
-                default:
-                    throw new ArgumentException("This version of the fiskaltrust Launcher currently only supports gRPC and HTTP communication.");
-            }
+            return configuration.UrlType switch
+            {
+                "grpc" => GrpcDESSCDFactory.CreateSSCDAsync(new GrpcClientOptions { Url = new Uri(configuration.Url.Replace("grpc://", "http://")), RetryPolicyOptions = retryPolicyoptions, ChannelOptions = new GrpcChannelOptions { Credentials = ChannelCredentials.Insecure } }).Result,
+                "rest" => HttpDESSCDFactory.CreateSSCDAsync(new ClientOptions { Url = new Uri(configuration.Url.Replace("rest://", "http://")), RetryPolicyOptions = retryPolicyoptions }).Result,
+                "http" or "https" or "net.tcp" => SoapDESSCDFactory.CreateSSCDAsync(new ClientOptions { Url = new Uri(configuration.Url), RetryPolicyOptions = retryPolicyoptions }).Result,
+                _ => throw new ArgumentException("This version of the fiskaltrust Launcher currently only supports gRPC, REST and SOAP communication."),
+            };
         }
     }
 }
