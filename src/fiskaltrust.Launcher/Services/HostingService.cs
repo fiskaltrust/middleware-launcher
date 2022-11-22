@@ -46,9 +46,9 @@ namespace fiskaltrust.Launcher.Services
             {
                 _sendTimeout = TimeSpan.FromSeconds(timeout);
             }
-        }        
+        }
 
-        public async Task<WebApplication> HostService<T>(Uri uri, HostingType hostingType, T instance, Action<WebApplication, object> addEndpoints) where T : class
+        public async Task<WebApplication> HostService<T>(Uri uri, HostingType hostingType, T instance, Action<WebApplication, object>? addEndpoints) where T : class
         {
             var builder = WebApplication.CreateBuilder();
 
@@ -116,7 +116,7 @@ namespace fiskaltrust.Launcher.Services
             app.Urls.Add(url.GetLeftPart(UriPartial.Authority));
 
             app.UseRouting();
-            addEndpoints(app, instance);
+            addEndpoints(app, instance!);
 
             return app;
         }
@@ -213,7 +213,7 @@ namespace fiskaltrust.Launcher.Services
 
             return app;
         }
-        
+
         private static void ConfigureKestrel(KestrelServerOptions options, Uri uri, Action<ListenOptions> configureListeners)
         {
             if (uri.IsLoopback && uri.Port != 0)
