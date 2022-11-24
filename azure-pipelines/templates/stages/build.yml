@@ -25,6 +25,14 @@ stages:
           vmImage: ubuntu-latest
           target: linux-x64
 
+        linux-arm:
+          vmImage: ubuntu-latest
+          target: linux-arm
+
+        linux-arm64:
+          vmImage: ubuntu-latest
+          target: linux-arm64
+
         osx-x64:
           vmImage: macos-latest
           target: osx-x64
