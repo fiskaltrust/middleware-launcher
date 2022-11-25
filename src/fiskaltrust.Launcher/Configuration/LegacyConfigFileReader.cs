@@ -23,7 +23,15 @@ namespace fiskaltrust.Launcher.Configuration
                     var value = item.Attribute("value")?.Value;
                     if (key is not null && value is not null)
                     {
-                        SetProperies(launcherConfiguration, key!, value!);
+                        if (key == "proxy")
+                        {
+                            Log.Warning("Proxy settings can currently not be migrated from legacy config files. Please set the proxy with the '{executable} config set --proxy' command.",
+                                OperatingSystem.IsWindows() ? "fiskaltrust.Launcher.exe" : "./fiskaltrust.Launcher");
+                        }
+                        else
+                        {
+                            SetProperies(launcherConfiguration, key!, value!);
+                        }
                     }
                 }
             }
@@ -81,9 +89,10 @@ namespace fiskaltrust.Launcher.Configuration
             {
                 launcherConfiguration.DownloadRetry = int.Parse(value);
             }
-            else if (key == "proxy")
+            else
             {
-                launcherConfiguration.Proxy = value;
+                Log.Warning("The legacy configuration option '{key}' cannot be automatically parsed. Please use the '{executable} config set --help' argument to list compatible options.",
+                    key, OperatingSystem.IsWindows() ? "fiskaltrust.Launcher.exe" : "./fiskaltrust.Launcher");
             }
         }
     }
