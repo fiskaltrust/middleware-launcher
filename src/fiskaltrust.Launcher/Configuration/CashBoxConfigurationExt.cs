@@ -14,7 +14,7 @@ namespace fiskaltrust.Launcher.Configuration
 
         public static void Decrypt(this ftCashBoxConfiguration cashboxConfiguration, LauncherConfiguration launcherConfiguration, ECDiffieHellman curve)
         {
-            var encryptionHelper = new Encryption(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, curve);
+            var encryptionHelper = new CashboxConfigEncryption(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, curve);
 
             foreach (var queue in cashboxConfiguration.ftQueues)
             {

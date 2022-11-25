@@ -50,7 +50,7 @@ namespace fiskaltrust.Launcher.Commands
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
-            _clientEcdh = Encryption.CreateCurve();
+            _clientEcdh = CashboxConfigEncryption.CreateCurve();
 
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
