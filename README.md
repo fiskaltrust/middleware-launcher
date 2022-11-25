@@ -120,12 +120,14 @@ Or this can be set to a [semver range](https://devhints.io/semver#ranges) (e.g. 
 
 ## Getting Started for developers
 
-Clone this github repository and bild the project with visual studio.
+Clone this github repository and bild the project with Visual Studio.
 
 Start the Launcher via the commandline:
-```sh
+```pwsh
 fiskaltrust.Launcher.exe run --cashbox-id <cashboxid> --access-token <accesstoken> --sandbox
 ```
+
+When using VS Code, please ensure that the following command line parameters are passed to `dotnet build` to enable seamless debugging: `-p:PublishSingleFile=true -p:PublishReadyToRun=true`.
 
 ## FAQ
 
