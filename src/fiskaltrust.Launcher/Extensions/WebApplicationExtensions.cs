@@ -38,8 +38,8 @@ namespace fiskaltrust.Launcher.Extensions
             app.MapMultiplePrefixed(_prefixes, "StartTransaction", EndpointRouteBuilderExtensions.MapPost, async (StartTransactionRequest req) => await sscd.StartTransactionAsync(req));
             app.MapMultiplePrefixed(_prefixes, "UpdateTransaction", EndpointRouteBuilderExtensions.MapPost, async (UpdateTransactionRequest req) => await sscd.UpdateTransactionAsync(req));
             app.MapMultiplePrefixed(_prefixes, "FinishTransaction", EndpointRouteBuilderExtensions.MapPost, async (FinishTransactionRequest req) => await sscd.FinishTransactionAsync(req));
-            app.MapMultiplePrefixed(_prefixes, "GetTseInfo", EndpointRouteBuilderExtensions.MapPost, async () => await sscd.GetTseInfoAsync());
-            app.MapMultiplePrefixed(_prefixes, "SetTseState", EndpointRouteBuilderExtensions.MapPost, async (TseState req) => await sscd.SetTseStateAsync(req));
+            app.MapMultiplePrefixed(_prefixes, "TseInfo", EndpointRouteBuilderExtensions.MapGet, async () => await sscd.GetTseInfoAsync());
+            app.MapMultiplePrefixed(_prefixes, "TseState", EndpointRouteBuilderExtensions.MapPost, async (TseState req) => await sscd.SetTseStateAsync(req));
             app.MapMultiplePrefixed(_prefixes, "RegisterClientId", EndpointRouteBuilderExtensions.MapPost, async (RegisterClientIdRequest req) => await sscd.RegisterClientIdAsync(req));
             app.MapMultiplePrefixed(_prefixes, "UnregisterClientId", EndpointRouteBuilderExtensions.MapPost, async (UnregisterClientIdRequest req) => await sscd.UnregisterClientIdAsync(req));
             app.MapMultiplePrefixed(_prefixes, "ExecuteSetTseTime", EndpointRouteBuilderExtensions.MapPost, async () => await sscd.ExecuteSetTseTimeAsync());

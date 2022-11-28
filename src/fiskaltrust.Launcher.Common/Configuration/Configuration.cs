@@ -3,10 +3,10 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Common.Constants;
-using fiskaltrust.storage.encryption.V0;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
-using System.Text;
+using System.Security.Cryptography;
+using fiskaltrust.Launcher.Common.Helpers;
 
 namespace fiskaltrust.Launcher.Common.Configuration
 {
@@ -247,7 +247,9 @@ namespace fiskaltrust.Launcher.Common.Configuration
             MapFieldsWithAttribute<EncryptAttribute>(value =>
             {
                 if (value is null) { return null; }
-                return Convert.ToBase64String(Encryption.Encrypt(Encoding.UTF8.GetBytes((string)value), Convert.FromBase64String(accessTokenInner)));
+                using var aes = Aes.Create();
+
+                return Convert.ToBase64String(AesHelper.Encrypt((string)value, Convert.FromBase64String(accessTokenInner)));
             });
         }
 
@@ -263,7 +265,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             {
                 if (value is null) { return null; }
 
-                return Encoding.UTF8.GetString(Encryption.Decrypt(Convert.FromBase64String((string)value), Convert.FromBase64String(accessTokenInner)));
+                return AesHelper.Decrypt((string)value, Convert.FromBase64String(accessTokenInner));
             });
         }
     }

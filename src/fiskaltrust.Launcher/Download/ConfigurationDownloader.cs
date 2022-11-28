@@ -30,7 +30,7 @@ namespace fiskaltrust.Launcher.Download
                 return File.Exists(_configuration.CashboxConfigurationFile!);
             }
 
-            var clientPublicKey = Convert.ToBase64String(Encryption.CreateCurve().PublicKey.ExportSubjectPublicKeyInfo());
+            var clientPublicKey = Convert.ToBase64String(CashboxConfigEncryption.CreateCurve().PublicKey.ExportSubjectPublicKeyInfo());
 
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.ConfigurationUrl}api/configuration/{_configuration.CashboxId}"));
             request.Headers.Add("accesstoken", _configuration.AccessToken);

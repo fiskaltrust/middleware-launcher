@@ -58,13 +58,12 @@ namespace fiskaltrust.Launcher.Extensions
 
         public void ServiceStartupCompleted()
         {
-            ApplicationLifetime.ApplicationStarted.Register(() => _started.SetResult());
-            _started.SetResult();
+            ApplicationLifetime.ApplicationStarted.Register(() => _started.TrySetResult());
         }
 
         public async Task WaitForStartAsync(CancellationToken cancellationToken)
         {
-            cancellationToken.Register(() => _started.SetResult());
+            cancellationToken.Register(() => _started.TrySetResult());
 
             await _started.Task;
         }
