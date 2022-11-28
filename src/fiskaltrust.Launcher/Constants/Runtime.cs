@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace fiskaltrust.Launcher.Constants
 {
     public class Runtime
@@ -6,24 +8,31 @@ namespace fiskaltrust.Launcher.Constants
         {
             get
             {
-                string runtimeIdentifier = Environment.Is64BitProcess ? "x64" : "x86";
-                if (OperatingSystem.IsWindows())
+                var arch = RuntimeInformation.OSArchitecture switch
                 {
-                    runtimeIdentifier = $"win-{runtimeIdentifier}";
+                    Architecture.X64 => "x64",
+                    Architecture.X86 => "x86",
+                    Architecture.Arm64 => "arm64",
+                    Architecture.Arm => "arm",
+                    _ => throw new NotImplementedException($"The processor architecture {RuntimeInformation.ProcessArchitecture} is currently not supported.")
+                };
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    return $"win-{arch}";
                 }
-                else if (OperatingSystem.IsLinux())
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    runtimeIdentifier = $"linux-{runtimeIdentifier}";
+                    return $"linux-{arch}";
                 }
-                else if (OperatingSystem.IsMacOS())
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    runtimeIdentifier = $"osx-{runtimeIdentifier}";
+                    return $"osx-{arch}";
                 }
                 else
                 {
-                    runtimeIdentifier = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
+                    throw new Exception("The Operating System could not be detected.");
                 }
-                return runtimeIdentifier;
             }
         }
     }

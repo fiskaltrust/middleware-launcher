@@ -61,6 +61,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                 "linux-x64",
                 "osx-x86",
                 "osx-x64",
+                // TODO: Add linux-arm and linux-arm64 after deployment went through
             };
 
             var targetPath = Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId?.ToString()!, PackageDownloader.LAUNCHER_NAME);
