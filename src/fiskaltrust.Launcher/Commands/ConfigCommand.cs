@@ -1,17 +1,13 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using fiskaltrust.Launcher.ProcessHost;
-using fiskaltrust.Launcher.Services;
 using Serilog;
-using ProtoBuf.Grpc.Server;
-using fiskaltrust.Launcher.Download;
-using fiskaltrust.Launcher.Extensions;
-using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Configuration;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
+using fiskaltrust.Launcher.Extensions;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -49,6 +45,13 @@ namespace fiskaltrust.Launcher.Commands
                 .AddLoggingConfiguration()
                 .CreateLogger();
 
+            var dataProtector = DataProtectionExtensions.Create(
+                configuration =>
+                {
+                    configuration.SetApplicationName("fiskaltrust.Launcher");
+                    configuration.ProtectKeysCustom(CipherAccessToken);
+                }).CreateProtector("fiskaltrust.Launcher.Configuration");
+
             LauncherConfiguration launcherConfiguration;
             string rawLauncherConfigurationOld = "{\n}";
 
@@ -71,7 +74,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 try
                 {
-                    launcherConfiguration.Decrypt(CipherAccessToken);
+                    launcherConfiguration.Decrypt(dataProtector);
                 }
                 catch (Exception e)
                 {
@@ -97,7 +100,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                launcherConfiguration.Encrypt(CipherAccessToken);
+                launcherConfiguration.Encrypt(dataProtector);
             }
             catch (Exception e)
             {
@@ -217,9 +220,16 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Error(e, "Could not read launcher configuration {file}.", launcherConfigurationFile);
             }
 
+            var dataProtector = DataProtectionExtensions.Create(
+                configuration =>
+                {
+                    configuration.SetApplicationName("fiskaltrust.Launcher");
+                    configuration.ProtectKeysCustom(CipherAccessToken);
+                }).CreateProtector("fiskaltrust.Launcher.Configuration");
+
             try
             {
-                configuration?.Decrypt(CipherAccessToken);
+                configuration?.Decrypt(dataProtector);
             }
             catch (Exception e)
             {

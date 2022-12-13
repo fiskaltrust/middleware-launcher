@@ -8,9 +8,11 @@ using fiskaltrust.Launcher.Common.Helpers;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
+using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
+using Microsoft.AspNetCore.DataProtection;
 using Serilog;
 using Serilog.Events;
 
@@ -48,10 +50,10 @@ namespace fiskaltrust.Launcher.Commands
         protected ftCashBoxConfiguration _cashboxConfiguration = null!;
         protected ECDiffieHellman _clientEcdh = null!;
 
+        protected IDataProtectionProvider _dataProtectionProvider = null!;
+
         public async Task<int> InvokeAsync(InvocationContext context)
         {
-            _clientEcdh = CashboxConfigEncryption.CreateCurve();
-
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(collectionSink)
@@ -177,9 +179,17 @@ namespace fiskaltrust.Launcher.Commands
             Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", _launcherConfiguration.CashboxConfigurationFile);
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", _launcherConfiguration.Redacted());
 
+
+            _dataProtectionProvider = DataProtectionExtensions.Create(
+                configuration =>
+                {
+                    configuration.SetApplicationName("fiskaltrust.Launcher");
+                    configuration.ProtectKeysCustom(_launcherConfiguration.AccessToken);
+                });
+
             try
             {
-                _launcherConfiguration.Decrypt();
+                _launcherConfiguration.Decrypt(_dataProtectionProvider.CreateProtector("fiskaltrust.Launcher.Configuration"));
             }
             catch (Exception e)
             {

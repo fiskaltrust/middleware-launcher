@@ -7,6 +7,7 @@ using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using fiskaltrust.Launcher.Common.Helpers;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace fiskaltrust.Launcher.Common.Configuration
 {
@@ -236,36 +237,23 @@ namespace fiskaltrust.Launcher.Common.Configuration
             }
         }
 
-        public void Encrypt(string? accessToken = null)
+        public void Encrypt(IDataProtector dataProtector)
         {
-            var accessTokenInner = accessToken ?? AccessToken;
-            if (accessTokenInner is null)
-            {
-                throw new Exception("No AccessToken provided.");
-            }
-
             MapFieldsWithAttribute<EncryptAttribute>(value =>
             {
                 if (value is null) { return null; }
-                using var aes = Aes.Create();
 
-                return Convert.ToBase64String(AesHelper.Encrypt((string)value, Convert.FromBase64String(accessTokenInner)));
+                return dataProtector.Protect((string)value);
             });
         }
 
-        public void Decrypt(string? accessToken = null)
+        public void Decrypt(IDataProtector dataProtector)
         {
-            var accessTokenInner = accessToken ?? AccessToken;
-            if (accessTokenInner is null)
-            {
-                throw new Exception("No AccessToken provided.");
-            }
-
             MapFieldsWithAttribute<EncryptAttribute>((value) =>
             {
                 if (value is null) { return null; }
 
-                return AesHelper.Decrypt((string)value, Convert.FromBase64String(accessTokenInner));
+                return dataProtector.Unprotect((string)value);
             });
         }
     }
