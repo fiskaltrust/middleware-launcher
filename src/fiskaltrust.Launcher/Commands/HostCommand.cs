@@ -75,7 +75,6 @@ namespace fiskaltrust.Launcher.Commands
 
             packageConfiguration.Configuration = packageConfiguration.Configuration.Union(DefaultPackageConfig(launcherConfiguration, cashboxConfiguration)).ToDictionary(k => k.Key, v => v.Value);
 
-
             IProcessHostService? processHostService = null;
             if (!NoProcessHostService)
             {

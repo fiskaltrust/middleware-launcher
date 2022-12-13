@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using ProtoBuf.Grpc.Server;
 using Serilog;
 using System.Net;
-using System.Reflection;
 using fiskaltrust.Launcher.Common.Configuration;
 using Microsoft.AspNetCore.HttpLogging;
 using fiskaltrust.Launcher.Services.Interfaces;
@@ -14,9 +13,9 @@ using Microsoft.AspNetCore.Http.Json;
 using fiskaltrust.Launcher.Helpers;
 using CoreWCF.Configuration;
 using CoreWCF;
-using fiskaltrust.ifPOS.v1;
 using CoreWCF.Channels;
 using CoreWCF.Description;
+using System.Security.Cryptography.X509Certificates;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -97,11 +96,11 @@ namespace fiskaltrust.Launcher.Services
 
             await app.StartAsync();
 
-            _logger.LogInformation("Started {hostingType} hosting on {url}", hostingType.ToString(), uri.ToString().Replace("rest://", "http://"));
+            _logger.LogInformation("Started {hostingType} hosting on {url}", hostingType.ToString(), GetRestUri(uri));
             return app;
         }
 
-        private static WebApplication CreateRestHost<T>(WebApplicationBuilder builder, Uri uri, T instance, Action<WebApplication, object> addEndpoints)
+        private WebApplication CreateRestHost<T>(WebApplicationBuilder builder, Uri uri, T instance, Action<WebApplication, object> addEndpoints)
         {
             builder.Services.Configure<JsonOptions>(options =>
             {
@@ -109,16 +108,51 @@ namespace fiskaltrust.Launcher.Services
                 options.SerializerOptions.Converters.Add(new NumberToStringConverter());
             });
 
-            var app = builder.Build();
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                ConfigureKestrel(options, new Uri(GetRestUri(uri)), listenOptions =>
+                {
+                    if (!string.IsNullOrEmpty(_launcherConfiguration?.TlsCertificatePath))
+                    {
+                        if (File.Exists(_launcherConfiguration!.TlsCertificatePath) && Path.GetExtension(_launcherConfiguration!.TlsCertificatePath).ToLowerInvariant() == ".pfx")
+                        {
+                            listenOptions.UseHttps(_launcherConfiguration!.TlsCertificatePath, _launcherConfiguration!.TlsCertificatePassword);
+                        }
+                        else
+                        {
+                            _logger.LogError("A TLS certificate path was defined, but the file '{PfxPath}' does not exist or is not a valid PFX file.", _launcherConfiguration?.TlsCertificatePath);
+                        }
+                    }
 
-            var url = new Uri(uri.ToString().Replace("rest://", "http://"));
-            app.UsePathBase(url.AbsolutePath);
-            app.Urls.Add(url.GetLeftPart(UriPartial.Authority));
+                    if (!string.IsNullOrEmpty(_launcherConfiguration?.TlsCertificateBase64))
+                    {
+                        try
+                        {
+                            var cert = new X509Certificate2(Convert.FromBase64String(_launcherConfiguration?.TlsCertificateBase64), _launcherConfiguration.TlsCertificatePassword);
+                            listenOptions.UseHttps(cert);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError("A TLS certificate was defined via base64 input, but could not be parsed. Error message: {TlsParsingError}", ex.Message);
+                        }
+                    }
+                });
+                options.AllowSynchronousIO = true;
+            });
+
+            var app = builder.Build();
+            app.UsePathBase(uri.AbsolutePath);
 
             app.UseRouting();
             addEndpoints(app, instance!);
 
             return app;
+        }
+
+        private string GetRestUri(Uri uri)
+        {
+            var isHttps = !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64);
+            return uri.ToString().Replace("rest://", isHttps ? "https://" : "http://");
         }
 
         private WebApplication CreateSoapHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
@@ -165,7 +199,6 @@ namespace fiskaltrust.Launcher.Services
             return app;
         }
 
-
         private NetTcpBinding CreateNetTcpBinding()
         {
             var binding = new NetTcpBinding(SecurityMode.None);
@@ -203,7 +236,7 @@ namespace fiskaltrust.Launcher.Services
         internal static WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
             builder.WebHost.ConfigureKestrel(options => ConfigureKestrelForGrpc(options, uri));
-            builder.Services.AddCodeFirstGrpc();
+            builder.Services.AddCodeFirstGrpc(options => options.EnableDetailedErrors = true);
             builder.Services.AddSingleton(instance);
 
             var app = builder.Build();
