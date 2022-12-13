@@ -74,7 +74,7 @@ namespace fiskaltrust.Launcher.Commands
             var app = builder.Build();
 
             app.UseRouting();
-            app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
+            app.MapGrpcService<ProcessHostService>();
 
             if (_launcherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null)
             {

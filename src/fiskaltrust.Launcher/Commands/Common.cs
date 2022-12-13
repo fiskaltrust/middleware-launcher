@@ -180,12 +180,7 @@ namespace fiskaltrust.Launcher.Commands
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", _launcherConfiguration.Redacted());
 
 
-            _dataProtectionProvider = DataProtectionExtensions.Create(
-                configuration =>
-                {
-                    configuration.SetApplicationName("fiskaltrust.Launcher");
-                    configuration.ProtectKeysCustom(_launcherConfiguration.AccessToken);
-                });
+            _dataProtectionProvider = DataProtectionExtensions.Create(_launcherConfiguration.AccessToken);
 
             try
             {

@@ -2,7 +2,6 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Xml.Linq;
 using fiskaltrust.Launcher.Common.Helpers;
-using fiskaltrust.Launcher.Constants;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.DataProtection.XmlEncryption;
@@ -63,7 +62,7 @@ namespace fiskaltrust.Launcher.Extensions
         {
             var plaintextElementString = plaintextElement.ToString();
 
-            var encryptedElement = new XElement("encrypted", AesHelper.Encrypt(plaintextElementString, Convert.FromBase64String(accessToken.AccessToken)));
+            var encryptedElement = new XElement("encrypted", Convert.ToBase64String(AesHelper.Encrypt(plaintextElementString, Convert.FromBase64String(accessToken.AccessToken))));
 
             return new EncryptedXmlInfo(encryptedElement, typeof(LegacyXmlDecryptor));
         }
@@ -73,9 +72,14 @@ namespace fiskaltrust.Launcher.Extensions
     {
         private readonly AccessTokenForEncryption accessToken;
 
-        public LegacyXmlDecryptor(IServiceCollection services)
+        public LegacyXmlDecryptor(IServiceCollection? services)
         {
-            accessToken = services.BuildServiceProvider().GetRequiredService<AccessTokenForEncryption>();
+            accessToken = services?.BuildServiceProvider()?.GetService<AccessTokenForEncryption>() ?? DataProtectionExtensions.AccessTokenForEncryption!;
+        }
+
+        public LegacyXmlDecryptor()
+        {
+            accessToken = DataProtectionExtensions.AccessTokenForEncryption!; // Because ctor injection is not working with IXmlDecryptor we have to use this workaround (See DataProtectionExtensions.AccessTokenForEncryption declaration below)
         }
 
         public XElement Decrypt(XElement encryptedElement)
@@ -86,30 +90,55 @@ namespace fiskaltrust.Launcher.Extensions
 
     record AccessTokenForEncryption(string AccessToken);
 
-    static class DataProtectionExtensions
+    public static class DataProtectionExtensions
     {
-        public static IDataProtectionProvider Create(Action<IDataProtectionBuilder> configuration) => DataProtectionProvider.Create(new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "fiskaltrust.Launcher", "keys")), configuration);
+        internal static AccessTokenForEncryption? AccessTokenForEncryption = null; // This godawful workaround exists becaues of this allegedly fixed bug https://github.com/dotnet/aspnetcore/issues/2523
+
+        public static IDataProtectionProvider Create(string? accessToken = null) =>
+            DataProtectionProvider
+            .Create(
+                new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "fiskaltrust.Launcher", "keys")),
+                configuration =>
+                {
+                    configuration.SetApplicationName("fiskaltrust.Launcher");
+                    configuration.ProtectKeysCustom(accessToken);
+                });
 
         public static IDataProtectionBuilder ProtectKeysCustom(this IDataProtectionBuilder builder, string? accessToken = null)
         {
             if (accessToken is not null)
             {
                 builder.Services.AddSingleton(new AccessTokenForEncryption(accessToken));
+                AccessTokenForEncryption = new AccessTokenForEncryption(accessToken);
             }
 
             builder
-                .SetDefaultKeyLifetime(TimeSpan.MaxValue - TimeSpan.FromDays(1)) // Encryption fails if we use max value directly ¯\_(ツ)_/¯
+                .SetDefaultKeyLifetime(DateTime.MaxValue - DateTime.Now) // Encryption fails if we use TimeStamp.MaxValue because that results in a DateTime exceeding its MaxValue ¯\_(ツ)_/¯
                 .SetApplicationName("fiskaltrust.Launcher");
 
             if (OperatingSystem.IsWindows())
             {
-                builder.ProtectKeysWithDpapi();
+                try
+                {
+                    builder.ProtectKeysWithDpapi();
+                    return builder;
+                }
+                catch { }
             }
             else
             {
-                builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new LegacyXmlEncryptor(builder.Services));
-                builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new KeyringXmlEncryptor());
+                try
+                {
+                    Marshal.PrelinkAll(typeof(KeyUtils));
+                    builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new KeyringXmlEncryptor());
+                    return builder;
+                }
+                catch
+                {
+                }
             }
+
+            builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new LegacyXmlEncryptor(builder.Services));
 
             return builder;
         }

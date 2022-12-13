@@ -45,20 +45,15 @@ namespace fiskaltrust.Launcher.Commands
                 .AddLoggingConfiguration()
                 .CreateLogger();
 
-            var dataProtector = DataProtectionExtensions.Create(
-                configuration =>
-                {
-                    configuration.SetApplicationName("fiskaltrust.Launcher");
-                    configuration.ProtectKeysCustom(CipherAccessToken);
-                }).CreateProtector("fiskaltrust.Launcher.Configuration");
-
             LauncherConfiguration launcherConfiguration;
             string rawLauncherConfigurationOld = "{\n}";
 
+            IDataProtector dataProtector;
             if (!File.Exists(LauncherConfigurationFile))
             {
                 Log.Warning("Launcher configuration file {file} does not exist. Creating new file.", LauncherConfigurationFile);
                 launcherConfiguration = new LauncherConfiguration();
+                dataProtector = DataProtectionExtensions.Create(CipherAccessToken).CreateProtector("fiskaltrust.Launcher.Configuration");
             }
             else
             {
@@ -72,9 +67,11 @@ namespace fiskaltrust.Launcher.Commands
                     return 1;
                 }
 
+                dataProtector = DataProtectionExtensions.Create(CipherAccessToken ?? launcherConfiguration?.AccessToken).CreateProtector("fiskaltrust.Launcher.Configuration");
+
                 try
                 {
-                    launcherConfiguration.Decrypt(dataProtector);
+                    launcherConfiguration!.Decrypt(dataProtector);
                 }
                 catch (Exception e)
                 {
@@ -83,7 +80,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 try
                 {
-                    rawLauncherConfigurationOld = launcherConfiguration.Serialize(true, true);
+                    rawLauncherConfigurationOld = launcherConfiguration!.Serialize(true, true);
                 }
                 catch (Exception e)
                 {
@@ -120,31 +117,28 @@ namespace fiskaltrust.Launcher.Commands
             Log.Information("Set values in launcher configuration file {file}.", LauncherConfigurationFile);
 
             var diff = InlineDiffBuilder.Diff(rawLauncherConfigurationOld, rawLauncherConfigurationNew);
-            if (diff.HasDifferences)
+            var savedColor = Console.ForegroundColor;
+            foreach (var line in diff.Lines)
             {
-                var savedColor = Console.ForegroundColor;
-                foreach (var line in diff.Lines)
+                switch (line.Type)
                 {
-                    switch (line.Type)
-                    {
-                        case ChangeType.Inserted:
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.Write("+ ");
-                            break;
-                        case ChangeType.Deleted:
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.Write("- ");
-                            break;
-                        default:
-                            Console.ForegroundColor = savedColor;
-                            Console.Write("  ");
-                            break;
-                    }
-
-                    Console.WriteLine(line.Text);
+                    case ChangeType.Inserted:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write("+ ");
+                        break;
+                    case ChangeType.Deleted:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write("- ");
+                        break;
+                    default:
+                        Console.ForegroundColor = savedColor;
+                        Console.Write("  ");
+                        break;
                 }
-                Console.ForegroundColor = savedColor;
+
+                Console.WriteLine(line.Text);
             }
+            Console.ForegroundColor = savedColor;
 
             return 0;
         }
@@ -210,34 +204,29 @@ namespace fiskaltrust.Launcher.Commands
 
         public async Task<LauncherConfiguration?> ReadLauncherConfiguration(string launcherConfigurationFile, Func<string, Task<LauncherConfiguration?>> deserialize)
         {
-            LauncherConfiguration? configuration = null;
+            LauncherConfiguration? launcherConfiguration = null;
             try
             {
-                configuration = await deserialize(await File.ReadAllTextAsync(launcherConfigurationFile));
+                launcherConfiguration = await deserialize(await File.ReadAllTextAsync(launcherConfigurationFile));
             }
             catch (Exception e)
             {
                 Log.Error(e, "Could not read launcher configuration {file}.", launcherConfigurationFile);
             }
 
-            var dataProtector = DataProtectionExtensions.Create(
-                configuration =>
-                {
-                    configuration.SetApplicationName("fiskaltrust.Launcher");
-                    configuration.ProtectKeysCustom(CipherAccessToken);
-                }).CreateProtector("fiskaltrust.Launcher.Configuration");
+            var dataProtector = DataProtectionExtensions.Create(CipherAccessToken ?? launcherConfiguration?.AccessToken).CreateProtector("fiskaltrust.Launcher.Configuration");
 
             try
             {
-                configuration?.Decrypt(dataProtector);
+                launcherConfiguration?.Decrypt(dataProtector);
             }
             catch (Exception e)
             {
                 Log.Warning(e, "Error decrypting launcher configuration file {file}.", launcherConfigurationFile);
             }
-            configuration?.DisableDefaults();
+            launcherConfiguration?.DisableDefaults();
 
-            return configuration;
+            return launcherConfiguration;
         }
 
         public Task<LauncherConfiguration?> ReadLauncherConfiguration(string launcherConfigurationFile, Func<string, LauncherConfiguration?> deserialize) => ReadLauncherConfiguration(launcherConfigurationFile, (content) => Task.FromResult(deserialize(content)));

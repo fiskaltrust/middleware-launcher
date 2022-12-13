@@ -209,7 +209,7 @@ namespace fiskaltrust.Launcher.Services
             var app = builder.Build();
 
             app.UseRouting();
-            app.UseEndpoints(endpoints => endpoints.MapGrpcService<T>());
+            app.MapGrpcService<T>();
 
             return app;
         }

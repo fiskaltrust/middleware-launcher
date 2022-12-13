@@ -1,6 +1,8 @@
 using FluentAssertions;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Extensions;
 using AutoBogus;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace fiskaltrust.Launcher.UnitTest.Logging
 {
@@ -17,15 +19,17 @@ namespace fiskaltrust.Launcher.UnitTest.Logging
                 .RuleFor(c => c.AccessToken, f => Convert.ToBase64String(f.Random.Bytes(33)))
                 .Generate();
 
+            var dataProtector = DataProtectionExtensions.Create(launcherConfiguration.AccessToken).CreateProtector("fiskaltrust.Launcher.Configuration");
+
             var o = launcherConfiguration.Serialize();
 
-            launcherConfiguration.Encrypt();
+            launcherConfiguration.Encrypt(dataProtector);
 
             var encrypted = launcherConfiguration.Serialize();
 
             launcherConfiguration = LauncherConfiguration.Deserialize(encrypted);
 
-            launcherConfiguration.Decrypt();
+            launcherConfiguration.Decrypt(dataProtector);
 
             var n = launcherConfiguration.Serialize();
 
