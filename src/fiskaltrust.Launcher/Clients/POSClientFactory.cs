@@ -5,6 +5,8 @@ using fiskaltrust.Middleware.Interface.Client;
 using fiskaltrust.Middleware.Interface.Client.Grpc;
 using fiskaltrust.Middleware.Interface.Client.Http;
 using fiskaltrust.Middleware.Interface.Client.Soap;
+using Grpc.Core;
+using Grpc.Net.Client;
 
 namespace fiskaltrust.Launcher.Clients
 {
@@ -29,12 +31,31 @@ namespace fiskaltrust.Launcher.Clients
             };
 
             var isHttps = !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64);
+            var sslValidationDisabled = _launcherConfiguration != null && _launcherConfiguration.SslValidation.HasValue && _launcherConfiguration.SslValidation.Value;
 
             return configuration.UrlType switch
             {
-                "grpc" => GrpcPosFactory.CreatePosAsync(new GrpcClientOptions { Url = new Uri(configuration.Url.Replace("grpc://", "http://")), RetryPolicyOptions = retryPolicyoptions }).Result,
-                "rest" => HttpPosFactory.CreatePosAsync(new HttpPosClientOptions { Url = new Uri(configuration.Url.Replace("rest://", isHttps ? "https://" : "http://")), RetryPolicyOptions = retryPolicyoptions }).Result,
-                "http" or "https" or "net.tcp" => SoapPosFactory.CreatePosAsync(new ClientOptions { Url = new Uri(configuration.Url), RetryPolicyOptions = retryPolicyoptions }).Result,
+                "grpc" => GrpcPosFactory.CreatePosAsync(new GrpcClientOptions
+                {
+                    Url = new Uri(configuration.Url.Replace("grpc://", isHttps ? "https://" : "http://")),
+                    RetryPolicyOptions = retryPolicyoptions,
+                    ChannelOptions = new GrpcChannelOptions
+                    {
+                        Credentials = isHttps ? ChannelCredentials.SecureSsl : ChannelCredentials.Insecure,
+                        HttpHandler = isHttps && sslValidationDisabled ? new HttpClientHandler { ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true } : null
+                    }
+                }).Result,
+                "rest" => HttpPosFactory.CreatePosAsync(new HttpPosClientOptions
+                {
+                    Url = new Uri(configuration.Url.Replace("rest://", isHttps ? "https://" : "http://")),
+                    RetryPolicyOptions = retryPolicyoptions,
+                    DisableSslValidation = _launcherConfiguration?.SslValidation
+                }).Result,
+                "http" or "https" or "net.tcp" => SoapPosFactory.CreatePosAsync(new ClientOptions
+                {
+                    Url = new Uri(configuration.Url),
+                    RetryPolicyOptions = retryPolicyoptions
+                }).Result,
                 _ => throw new ArgumentException("This version of the fiskaltrust Launcher currently only supports gRPC, REST and SOAP communication."),
             };
         }

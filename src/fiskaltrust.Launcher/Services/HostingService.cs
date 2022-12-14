@@ -110,33 +110,7 @@ namespace fiskaltrust.Launcher.Services
 
             builder.WebHost.ConfigureKestrel(options =>
             {
-                ConfigureKestrel(options, new Uri(GetRestUri(uri)), listenOptions =>
-                {
-                    if (!string.IsNullOrEmpty(_launcherConfiguration?.TlsCertificatePath))
-                    {
-                        if (File.Exists(_launcherConfiguration!.TlsCertificatePath) && Path.GetExtension(_launcherConfiguration!.TlsCertificatePath).ToLowerInvariant() == ".pfx")
-                        {
-                            listenOptions.UseHttps(_launcherConfiguration!.TlsCertificatePath, _launcherConfiguration!.TlsCertificatePassword);
-                        }
-                        else
-                        {
-                            _logger.LogError("A TLS certificate path was defined, but the file '{PfxPath}' does not exist or is not a valid PFX file.", _launcherConfiguration?.TlsCertificatePath);
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(_launcherConfiguration?.TlsCertificateBase64))
-                    {
-                        try
-                        {
-                            var cert = new X509Certificate2(Convert.FromBase64String(_launcherConfiguration?.TlsCertificateBase64), _launcherConfiguration.TlsCertificatePassword);
-                            listenOptions.UseHttps(cert);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError("A TLS certificate was defined via base64 input, but could not be parsed. Error message: {TlsParsingError}", ex.Message);
-                        }
-                    }
-                });
+                ConfigureKestrel(options, new Uri(GetRestUri(uri)), listenOptions => ConfigureTls(listenOptions));
                 options.AllowSynchronousIO = true;
             });
 
@@ -233,9 +207,9 @@ namespace fiskaltrust.Launcher.Services
             return binding;
         }
 
-        internal static WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
+        private WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
-            builder.WebHost.ConfigureKestrel(options => ConfigureKestrelForGrpc(options, uri));
+            builder.WebHost.ConfigureKestrel(options => ConfigureKestrelForGrpc(options, uri, listenOptions => ConfigureTls(listenOptions)));
             builder.Services.AddCodeFirstGrpc(options => options.EnableDetailedErrors = true);
             builder.Services.AddSingleton(instance);
 
@@ -245,6 +219,34 @@ namespace fiskaltrust.Launcher.Services
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<T>());
 
             return app;
+        }
+
+        private void ConfigureTls(ListenOptions listenOptions)
+        {
+            if (!string.IsNullOrEmpty(_launcherConfiguration?.TlsCertificatePath))
+            {
+                if (File.Exists(_launcherConfiguration!.TlsCertificatePath) && Path.GetExtension(_launcherConfiguration!.TlsCertificatePath).ToLowerInvariant() == ".pfx")
+                {
+                    listenOptions.UseHttps(_launcherConfiguration!.TlsCertificatePath, _launcherConfiguration!.TlsCertificatePassword);
+                }
+                else
+                {
+                    _logger.LogError("A TLS certificate path was defined, but the file '{PfxPath}' does not exist or is not a valid PFX file.", _launcherConfiguration?.TlsCertificatePath);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(_launcherConfiguration?.TlsCertificateBase64))
+            {
+                try
+                {
+                    var cert = new X509Certificate2(Convert.FromBase64String(_launcherConfiguration?.TlsCertificateBase64), _launcherConfiguration.TlsCertificatePassword);
+                    listenOptions.UseHttps(cert);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("A TLS certificate was defined via base64 input, but could not be parsed. Error message: {TlsParsingError}", ex.Message);
+                }
+            }
         }
 
         private static void ConfigureKestrel(KestrelServerOptions options, Uri uri, Action<ListenOptions> configureListeners)
@@ -263,9 +265,10 @@ namespace fiskaltrust.Launcher.Services
             }
         }
 
-        public static void ConfigureKestrelForGrpc(KestrelServerOptions options, Uri uri) => ConfigureKestrel(options, uri, listenOptions =>
+        public static void ConfigureKestrelForGrpc(KestrelServerOptions options, Uri uri, Action<ListenOptions>? configureListeners = null) => ConfigureKestrel(options, uri, listenOptions =>
         {
             listenOptions.Protocols = HttpProtocols.Http2;
+            configureListeners?.Invoke(listenOptions);
         });
     }
 }
