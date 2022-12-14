@@ -9,7 +9,10 @@ using Serilog.Context;
 namespace fiskaltrust.Launcher.Helpers
 {
     public record LauncherProcessId(int Id);
-    public record LauncherExecutablePath(string Path);
+    public record LauncherExecutablePath(string Path)
+    {
+        public override string ToString() => Path.ToString();
+    };
 
     public class SelfUpdater
     {

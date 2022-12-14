@@ -120,7 +120,7 @@ namespace fiskaltrust.Launcher.Extensions
             {
                 try
                 {
-                    builder.ProtectKeysWithDpapi();
+                    builder.ProtectKeysWithDpapi(true);
                     return builder;
                 }
                 catch { }

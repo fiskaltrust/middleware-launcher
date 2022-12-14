@@ -54,6 +54,8 @@ namespace fiskaltrust.Launcher.Commands
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
+            _clientEcdh = CashboxConfigEncryption.CreateCurve();
+
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(collectionSink)
@@ -123,7 +125,7 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 using var downloader = new ConfigurationDownloader(_launcherConfiguration);
-                var exists = await downloader.DownloadConfigurationAsync();
+                var exists = await downloader.DownloadConfigurationAsync(_clientEcdh);
                 if (_launcherConfiguration.UseOffline!.Value && !exists)
                 {
                     Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");

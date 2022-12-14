@@ -23,14 +23,14 @@ namespace fiskaltrust.Launcher.Download
             }
         }
 
-        public async Task<bool> DownloadConfigurationAsync()
+        public async Task<bool> DownloadConfigurationAsync(ECDiffieHellman clientCurve)
         {
             if (_configuration.UseOffline!.Value)
             {
                 return File.Exists(_configuration.CashboxConfigurationFile!);
             }
 
-            var clientPublicKey = Convert.ToBase64String(CashboxConfigEncryption.CreateCurve().PublicKey.ExportSubjectPublicKeyInfo());
+            var clientPublicKey = Convert.ToBase64String(clientCurve.PublicKey.ExportSubjectPublicKeyInfo());
 
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.ConfigurationUrl}api/configuration/{_configuration.CashboxId}"));
             request.Headers.Add("accesstoken", _configuration.AccessToken);
