@@ -133,7 +133,7 @@ namespace fiskaltrust.Launcher.Services
         {
             builder.WebHost.ConfigureKestrel(options =>
             {
-                ConfigureKestrel(options, uri, _ => { });
+                ConfigureKestrel(options, uri, listenOptions => ConfigureTls(listenOptions));
                 options.AllowSynchronousIO = true;
             });
 
