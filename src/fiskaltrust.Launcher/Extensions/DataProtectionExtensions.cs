@@ -1,33 +1,65 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Text;
 using System.Xml.Linq;
 using fiskaltrust.Launcher.Common.Helpers;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.DataProtection.XmlEncryption;
+using Serilog;
 
 namespace fiskaltrust.Launcher.Extensions
 {
 
     static class KeyUtils
     {
-        [DllImport("keyutils", SetLastError = true, CharSet = CharSet.Ansi)]
-        public static extern Int32 add_key(string type, string description, string payload, UIntPtr plen, Int32 keyring);
+        [DllImport("keyutils", SetLastError = true)]
+        public static extern Int32 add_key(IntPtr type, IntPtr description, IntPtr payload, UIntPtr plen, Int32 keyring);
 
-        [DllImport("keyutils", SetLastError = true, CharSet = CharSet.Ansi)]
-        public static extern Int32 request_key(string type, string description, string callout_info, Int32 dest_keyring);
+        [DllImport("keyutils", SetLastError = true)]
+        public static extern Int64 keyctl_read(Int32 key, IntPtr buffer, UIntPtr buflen);
+
+        [DllImport("keyutils", SetLastError = true)]
+        public static extern Int32 keyctl_get_keyring_ID(Int32 id, bool create);
     }
 
     class KeyringXmlEncryptor : IXmlEncryptor
     {
-        public const int KEY_SPEC_SESSION_KEYRING = -3;
+        public const int KEY_SPEC_USER_KEYRING = -4;
+        public const long SYS_keyctl = 250;
 
         public EncryptedXmlInfo Encrypt(XElement plaintextElement)
         {
-            var plaintextElementString = plaintextElement.ToString();
+            var keyringId = KeyUtils.keyctl_get_keyring_ID(KEY_SPEC_USER_KEYRING, false);
+            if (keyringId < 0)
+            {
+                throw new Exception($"Could not get keyring: errno {Marshal.GetLastPInvokeError()}");
+            }
 
-            var keySerial = KeyUtils.add_key("user", "fiskaltrust.Launcher DataProtection Key", plaintextElementString, (UIntPtr)plaintextElementString.Length, KEY_SPEC_SESSION_KEYRING);
-            var encryptedElement = new XElement("key_serial", keySerial);
+            Log.Warning("p {l}", plaintextElement.ToString());
+            var plaintextElementBytes = Encoding.Unicode.GetBytes(plaintextElement.ToString());
+            var plaintextElementPtr = Marshal.AllocHGlobal(plaintextElementBytes.Length);
+            Marshal.Copy(plaintextElementBytes, 0, plaintextElementPtr, plaintextElementBytes.Length);
+
+            var type = Encoding.ASCII.GetBytes("user");
+            var typePtr = Marshal.AllocHGlobal(type.Length);
+            Marshal.Copy(type, 0, typePtr, type.Length);
+
+            var description = Encoding.ASCII.GetBytes("fiskaltrust.Launcher DataProtection Key");
+            var descriptionPtr = Marshal.AllocHGlobal(description.Length);
+            Marshal.Copy(description, 0, descriptionPtr, description.Length);
+
+            var keySerial = KeyUtils.add_key(typePtr, descriptionPtr, plaintextElementPtr, (UIntPtr)plaintextElementBytes.Length, keyringId);
+            if (keySerial < 0)
+            {
+                throw new Exception($"Could not save key in keyring: errno {Marshal.GetLastPInvokeError()}");
+            }
+            var encryptedElement = new XElement("key_serial", keySerial.ToString());
+
+            Log.Warning("e {l}", encryptedElement.ToString());
+            Marshal.FreeHGlobal(plaintextElementPtr);
+            Marshal.FreeHGlobal(typePtr);
+            Marshal.FreeHGlobal(descriptionPtr);
 
             return new EncryptedXmlInfo(encryptedElement, typeof(KeyringXmlDecryptor));
         }
@@ -35,6 +67,10 @@ namespace fiskaltrust.Launcher.Extensions
 
     class KeyringXmlDecryptor : IXmlDecryptor
     {
+        public const long SYS_keyctl = 250;
+        public const int KEYCTL_READ = 11;
+        public const int MAX_CAPACITY = 32767;
+
         public KeyringXmlDecryptor(IServiceCollection _)
         {
         }
@@ -45,7 +81,21 @@ namespace fiskaltrust.Launcher.Extensions
 
         public XElement Decrypt(XElement encryptedElement)
         {
-            throw new NotImplementedException();
+            var bufferPtr = Marshal.AllocHGlobal(MAX_CAPACITY);
+            var len = KeyUtils.keyctl_read(Int32.Parse(encryptedElement.Value), bufferPtr, MAX_CAPACITY);
+            Log.Warning("d {l}", encryptedElement.ToString());
+
+            if (len <= 0)
+            {
+                throw new Exception($"Could not find key in keyring: errno {Marshal.GetLastPInvokeError()}");
+            }
+            var buffer = new byte[len];
+
+            Marshal.Copy(bufferPtr, buffer, 0, (int)len);
+            Marshal.FreeHGlobal(bufferPtr);
+
+            return XElement.Parse(Encoding.Unicode.GetString(buffer));
+
         }
     }
 
@@ -133,8 +183,9 @@ namespace fiskaltrust.Launcher.Extensions
                     builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new KeyringXmlEncryptor());
                     return builder;
                 }
-                catch
+                catch (Exception e)
                 {
+                    Log.Warning(e, "Fallback config encryption mechanism used.");
                 }
             }
 
