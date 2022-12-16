@@ -119,12 +119,24 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private bool? _sslValidation;
         [JsonPropertyName("sslValidation")]
-        public bool? SslValidation { get => WithDefault<bool?>(_sslValidation.GetValueOrDefault(false) ? true : null, true); set => _sslValidation = value; } // TODO implement
-
+        public bool? SslValidation { get =>_sslValidation.GetValueOrDefault(true); set => _sslValidation = value; }
+        
         [Encrypt]
         private string? _proxy = null;
         [JsonPropertyName("proxy")]
         public string? Proxy { get => _proxy; set => _proxy = value; }
+
+        private string? _tlsCertificatePath;
+        [JsonPropertyName("tlsCertificatePath")]
+        public string? TlsCertificatePath { get => _tlsCertificatePath; set => _tlsCertificatePath = value; }
+
+        private string? _tlsCertificateBase64;
+        [JsonPropertyName("tlsCertificateBase64")]
+        public string? TlsCertificateBase64 { get => _tlsCertificateBase64; set => _tlsCertificateBase64 = value; }
+        
+        private string? _tlsCertificatePassword;
+        [JsonPropertyName("tlsCertificatePassword")]
+        public string? TlsCertificatePassword { get => _tlsCertificatePassword; set => _tlsCertificatePassword = value; }
 
         private int? _processHostPingPeriodSec;
         [JsonPropertyName("processHostPingPeriodSec")]

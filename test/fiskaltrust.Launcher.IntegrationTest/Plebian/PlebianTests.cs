@@ -32,7 +32,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 
             await RunTest<IDESSCD>(new DummyDeSscd(), PackageType.SCU, packageConfiguration, async () =>
             {
-                var grpcClient = new DESSCDClientFactory().CreateClient(new ClientConfiguration
+                var grpcClient = new DESSCDClientFactory(new LauncherConfiguration()).CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[0],
                     UrlType = "grpc",
@@ -41,7 +41,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 
                 (await grpcClient.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().Match<ScuDeEchoResponse>(r => r.Message == "test");
 
-                var restClient = new DESSCDClientFactory().CreateClient(new ClientConfiguration
+                var restClient = new DESSCDClientFactory(new LauncherConfiguration()).CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[1],
                     UrlType = "rest",
@@ -51,7 +51,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 
                 (await restClient.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().NotBeNull().And.Match<ScuDeEchoResponse>(r => r.Message == "test");
 
-                var soapClientHttp = new DESSCDClientFactory().CreateClient(new ClientConfiguration
+                var soapClientHttp = new DESSCDClientFactory(new LauncherConfiguration()).CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[2],
                     UrlType = "http",
@@ -78,7 +78,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 
             await RunTest<IPOS>(new DummyPos(), PackageType.Queue, packageConfiguration, async () =>
             {
-                var grpcClient = new POSClientFactory().CreateClient(new ClientConfiguration
+                var grpcClient = new POSClientFactory(new LauncherConfiguration()).CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[0],
                     UrlType = "grpc",
@@ -87,7 +87,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 
                 (await grpcClient.EchoAsync(new EchoRequest { Message = "test" })).Should().Match<EchoResponse>(r => r.Message == "test");
 
-                var restClient = new POSClientFactory().CreateClient(new ClientConfiguration
+                var restClient = new POSClientFactory(new LauncherConfiguration()).CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[1],
                     UrlType = "rest",
@@ -96,7 +96,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 
                 (await restClient.EchoAsync(new EchoRequest { Message = "test" })).Should().Match<EchoResponse>(r => r.Message == "test");
 
-                var soapClientHttp = new POSClientFactory().CreateClient(new ClientConfiguration
+                var soapClientHttp = new POSClientFactory(new LauncherConfiguration()).CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[2],
                     UrlType = "http",

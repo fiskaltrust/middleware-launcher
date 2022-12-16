@@ -26,6 +26,9 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--proxy"));
             AddOption(new Option<string?>("--processhost-ping-period-sec"));
             AddOption(new Option<string?>("--cashbox-configuration-file"));
+            AddOption(new Option<string?>("--tls-certificate-path"));
+            AddOption(new Option<string?>("--tls-certificate-base64"));
+            AddOption(new Option<string?>("--tls-certificate-password"));
         }
     }
 
