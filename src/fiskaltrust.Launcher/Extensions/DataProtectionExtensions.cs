@@ -16,6 +16,7 @@ namespace fiskaltrust.Launcher.Extensions
     {
         private const Int64 KEYCTL = 250;
 
+        // https://man7.org/linux/man-pages/man3/keyctl_read.3.html
         [LibraryImport("libc", SetLastError = true, EntryPoint = "syscall")]
         private static partial Int64 keyctl_read(Int64 syscall, Int32 cmd, Int32 key, byte* buffer, UIntPtr buflen);
 
@@ -38,6 +39,7 @@ namespace fiskaltrust.Launcher.Extensions
             }
         }
 
+        // https://man7.org/linux/man-pages/man3/keyctl_get_keyring_ID.3.html
         [LibraryImport("libc", SetLastError = true, EntryPoint = "syscall")]
         private static partial Int32 keyctl_get_keyring_ID(Int64 syscall, Int32 cmd, Int32 id, [MarshalAs(UnmanagedType.Bool)] bool create);
 
@@ -55,6 +57,7 @@ namespace fiskaltrust.Launcher.Extensions
             return keyringId;
         }
 
+        // https://man7.org/linux/man-pages/man2/add_key.2.html
         [LibraryImport("libc", SetLastError = true, EntryPoint = "syscall", StringMarshalling = StringMarshalling.Utf8)]
         private static partial Int32 add_key(Int64 syscall, string type, string description, byte* payload, UIntPtr plen, Int32 keyring);
 
@@ -154,15 +157,16 @@ namespace fiskaltrust.Launcher.Extensions
 
     public static class DataProtectionExtensions
     {
+        private const string DATA_PROTECTION_APPLICATION_NAME = "fiskaltrust.Launcher";
         internal static AccessTokenForEncryption? AccessTokenForEncryption = null; // This godawful workaround exists becaues of this allegedly fixed bug https://github.com/dotnet/aspnetcore/issues/2523
 
         public static IDataProtectionProvider Create(string? accessToken = null) =>
             DataProtectionProvider
             .Create(
-                new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "fiskaltrust.Launcher", "keys")),
+                new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), DATA_PROTECTION_APPLICATION_NAME, "keys")),
                 configuration =>
                 {
-                    configuration.SetApplicationName("fiskaltrust.Launcher");
+                    configuration.SetApplicationName(DATA_PROTECTION_APPLICATION_NAME);
                     configuration.ProtectKeysCustom(accessToken);
                 });
 
@@ -176,7 +180,7 @@ namespace fiskaltrust.Launcher.Extensions
 
             builder
                 .SetDefaultKeyLifetime(DateTime.MaxValue - DateTime.Now) // Encryption fails if we use TimeStamp.MaxValue because that results in a DateTime exceeding its MaxValue ¯\_(ツ)_/¯
-                .SetApplicationName("fiskaltrust.Launcher");
+                .SetApplicationName(DATA_PROTECTION_APPLICATION_NAME);
 
             if (OperatingSystem.IsWindows())
             {

@@ -186,7 +186,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                _launcherConfiguration.Decrypt(_dataProtectionProvider.CreateProtector("fiskaltrust.Launcher.Configuration"));
+                _launcherConfiguration.Decrypt(_dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
             }
             catch (Exception e)
             {

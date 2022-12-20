@@ -27,6 +27,8 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
     public record LauncherConfiguration
     {
+        public const string DATA_PROTECTION_DATA_PURPOSE = "fiskaltrust.Launcher.Configuration";
+
         private bool _useDefaults;
 
         [JsonConstructor]

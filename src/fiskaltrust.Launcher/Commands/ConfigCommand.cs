@@ -51,9 +51,17 @@ namespace fiskaltrust.Launcher.Commands
             IDataProtector dataProtector;
             if (!File.Exists(LauncherConfigurationFile))
             {
+                if (CipherAccessToken is null)
+                {
+                    Log.Warning("Launcher configuration file {file} does not exist.", LauncherConfigurationFile);
+                    Log.Error("Please specify the --cipher-access-token parameter or an existing launcher configuration file containing an access token.");
+                    return 1;
+                }
+
                 Log.Warning("Launcher configuration file {file} does not exist. Creating new file.", LauncherConfigurationFile);
                 launcherConfiguration = new LauncherConfiguration();
-                dataProtector = DataProtectionExtensions.Create(CipherAccessToken).CreateProtector("fiskaltrust.Launcher.Configuration");
+
+                dataProtector = DataProtectionExtensions.Create(CipherAccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
             }
             else
             {
@@ -67,7 +75,13 @@ namespace fiskaltrust.Launcher.Commands
                     return 1;
                 }
 
-                dataProtector = DataProtectionExtensions.Create(CipherAccessToken ?? launcherConfiguration?.AccessToken).CreateProtector("fiskaltrust.Launcher.Configuration");
+                if (CipherAccessToken is null && launcherConfiguration?.AccessToken is null)
+                {
+                    Log.Error("Please specify the --cipher-access-token parameter or set it in the provided launcher configuration file.");
+                    return 1;
+                }
+
+                dataProtector = DataProtectionExtensions.Create(CipherAccessToken ?? launcherConfiguration?.AccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
 
                 try
                 {
@@ -214,7 +228,7 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Error(e, "Could not read launcher configuration {file}.", launcherConfigurationFile);
             }
 
-            var dataProtector = DataProtectionExtensions.Create(CipherAccessToken ?? launcherConfiguration?.AccessToken).CreateProtector("fiskaltrust.Launcher.Configuration");
+            var dataProtector = DataProtectionExtensions.Create(CipherAccessToken ?? launcherConfiguration?.AccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
 
             try
             {
