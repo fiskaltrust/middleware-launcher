@@ -144,7 +144,7 @@ When using VS Code, please ensure that the following command line parameters are
 **A:** It is possible to switch the launcher version from 1.3 to 2.0 using the version Launcher 2.0-Public Preview 3 and later versions.
 
 ## Contributing
-In general, we welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!
+We welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!
 
 Please check out the [contribution guidelines](CONTRIBUTING.md) for more detailed information about how to proceed.
 
