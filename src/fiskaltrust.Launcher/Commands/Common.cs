@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Helpers;
@@ -54,8 +55,6 @@ namespace fiskaltrust.Launcher.Commands
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
-            _clientEcdh = CashboxConfigEncryption.CreateCurve();
-
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(collectionSink)
@@ -120,6 +119,17 @@ namespace fiskaltrust.Launcher.Commands
             catch (Exception e)
             {
                 Log.Error(e, "Could not create cashbox-configuration-file folder.");
+            }
+
+            {
+                var dataProtector = DataProtectionExtensions.Create(_launcherConfiguration.AccessToken).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
+                var clientEcdhPath = Path.Combine(Common.Constants.Paths.CommonFolder, "fiskaltrust.Launcher", "client.ecdh");
+                if (File.Exists(clientEcdhPath))
+                {
+                }
+                else
+                {
+                }
             }
 
             try

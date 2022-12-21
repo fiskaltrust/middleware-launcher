@@ -5,6 +5,7 @@ namespace fiskaltrust.Launcher.Helpers
 {
     public class CashboxConfigEncryption
     {
+        public static readonly ECCurve CURVE = ECCurve.NamedCurves.nistP256;
         private readonly byte[] _clientSharedSecret;
         private readonly byte[] _iv;
         private readonly ECDiffieHellman _curve;
@@ -17,7 +18,7 @@ namespace fiskaltrust.Launcher.Helpers
             _iv = cashboxId.ToByteArray();
         }
 
-        public static ECDiffieHellman CreateCurve() => ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
+        public static ECDiffieHellman CreateCurve() => ECDiffieHellman.Create(CURVE);
 
         public string Decrypt(string valueBase64)
         {

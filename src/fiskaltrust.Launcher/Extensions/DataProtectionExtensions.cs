@@ -51,7 +51,7 @@ namespace fiskaltrust.Launcher.Extensions
 
             if (keyringId < 0)
             {
-                throw new Exception($"Could not get keyring: errno {Marshal.GetLastPInvokeError()}");
+                throw new Exception($"Could not get linux keyring: errno {Marshal.GetLastPInvokeError()}");
             }
 
             return keyringId;
@@ -71,7 +71,7 @@ namespace fiskaltrust.Launcher.Extensions
 
                 if (keyId < 0)
                 {
-                    throw new Exception($"Could not save key in keyring: errno {Marshal.GetLastPInvokeError()}");
+                    throw new Exception($"Could not save key in linux keyring: errno {Marshal.GetLastPInvokeError()}");
                 }
 
                 return keyId;
@@ -163,7 +163,7 @@ namespace fiskaltrust.Launcher.Extensions
         public static IDataProtectionProvider Create(string? accessToken = null) =>
             DataProtectionProvider
             .Create(
-                new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), DATA_PROTECTION_APPLICATION_NAME, "keys")),
+                new DirectoryInfo(Path.Combine(Common.Constants.Paths.CommonFolder, DATA_PROTECTION_APPLICATION_NAME, "keys")),
                 configuration =>
                 {
                     configuration.SetApplicationName(DATA_PROTECTION_APPLICATION_NAME);
