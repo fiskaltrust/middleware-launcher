@@ -77,7 +77,9 @@ namespace fiskaltrust.Launcher.Commands
             var app = builder.Build();
 
             app.UseRouting();
-            app.MapGrpcService<ProcessHostService>();
+#pragma warning disable ASP0014
+            app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
+#pragma warning restore ASP0014
 
             if (_launcherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null)
             {

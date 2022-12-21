@@ -216,7 +216,9 @@ namespace fiskaltrust.Launcher.Services
             var app = builder.Build();
 
             app.UseRouting();
-            app.MapGrpcService<T>();
+#pragma warning disable ASP0014
+            app.UseEndpoints(endpoints => endpoints.MapGrpcService<T>());
+#pragma warning restore ASP0014
 
             return app;
         }
@@ -239,7 +241,7 @@ namespace fiskaltrust.Launcher.Services
             {
                 try
                 {
-                    var cert = new X509Certificate2(Convert.FromBase64String(_launcherConfiguration?.TlsCertificateBase64), _launcherConfiguration.TlsCertificatePassword);
+                    var cert = new X509Certificate2(Convert.FromBase64String(_launcherConfiguration!.TlsCertificateBase64), _launcherConfiguration!.TlsCertificatePassword);
                     listenOptions.UseHttps(cert);
                 }
                 catch (Exception ex)
