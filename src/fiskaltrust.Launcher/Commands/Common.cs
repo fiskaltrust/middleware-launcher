@@ -126,9 +126,14 @@ namespace fiskaltrust.Launcher.Commands
                 var clientEcdhPath = Path.Combine(Common.Constants.Paths.CommonFolder, "fiskaltrust.Launcher", "client.ecdh");
                 if (File.Exists(clientEcdhPath))
                 {
+                    _clientEcdh = ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
+
                 }
                 else
                 {
+                    _clientEcdh = CashboxConfigEncryption.CreateCurve();
+
+                    await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(_clientEcdh.Serialize()));
                 }
             }
 
