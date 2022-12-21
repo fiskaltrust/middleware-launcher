@@ -179,7 +179,7 @@ namespace fiskaltrust.Launcher.Extensions
             }
 
             builder
-                .SetDefaultKeyLifetime(DateTime.MaxValue - DateTime.Now) // Encryption fails if we use TimeStamp.MaxValue because that results in a DateTime exceeding its MaxValue ¯\_(ツ)_/¯
+                .SetDefaultKeyLifetime(DateTime.MaxValue - DateTime.Now - TimeSpan.FromDays(1)) // Encryption fails if we use TimeStamp.MaxValue because that results in a DateTime exceeding its MaxValue ¯\_(ツ)_/¯
                 .SetApplicationName(DATA_PROTECTION_APPLICATION_NAME);
 
             if (OperatingSystem.IsWindows())
