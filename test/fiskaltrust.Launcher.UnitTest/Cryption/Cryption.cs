@@ -18,7 +18,13 @@ namespace fiskaltrust.Launcher.UnitTest.Logging
                 .RuleFor(c => c.AccessToken, f => Convert.ToBase64String(f.Random.Bytes(33)))
                 .Generate();
 
-            var dataProtector = DataProtectionExtensions.Create(launcherConfiguration.AccessToken, "./keys").CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+            var useFallback = false;
+            if (OperatingSystem.IsLinux()) // on the azure pipeline agent we dont have access to the keyring
+            {
+                useFallback = true;
+            }
+
+            var dataProtector = DataProtectionExtensions.Create(launcherConfiguration.AccessToken, "./keys", useFallback).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
 
             var o = launcherConfiguration.Serialize();
 

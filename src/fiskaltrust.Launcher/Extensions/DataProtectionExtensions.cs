@@ -160,17 +160,17 @@ namespace fiskaltrust.Launcher.Extensions
         private const string DATA_PROTECTION_APPLICATION_NAME = "fiskaltrust.Launcher";
         internal static AccessTokenForEncryption? AccessTokenForEncryption = null; // This godawful workaround exists becaues of this allegedly fixed bug https://github.com/dotnet/aspnetcore/issues/2523
 
-        public static IDataProtectionProvider Create(string? accessToken = null, string? path = null) =>
+        public static IDataProtectionProvider Create(string? accessToken = null, string? path = null, bool useFallback = false) =>
             DataProtectionProvider
             .Create(
                 new DirectoryInfo(path ?? Path.Combine(Common.Constants.Paths.CommonFolder, DATA_PROTECTION_APPLICATION_NAME, "keys")),
                 configuration =>
                 {
                     configuration.SetApplicationName(DATA_PROTECTION_APPLICATION_NAME);
-                    configuration.ProtectKeysCustom(accessToken);
+                    configuration.ProtectKeysCustom(accessToken, useFallback);
                 });
 
-        public static IDataProtectionBuilder ProtectKeysCustom(this IDataProtectionBuilder builder, string? accessToken = null)
+        public static IDataProtectionBuilder ProtectKeysCustom(this IDataProtectionBuilder builder, string? accessToken = null, bool useFallback = false)
         {
             if (accessToken is not null)
             {
@@ -182,33 +182,35 @@ namespace fiskaltrust.Launcher.Extensions
                 .SetDefaultKeyLifetime(DateTime.MaxValue - DateTime.Now - TimeSpan.FromDays(1)) // Encryption fails if we use TimeStamp.MaxValue because that results in a DateTime exceeding its MaxValue ¯\_(ツ)_/¯
                 .SetApplicationName(DATA_PROTECTION_APPLICATION_NAME);
 
-            if (OperatingSystem.IsWindows())
+            if (!useFallback)
             {
-                try
+                if (OperatingSystem.IsWindows())
                 {
-                    builder.ProtectKeysWithDpapi(true);
-                    return builder;
+                    try
+                    {
+                        builder.ProtectKeysWithDpapi(true);
+                        return builder;
+                    }
+                    catch { }
                 }
-                catch { }
-            }
-            else if (OperatingSystem.IsLinux())
-            {
-                try
+                else if (OperatingSystem.IsLinux())
                 {
-                    Marshal.PrelinkAll(typeof(KeyUtils));
-                    builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new KeyringXmlEncryptor());
-                    return builder;
+                    try
+                    {
+                        Marshal.PrelinkAll(typeof(KeyUtils));
+                        builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new KeyringXmlEncryptor());
+                        return builder;
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Warning(e, "Fallback config encryption mechanism used.");
+                    }
                 }
-                catch (Exception e)
+                else if (OperatingSystem.IsMacOS())
                 {
-                    Log.Warning(e, "Fallback config encryption mechanism used.");
+                    Log.Warning("Fallback config encryption mechanism is used on macos.");
                 }
             }
-            else if (OperatingSystem.IsMacOS())
-            {
-                Log.Warning("Fallback config encryption mechanism is used on macos.");
-            }
-
             builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new LegacyXmlEncryptor(builder.Services));
 
             return builder;
