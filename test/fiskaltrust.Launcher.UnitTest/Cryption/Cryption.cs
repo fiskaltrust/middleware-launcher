@@ -2,7 +2,6 @@ using FluentAssertions;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Extensions;
 using AutoBogus;
-using Microsoft.AspNetCore.DataProtection;
 
 namespace fiskaltrust.Launcher.UnitTest.Logging
 {

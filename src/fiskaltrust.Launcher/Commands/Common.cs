@@ -121,21 +121,7 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Error(e, "Could not create cashbox-configuration-file folder.");
             }
 
-            {
-                var dataProtector = DataProtectionExtensions.Create(_launcherConfiguration.AccessToken).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
-                var clientEcdhPath = Path.Combine(Common.Constants.Paths.CommonFolder, "fiskaltrust.Launcher", "client.ecdh");
-                if (File.Exists(clientEcdhPath))
-                {
-                    _clientEcdh = ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
-
-                }
-                else
-                {
-                    _clientEcdh = CashboxConfigEncryption.CreateCurve();
-
-                    await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(_clientEcdh.Serialize()));
-                }
-            }
+            _clientEcdh = await LoadCurve(_launcherConfiguration.AccessToken!);
 
             try
             {
@@ -208,6 +194,25 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Warning(e, "Error decrypring launcher configuration file.");
             }
             return 0;
+        }
+
+        public static async Task<ECDiffieHellman> LoadCurve(string accessToken)
+        {
+            var dataProtector = DataProtectionExtensions.Create(accessToken).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
+            var clientEcdhPath = Path.Combine(Common.Constants.Paths.CommonFolder, "fiskaltrust.Launcher", "client.ecdh");
+            if (File.Exists(clientEcdhPath))
+            {
+                return ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
+
+            }
+            else
+            {
+                var clientEcdh = CashboxConfigEncryption.CreateCurve();
+
+                await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize()));
+
+                return clientEcdh;
+            }
         }
     }
 }

@@ -65,6 +65,8 @@ namespace fiskaltrust.Launcher.Commands
 
             var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
 
+            cashboxConfiguration.Decrypt(launcherConfiguration, await CommonCommandHandler.LoadCurve(launcherConfiguration.AccessToken!));
+
             var packageConfiguration = (plebianConfiguration.PackageType switch
             {
                 PackageType.Queue => cashboxConfiguration.ftQueues,
@@ -73,8 +75,7 @@ namespace fiskaltrust.Launcher.Commands
                 var unknown => throw new Exception($"Unknown PackageType {unknown}")
             }).First(p => p.Id == plebianConfiguration.PackageId);
 
-            packageConfiguration.Configuration = packageConfiguration.Configuration.Union(DefaultPackageConfig(launcherConfiguration, cashboxConfiguration)).ToDictionary(k => k.Key, v => v.Value);
-
+            packageConfiguration.Configuration = ProcessPackageConfiguration(packageConfiguration.Configuration, launcherConfiguration, cashboxConfiguration);
 
             IProcessHostService? processHostService = null;
             if (!NoProcessHostService)
@@ -165,9 +166,9 @@ namespace fiskaltrust.Launcher.Commands
         }
 
 
-        private static Dictionary<string, object> DefaultPackageConfig(LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashboxConfiguration)
+        private static Dictionary<string, object> ProcessPackageConfiguration(Dictionary<string, object> configuration, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashboxConfiguration)
         {
-            var config = new Dictionary<string, object>
+            var defaults = new Dictionary<string, object>
             {
                 { "cashboxid", launcherConfiguration.CashboxId! },
                 { "accesstoken", launcherConfiguration.AccessToken! },
@@ -179,10 +180,23 @@ namespace fiskaltrust.Launcher.Commands
 
             if (launcherConfiguration.Proxy is not null)
             {
-                config.Add("proxy", launcherConfiguration.Proxy!);
+                defaults.Add("proxy", launcherConfiguration.Proxy!);
             }
 
-            return config;
+            foreach (var entry in defaults)
+            {
+                if (!configuration.ContainsKey(entry.Key))
+                {
+                    configuration.Add(entry.Key, entry.Value);
+                }
+            }
+
+            foreach (var entry in configuration.Where(entry => entry.Key.ToLower() == "connectionstring"))
+            {
+                configuration[entry.Key] = $"raw:{entry.Value}";
+            }
+
+            return configuration;
         }
     }
 }
