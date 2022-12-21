@@ -160,10 +160,10 @@ namespace fiskaltrust.Launcher.Extensions
         private const string DATA_PROTECTION_APPLICATION_NAME = "fiskaltrust.Launcher";
         internal static AccessTokenForEncryption? AccessTokenForEncryption = null; // This godawful workaround exists becaues of this allegedly fixed bug https://github.com/dotnet/aspnetcore/issues/2523
 
-        public static IDataProtectionProvider Create(string? accessToken = null) =>
+        public static IDataProtectionProvider Create(string? accessToken = null, string? path = null) =>
             DataProtectionProvider
             .Create(
-                new DirectoryInfo(Path.Combine(Common.Constants.Paths.CommonFolder, DATA_PROTECTION_APPLICATION_NAME, "keys")),
+                new DirectoryInfo(path ?? Path.Combine(Common.Constants.Paths.CommonFolder, DATA_PROTECTION_APPLICATION_NAME, "keys")),
                 configuration =>
                 {
                     configuration.SetApplicationName(DATA_PROTECTION_APPLICATION_NAME);

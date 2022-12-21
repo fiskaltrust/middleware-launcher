@@ -18,7 +18,7 @@ namespace fiskaltrust.Launcher.UnitTest.Logging
                 .RuleFor(c => c.AccessToken, f => Convert.ToBase64String(f.Random.Bytes(33)))
                 .Generate();
 
-            var dataProtector = DataProtectionExtensions.Create(launcherConfiguration.AccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+            var dataProtector = DataProtectionExtensions.Create(launcherConfiguration.AccessToken, "./keys").CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
 
             var o = launcherConfiguration.Serialize();
 
