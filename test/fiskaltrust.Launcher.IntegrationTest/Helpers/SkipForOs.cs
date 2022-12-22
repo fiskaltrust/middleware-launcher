@@ -5,17 +5,20 @@ namespace fiskaltrust.Launcher.IntegrationTest.Helpers
 {
     public sealed class FactSkipIf : FactAttribute
     {
-        public FactSkipIf(string OsIs)
+        public FactSkipIf(string[] OsIs)
         {
-            if (OsIs switch
+            foreach (var os in OsIs)
             {
-                "windows" => OperatingSystem.IsWindows(),
-                "linux" => OperatingSystem.IsLinux(),
-                "macos" => OperatingSystem.IsMacOS(),
-                _ => true
-            })
-            {
-                Skip = $"Ignore on {OsIs}";
+                if (os switch
+                {
+                    "windows" => OperatingSystem.IsWindows(),
+                    "linux" => OperatingSystem.IsLinux(),
+                    "macos" => OperatingSystem.IsMacOS(),
+                    _ => true
+                })
+                {
+                    Skip = $"Ignore on {OsIs}";
+                }
             }
         }
     }

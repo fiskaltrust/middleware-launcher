@@ -12,7 +12,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
     public class SelfUpdateTests
     {
         // Test is not working on linux right now 🥲
-        [FactSkipIf(OsIs: "linux")]
+        [FactSkipIf(OsIs: new[] { "linux", "macos" })]
         public async Task Test()
         {
             LauncherConfiguration launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(Guid.Parse("c813ffc2-e129-45aa-8b51-9f2342bdfa08"), "BFHGxJScfQz7OJwIfH4QSYpVJj7mDkC4UYZQDiINXW6PED34hdJQ791wlFXKL+q3vPg/vYgaBSeB9oqyolQgtkE=");
