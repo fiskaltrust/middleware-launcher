@@ -147,7 +147,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private string? _cashboxConfiguration;
         [JsonPropertyName("cashboxConfigurationFile")]
-        public string? CashboxConfigurationFile { get => WithDefault(_cashboxConfiguration, () => Path.Join(ServiceFolder, "service", $"Configuration-{CashboxId}.json")); set => _cashboxConfiguration = value; }
+        public string? CashboxConfigurationFile { get => WithDefault(_cashboxConfiguration, () => (UseOffline ?? false && File.Exists("./cashbox.configuration.json")) ? "./cashbox.configuration.json" : Path.Join(ServiceFolder, "service", $"Configuration-{CashboxId}.json")); set => _cashboxConfiguration = value; }
 
         private SemanticVersioning.Range? _launcherVersion = null;
         [JsonPropertyName("launcherVersion")]
