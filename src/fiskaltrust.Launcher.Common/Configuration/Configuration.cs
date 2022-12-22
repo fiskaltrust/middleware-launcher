@@ -122,8 +122,8 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private bool? _sslValidation;
         [JsonPropertyName("sslValidation")]
-        public bool? SslValidation { get =>_sslValidation.GetValueOrDefault(true); set => _sslValidation = value; }
-        
+        public bool? SslValidation { get => _sslValidation.GetValueOrDefault(true); set => _sslValidation = value; }
+
         [Encrypt]
         private string? _proxy = null;
         [JsonPropertyName("proxy")]
@@ -136,7 +136,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         private string? _tlsCertificateBase64;
         [JsonPropertyName("tlsCertificateBase64")]
         public string? TlsCertificateBase64 { get => _tlsCertificateBase64; set => _tlsCertificateBase64 = value; }
-        
+
         private string? _tlsCertificatePassword;
         [JsonPropertyName("tlsCertificatePassword")]
         public string? TlsCertificatePassword { get => _tlsCertificatePassword; set => _tlsCertificatePassword = value; }
@@ -186,7 +186,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             return configuration;
         }
 
-        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false) => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), new SerializerContext(new JsonSerializerOptions { WriteIndented = writeIndented, Encoder = useUnsafeEncoding ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default, }));
+        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false, bool ignoreNullValues = false) => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), new SerializerContext(new JsonSerializerOptions { WriteIndented = writeIndented, Encoder = useUnsafeEncoding ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default, DefaultIgnoreCondition = ignoreNullValues ? JsonIgnoreCondition.WhenWritingNull : JsonIgnoreCondition.Never }));
 
         internal void SetAlternateNames(string text)
         {
