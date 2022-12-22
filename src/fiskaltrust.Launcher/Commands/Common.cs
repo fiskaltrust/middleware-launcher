@@ -34,7 +34,7 @@ namespace fiskaltrust.Launcher.Commands
             if (addCliOnlyParameters)
             {
                 AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
-                AddOption(new Option<string>("--legacy-config-file", getDefaultValue: () => "fiskaltrust.exe.config"));
+                AddOption(new Option<string>("--legacy-configuration-file", getDefaultValue: () => "fiskaltrust.exe.config"));
                 AddOption(new Option<bool>("--merge-legacy-config-if-exists", getDefaultValue: () => true));
             }
         }
@@ -44,7 +44,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
-        public string LegacyConfigFile { get; set; } = null!;
+        public string LegacyConfigurationFile { get; set; } = null!;
         public bool MergeLegacyConfigIfExists { get; set; }
 
         protected LauncherConfiguration _launcherConfiguration = null!;
@@ -68,7 +68,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                if (!(MergeLegacyConfigIfExists && File.Exists(LegacyConfigFile)))
+                if (!(MergeLegacyConfigIfExists && File.Exists(LegacyConfigurationFile)))
                 {
                     if (File.Exists(LauncherConfigurationFile))
                     {
@@ -82,20 +82,21 @@ namespace fiskaltrust.Launcher.Commands
                 }
             }
 
-            if (MergeLegacyConfigIfExists && File.Exists(LegacyConfigFile))
+            if (MergeLegacyConfigIfExists && File.Exists(LegacyConfigurationFile))
             {
-                _launcherConfiguration.OverwriteWith(await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigFile));
+                var legacyConfig = await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigurationFile);
+                _launcherConfiguration.OverwriteWith(legacyConfig);
 
-                var configFileDirectory = Path.GetDirectoryName(LauncherConfigurationFile);
+                var configFileDirectory = Path.GetDirectoryName(Path.GetFullPath(LauncherConfigurationFile));
                 if (configFileDirectory is not null)
                 {
                     Directory.CreateDirectory(configFileDirectory);
                 }
 
-                await File.WriteAllTextAsync(LauncherConfigurationFile, _launcherConfiguration.Serialize());
+                await File.WriteAllTextAsync(LauncherConfigurationFile, legacyConfig.Serialize(ignoreNullValues: true));
 
-                var fi = new FileInfo(LegacyConfigFile);
-                fi.CopyTo(LegacyConfigFile + ".legacy");
+                var fi = new FileInfo(LegacyConfigurationFile);
+                fi.CopyTo(LegacyConfigurationFile + ".legacy");
                 fi.Delete();
             }
 
@@ -121,7 +122,7 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Error(e, "Could not create cashbox-configuration-file folder.");
             }
 
-            _clientEcdh = await LoadCurve(_launcherConfiguration.AccessToken!);
+            _clientEcdh = await LoadCurve(_launcherConfiguration.AccessToken!, _launcherConfiguration.UseOffline!.Value);
 
             try
             {
@@ -146,7 +147,8 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                _launcherConfiguration.OverwriteWith(LauncherConfigurationInCashBoxConfiguration.Deserialize(await File.ReadAllTextAsync(_launcherConfiguration.CashboxConfigurationFile!)));
+                var cashboxConfigurationFile = _launcherConfiguration.CashboxConfigurationFile!;
+                _launcherConfiguration.OverwriteWith(LauncherConfigurationInCashBoxConfiguration.Deserialize(await File.ReadAllTextAsync(cashboxConfigurationFile)));
             }
             catch (Exception e)
             {
@@ -196,18 +198,32 @@ namespace fiskaltrust.Launcher.Commands
             return 0;
         }
 
-        public static async Task<ECDiffieHellman> LoadCurve(string accessToken)
+        public static async Task<ECDiffieHellman> LoadCurve(string accessToken, bool useOffline = false)
         {
             var dataProtector = DataProtectionExtensions.Create(accessToken).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
             var clientEcdhPath = Path.Combine(Common.Constants.Paths.CommonFolder, "fiskaltrust.Launcher", "client.ecdh");
             if (File.Exists(clientEcdhPath))
             {
                 return ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
-
             }
             else
             {
-                var clientEcdh = CashboxConfigEncryption.CreateCurve();
+                const string offlineClientEcdhPath = "/client.ecdh";
+                ECDiffieHellman clientEcdh;
+
+                if (useOffline && File.Exists(offlineClientEcdhPath))
+                {
+                    clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
+                    try
+                    {
+                        File.Delete(offlineClientEcdhPath);
+                    }
+                    catch { }
+                }
+                else
+                {
+                    clientEcdh = CashboxConfigEncryption.CreateCurve();
+                }
 
                 await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize()));
 

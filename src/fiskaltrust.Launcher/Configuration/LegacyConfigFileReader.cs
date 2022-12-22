@@ -10,7 +10,7 @@ namespace fiskaltrust.Launcher.Configuration
         public static async Task<LauncherConfiguration> ReadLegacyConfigFile(string path)
         {
             using var fsSource = new FileStream(path, FileMode.Open, FileAccess.Read);
-            var launcherConfiguration = new LauncherConfiguration(true);
+            var launcherConfiguration = new LauncherConfiguration(false);
             try
             {
                 XElement purchaseOrder = await XElement.LoadAsync(fsSource, LoadOptions.None, CancellationToken.None);

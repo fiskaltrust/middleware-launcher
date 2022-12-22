@@ -122,7 +122,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private bool? _sslValidation;
         [JsonPropertyName("sslValidation")]
-        public bool? SslValidation { get => _sslValidation.GetValueOrDefault(true); set => _sslValidation = value; }
+        public bool? SslValidation { get => WithDefault(_sslValidation, true); set => _sslValidation = value; }
 
         [Encrypt]
         private string? _proxy = null;
@@ -156,6 +156,9 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         public void OverwriteWith(LauncherConfiguration? source)
         {
+            var useDefaults = _useDefaults;
+            _useDefaults = false;
+
             if (source is null) { return; }
 
             foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
@@ -167,6 +170,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
                     field.SetValue(this, value);
                 }
             }
+            _useDefaults = useDefaults;
         }
 
         public LauncherConfiguration Redacted()
@@ -181,12 +185,34 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         public static LauncherConfiguration Deserialize(string text)
         {
-            var configuration = JsonSerializer.Deserialize(text, typeof(LauncherConfiguration), SerializerContext.Default) as LauncherConfiguration ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
+            var configuration = JsonSerializer.Deserialize(
+                text,
+                typeof(LauncherConfiguration),
+                new SerializerContext(new JsonSerializerOptions
+                {
+                    Converters = {
+                        new JsonStringEnumConverter()
+                    }
+                })
+            ) as LauncherConfiguration ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
             configuration.SetAlternateNames(text);
             return configuration;
         }
 
-        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false, bool ignoreNullValues = false) => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), new SerializerContext(new JsonSerializerOptions { WriteIndented = writeIndented, Encoder = useUnsafeEncoding ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default, DefaultIgnoreCondition = ignoreNullValues ? JsonIgnoreCondition.WhenWritingNull : JsonIgnoreCondition.Never }));
+        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false, bool ignoreNullValues = false)
+            => JsonSerializer.Serialize(
+                this,
+                typeof(LauncherConfiguration),
+                new SerializerContext(new JsonSerializerOptions
+                {
+                    WriteIndented = writeIndented,
+                    Encoder = useUnsafeEncoding ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default,
+                    DefaultIgnoreCondition = ignoreNullValues ? JsonIgnoreCondition.WhenWritingNull : JsonIgnoreCondition.Never,
+                    Converters = {
+                        new JsonStringEnumConverter()
+                    }
+                })
+            );
 
         internal void SetAlternateNames(string text)
         {
@@ -279,7 +305,16 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         public static LauncherConfiguration? Deserialize(string text)
         {
-            var configuration = (JsonSerializer.Deserialize(text, typeof(LauncherConfigurationInCashBoxConfiguration), SerializerContext.Default) as LauncherConfigurationInCashBoxConfiguration ?? throw new Exception($"Could not deserialize {nameof(LauncherConfigurationInCashBoxConfiguration)}")).LauncherConfiguration;
+            var configuration = (JsonSerializer.Deserialize(
+                text,
+                typeof(LauncherConfigurationInCashBoxConfiguration),
+                new SerializerContext(new JsonSerializerOptions
+                {
+                    Converters = {
+                        new JsonStringEnumConverter()
+                    }
+                })
+            ) as LauncherConfigurationInCashBoxConfiguration ?? throw new Exception($"Could not deserialize {nameof(LauncherConfigurationInCashBoxConfiguration)}")).LauncherConfiguration;
             configuration?.SetAlternateNames(text);
             return configuration;
         }

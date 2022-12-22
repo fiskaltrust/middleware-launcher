@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.Download
@@ -94,7 +95,18 @@ namespace fiskaltrust.Launcher.Download
         public async Task DownloadAsync(string name, string version, string platform, string targetPath, IEnumerable<string> targetNames)
         {
             var combinedName = $"{name}-{version}";
+
             var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{combinedName}.zip");
+
+            if (_configuration.UseOffline!.Value)
+            {
+                var localCacheSource = Path.Combine("./packages", $"{combinedName}.zip");
+                if (!File.Exists(sourcePath))
+                {
+                    sourcePath = localCacheSource;
+                }
+            }
+
             var versionFile = Path.Combine(targetPath, "version.txt");
 
             if (File.Exists(versionFile) && await File.ReadAllTextAsync(versionFile) == version && targetNames.Select(t => File.Exists(Path.Combine(targetPath, t))).All(t => t))
