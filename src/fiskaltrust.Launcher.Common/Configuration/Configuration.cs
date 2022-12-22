@@ -7,6 +7,7 @@ using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using fiskaltrust.Launcher.Common.Helpers;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace fiskaltrust.Launcher.Common.Configuration
 {
@@ -26,6 +27,8 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
     public record LauncherConfiguration
     {
+        public const string DATA_PROTECTION_DATA_PURPOSE = "fiskaltrust.Launcher.Configuration";
+
         private bool _useDefaults;
 
         [JsonConstructor]
@@ -119,8 +122,8 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private bool? _sslValidation;
         [JsonPropertyName("sslValidation")]
-        public bool? SslValidation { get =>_sslValidation.GetValueOrDefault(true); set => _sslValidation = value; }
-        
+        public bool? SslValidation { get => _sslValidation.GetValueOrDefault(true); set => _sslValidation = value; }
+
         [Encrypt]
         private string? _proxy = null;
         [JsonPropertyName("proxy")]
@@ -133,7 +136,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         private string? _tlsCertificateBase64;
         [JsonPropertyName("tlsCertificateBase64")]
         public string? TlsCertificateBase64 { get => _tlsCertificateBase64; set => _tlsCertificateBase64 = value; }
-        
+
         private string? _tlsCertificatePassword;
         [JsonPropertyName("tlsCertificatePassword")]
         public string? TlsCertificatePassword { get => _tlsCertificatePassword; set => _tlsCertificatePassword = value; }
@@ -183,7 +186,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             return configuration;
         }
 
-        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false) => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), new SerializerContext(new JsonSerializerOptions { WriteIndented = writeIndented, Encoder = useUnsafeEncoding ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default, }));
+        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false, bool ignoreNullValues = false) => JsonSerializer.Serialize(this, typeof(LauncherConfiguration), new SerializerContext(new JsonSerializerOptions { WriteIndented = writeIndented, Encoder = useUnsafeEncoding ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default, DefaultIgnoreCondition = ignoreNullValues ? JsonIgnoreCondition.WhenWritingNull : JsonIgnoreCondition.Never }));
 
         internal void SetAlternateNames(string text)
         {
@@ -248,36 +251,23 @@ namespace fiskaltrust.Launcher.Common.Configuration
             }
         }
 
-        public void Encrypt(string? accessToken = null)
+        public void Encrypt(IDataProtector dataProtector)
         {
-            var accessTokenInner = accessToken ?? AccessToken;
-            if (accessTokenInner is null)
-            {
-                throw new Exception("No AccessToken provided.");
-            }
-
             MapFieldsWithAttribute<EncryptAttribute>(value =>
             {
                 if (value is null) { return null; }
-                using var aes = Aes.Create();
 
-                return Convert.ToBase64String(AesHelper.Encrypt((string)value, Convert.FromBase64String(accessTokenInner)));
+                return dataProtector.Protect((string)value);
             });
         }
 
-        public void Decrypt(string? accessToken = null)
+        public void Decrypt(IDataProtector dataProtector)
         {
-            var accessTokenInner = accessToken ?? AccessToken;
-            if (accessTokenInner is null)
-            {
-                throw new Exception("No AccessToken provided.");
-            }
-
             MapFieldsWithAttribute<EncryptAttribute>((value) =>
             {
                 if (value is null) { return null; }
 
-                return AesHelper.Decrypt((string)value, Convert.FromBase64String(accessTokenInner));
+                return dataProtector.Unprotect((string)value);
             });
         }
     }

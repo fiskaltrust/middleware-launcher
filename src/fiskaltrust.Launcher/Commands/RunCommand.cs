@@ -7,6 +7,7 @@ using ProtoBuf.Grpc.Server;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -76,7 +77,9 @@ namespace fiskaltrust.Launcher.Commands
             var app = builder.Build();
 
             app.UseRouting();
+#pragma warning disable ASP0014
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
+#pragma warning restore ASP0014
 
             if (_launcherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null)
             {

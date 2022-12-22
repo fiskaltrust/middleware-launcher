@@ -29,7 +29,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 return 1;
             }
 
-            var processPath = _launcherExecutablePath;
+            var processPath = _launcherExecutablePath.Path;
 
             var arguments = new List<string> {
                 "create",

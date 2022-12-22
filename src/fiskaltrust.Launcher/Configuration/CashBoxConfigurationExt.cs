@@ -9,6 +9,8 @@ namespace fiskaltrust.Launcher.Configuration
 {
     public static class CashBoxConfigurationExt
     {
+        public const string DATA_PROTECTION_DATA_PURPOSE = "fiskaltrust.Launcher.ftCashBoxConfiguration";
+
         private const string ENCRYPTION_SUFFIX = "_encrypted";
         private static readonly List<string> _configKeyToEncrypt = new() { "connectionstring" };
 

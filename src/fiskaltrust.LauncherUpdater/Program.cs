@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Extensions;
-using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Serilog;
 
 var processIdOption = new Option<int>(name: "--launcher-process-id");

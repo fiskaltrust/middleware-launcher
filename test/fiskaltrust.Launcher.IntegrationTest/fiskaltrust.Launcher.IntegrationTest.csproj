@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -30,7 +30,7 @@
 
   <Target Name="CopyLauncherUpdater" AfterTargets="Build">
     <ItemGroup>
-      <LauncherUpdater Include="..\..\src\fiskaltrust.LauncherUpdater\bin\$(Configuration)\$(TargetFramework)\*"/>
+      <LauncherUpdater Include="..\..\src\fiskaltrust.LauncherUpdater\bin\$(Configuration)\$(TargetFramework)\*\*"/>
     </ItemGroup>
     <Copy SourceFiles="@(LauncherUpdater)" DestinationFiles="$(OutputPath)/fiskaltrust.LauncherUpdater/%(Filename)%(Extension)" ContinueOnError="false" />
   </Target>

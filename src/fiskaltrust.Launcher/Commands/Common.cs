@@ -2,15 +2,18 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Helpers;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
+using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
+using Microsoft.AspNetCore.DataProtection;
 using Serilog;
 using Serilog.Events;
 
@@ -48,10 +51,10 @@ namespace fiskaltrust.Launcher.Commands
         protected ftCashBoxConfiguration _cashboxConfiguration = null!;
         protected ECDiffieHellman _clientEcdh = null!;
 
+        protected IDataProtectionProvider _dataProtectionProvider = null!;
+
         public async Task<int> InvokeAsync(InvocationContext context)
         {
-            _clientEcdh = CashboxConfigEncryption.CreateCurve();
-
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(collectionSink)
@@ -118,10 +121,12 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Error(e, "Could not create cashbox-configuration-file folder.");
             }
 
+            _clientEcdh = await LoadCurve(_launcherConfiguration.AccessToken!);
+
             try
             {
                 using var downloader = new ConfigurationDownloader(_launcherConfiguration);
-                var exists = await downloader.DownloadConfigurationAsync();
+                var exists = await downloader.DownloadConfigurationAsync(_clientEcdh);
                 if (_launcherConfiguration.UseOffline!.Value && !exists)
                 {
                     Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
@@ -177,15 +182,37 @@ namespace fiskaltrust.Launcher.Commands
             Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", _launcherConfiguration.CashboxConfigurationFile);
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", _launcherConfiguration.Redacted());
 
+
+            _dataProtectionProvider = DataProtectionExtensions.Create(_launcherConfiguration.AccessToken);
+
             try
             {
-                _launcherConfiguration.Decrypt();
+                _launcherConfiguration.Decrypt(_dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
             }
             catch (Exception e)
             {
                 Log.Warning(e, "Error decrypring launcher configuration file.");
             }
             return 0;
+        }
+
+        public static async Task<ECDiffieHellman> LoadCurve(string accessToken)
+        {
+            var dataProtector = DataProtectionExtensions.Create(accessToken).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
+            var clientEcdhPath = Path.Combine(Common.Constants.Paths.CommonFolder, "fiskaltrust.Launcher", "client.ecdh");
+            if (File.Exists(clientEcdhPath))
+            {
+                return ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
+
+            }
+            else
+            {
+                var clientEcdh = CashboxConfigEncryption.CreateCurve();
+
+                await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize()));
+
+                return clientEcdh;
+            }
         }
     }
 }
