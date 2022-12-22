@@ -16,8 +16,6 @@ namespace fiskaltrust.Launcher.Commands
     {
         public ConfigCommand() : base("config")
         {
-            AddOption(new Option<string?>("--cipher-access-token"));
-
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
             AddCommand(new ConfigSetCommand());
             AddCommand(new ConfigGetCommand());
@@ -37,8 +35,6 @@ namespace fiskaltrust.Launcher.Commands
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
 
-        public string? CipherAccessToken { get; set; }
-
         public async Task<int> InvokeAsync(InvocationContext context)
         {
             Log.Logger = new LoggerConfiguration()
@@ -51,17 +47,17 @@ namespace fiskaltrust.Launcher.Commands
             IDataProtector dataProtector;
             if (!File.Exists(LauncherConfigurationFile))
             {
-                if (CipherAccessToken is null)
+                if (ArgsLauncherConfiguration.AccessToken is null)
                 {
                     Log.Warning("Launcher configuration file {file} does not exist.", LauncherConfigurationFile);
-                    Log.Error("Please specify the --cipher-access-token parameter or an existing launcher configuration file containing an access token.");
+                    Log.Error("Please specify the --access-token parameter or an existing launcher configuration file containing an access token.");
                     return 1;
                 }
 
                 Log.Warning("Launcher configuration file {file} does not exist. Creating new file.", LauncherConfigurationFile);
                 launcherConfiguration = new LauncherConfiguration();
 
-                dataProtector = DataProtectionExtensions.Create(CipherAccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+                dataProtector = DataProtectionExtensions.Create(ArgsLauncherConfiguration.AccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
             }
             else
             {
@@ -75,13 +71,13 @@ namespace fiskaltrust.Launcher.Commands
                     return 1;
                 }
 
-                if (CipherAccessToken is null && launcherConfiguration?.AccessToken is null)
+                if (ArgsLauncherConfiguration.AccessToken is null && launcherConfiguration?.AccessToken is null)
                 {
-                    Log.Error("Please specify the --cipher-access-token parameter or set it in the provided launcher configuration file.");
+                    Log.Error("Please specify the --access-token parameter or set it in the provided launcher configuration file.");
                     return 1;
                 }
 
-                dataProtector = DataProtectionExtensions.Create(CipherAccessToken ?? launcherConfiguration?.AccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+                dataProtector = DataProtectionExtensions.Create(ArgsLauncherConfiguration.AccessToken ?? launcherConfiguration?.AccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
 
                 try
                 {
@@ -162,6 +158,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public ConfigGetCommand() : base("get")
         {
+            AddOption(new Option<string?>("--access-token"));
             AddOption(new Option<string?>("--cashbox-configuration-file"));
             AddOption(new Option<string?>("--legacy-config-file"));
         }
@@ -169,11 +166,10 @@ namespace fiskaltrust.Launcher.Commands
 
     public class ConfigGetCommandHandler : ICommandHandler
     {
+        public string? AccessToken { get; set; }
         public string? LauncherConfigurationFile { get; set; }
         public string? LegacyConfigFile { get; set; }
         public string? CashBoxConfigurationFile { get; set; }
-
-        public string? CipherAccessToken { get; set; }
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
@@ -228,16 +224,24 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Error(e, "Could not read launcher configuration {file}.", launcherConfigurationFile);
             }
 
-            var dataProtector = DataProtectionExtensions.Create(CipherAccessToken ?? launcherConfiguration?.AccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+            if (AccessToken is null && launcherConfiguration?.AccessToken is null)
+            {
+                Log.Warning("To decrypt the encrypted values from the configuration file specify the --access-token parameter or set it in the provided launcher configuration file.");
+            }
+            else
+            {
+                var dataProtector = DataProtectionExtensions.Create(AccessToken ?? launcherConfiguration?.AccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
 
-            try
-            {
-                launcherConfiguration?.Decrypt(dataProtector);
+                try
+                {
+                    launcherConfiguration?.Decrypt(dataProtector);
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Error decrypting launcher configuration file {file}.", launcherConfigurationFile);
+                }
             }
-            catch (Exception e)
-            {
-                Log.Warning(e, "Error decrypting launcher configuration file {file}.", launcherConfigurationFile);
-            }
+
             launcherConfiguration?.DisableDefaults();
 
             return launcherConfiguration;
