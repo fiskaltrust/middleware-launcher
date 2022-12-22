@@ -70,7 +70,13 @@ async static Task RunSelfUpdate(int processId, string from, string to)
     }
 
     Log.Information("Copying launcher executable from \"{from}\" to \"{to}\".", from, to);
-    File.Copy(from, to, true);
+
+    var backup = $"{to}.bakup";
+    var update = $"{to}.update";
+
+    File.Copy(from, update, true);
+    File.Copy(to, backup, true);
+    File.Move(update, to);
 
     Log.Information("Launcher update successful");
 }

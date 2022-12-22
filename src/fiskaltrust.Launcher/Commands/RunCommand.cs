@@ -86,31 +86,51 @@ namespace fiskaltrust.Launcher.Commands
                 var packageDownloader = app.Services.GetRequiredService<PackageDownloader>();
                 SemanticVersioning.Version? launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, _launcherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
 
-                if (launcherVersion is not null && Common.Constants.Version.CurrentVersion < launcherVersion)
+                if (launcherVersion is not null && Common.Constants.Version.CurrentVersion != launcherVersion)
                 {
                     if (_launcherConfiguration.LauncherVersion.ToString() == launcherVersion.ToString())
                     {
-                        Log.Information("A new Launcher version is set.");
+                        if (Common.Constants.Version.CurrentVersion < launcherVersion)
+                        {
+                            Log.Information("A new Launcher version is set.");
+                        }
+                        else
+                        {
+                            Log.Information("An older Launcher version is set.");
+                        }
                     }
                     else
                     {
-                        Log.Information("A new Launcher version is found for configured range \"{range}\".", _launcherConfiguration.LauncherVersion);
+                        if (Common.Constants.Version.CurrentVersion < launcherVersion)
+                        {
+                            Log.Information("A new Launcher version is found for configured range \"{range}\".", _launcherConfiguration.LauncherVersion);
+                        }
+                        else
+                        {
+                            Log.Information("An older Launcher version is found for configured range \"{range}\".", _launcherConfiguration.LauncherVersion);
+                        }
                     }
+
                     Log.Information("Downloading new version {new}.", launcherVersion);
 
                     try
                     {
                         await packageDownloader.DownloadLauncherAsync(launcherVersion);
                         _updatePending = true;
-                        Log.Information("Launcher will be updated to version {new} on shutdown.", launcherVersion);
-
+                        if (Common.Constants.Version.CurrentVersion < launcherVersion)
+                        {
+                            Log.Information("Launcher will be updated to version {new} on shutdown.", launcherVersion);
+                        }
+                        else
+                        {
+                            Log.Information("Launcher will be downgraded to version {old} on shutdown.", launcherVersion);
+                        }
                     }
                     catch (Exception e)
                     {
                         Log.Error(e, "Could not download new Launcher version.");
                     }
                 }
-
             }
 
             try
