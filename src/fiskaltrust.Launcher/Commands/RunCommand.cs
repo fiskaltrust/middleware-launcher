@@ -20,6 +20,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--service-folder"));
             AddOption(new Option<Uri?>("--configuration-url"));
             AddOption(new Option<Uri?>("--packages-url"));
+            AddOption(new Option<string?>("--package-cache"));
             AddOption(new Option<Uri?>("--helipad-url"));
             AddOption(new Option<int?>("--download-timeout-sec"));
             AddOption(new Option<int?>("--download-retry"));

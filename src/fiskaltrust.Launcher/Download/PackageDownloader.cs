@@ -96,16 +96,7 @@ namespace fiskaltrust.Launcher.Download
         {
             var combinedName = $"{name}-{version}";
 
-            var sourcePath = Path.Combine(_configuration.ServiceFolder!, "cache", "packages", $"{combinedName}.zip");
-
-            if (_configuration.UseOffline!.Value)
-            {
-                var localCacheSource = Path.Combine("./packages", $"{combinedName}.zip");
-                if (!File.Exists(sourcePath))
-                {
-                    sourcePath = localCacheSource;
-                }
-            }
+            var sourcePath = Path.Combine(_configuration.PackageCache!, "packages", $"{combinedName}.zip");
 
             var versionFile = Path.Combine(targetPath, "version.txt");
 

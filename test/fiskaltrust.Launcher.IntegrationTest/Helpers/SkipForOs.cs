@@ -18,6 +18,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Helpers
                 })
                 {
                     Skip = $"Ignore on {OsIs}";
+                    return;
                 }
             }
         }
