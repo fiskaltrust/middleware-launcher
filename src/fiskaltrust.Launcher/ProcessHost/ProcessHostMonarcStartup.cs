@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Download;

@@ -1,6 +1,4 @@
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
-using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
 using fiskaltrust.Launcher.Common.Helpers;

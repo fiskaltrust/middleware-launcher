@@ -1,12 +1,8 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Security.Cryptography;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Extensions;
-using fiskaltrust.Launcher.Common.Helpers;
-using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
