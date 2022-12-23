@@ -5,8 +5,6 @@ using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Common.Constants;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
-using System.Security.Cryptography;
-using fiskaltrust.Launcher.Common.Helpers;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace fiskaltrust.Launcher.Common.Configuration
@@ -34,7 +32,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonConstructor]
         public LauncherConfiguration() { _useDefaults = false; }
 
-        public LauncherConfiguration(bool useDefaults = true)
+        public LauncherConfiguration(bool useDefaults)
         {
             _useDefaults = useDefaults;
         }

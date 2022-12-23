@@ -1,9 +1,6 @@
 
 using System.Diagnostics;
-using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.Launcher.Common.Helpers.Serialization;
-using Serilog;
 using Serilog.Context;
 
 namespace fiskaltrust.Launcher.Helpers
