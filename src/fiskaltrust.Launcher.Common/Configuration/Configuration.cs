@@ -159,18 +159,24 @@ namespace fiskaltrust.Launcher.Common.Configuration
             var useDefaults = _useDefaults;
             _useDefaults = false;
 
-            if (source is null) { return; }
-
-            foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
+            try
             {
-                var value = field.GetValue(source);
+                if (source is null) { return; }
 
-                if (value is not null)
+                foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
                 {
-                    field.SetValue(this, value);
+                    var value = field.GetValue(source);
+
+                    if (value is not null)
+                    {
+                        field.SetValue(this, value);
+                    }
                 }
             }
-            _useDefaults = useDefaults;
+            finally
+            {
+                _useDefaults = useDefaults;
+            }
         }
 
         public LauncherConfiguration Redacted()
