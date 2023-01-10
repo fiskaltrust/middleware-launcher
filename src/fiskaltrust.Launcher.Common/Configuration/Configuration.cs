@@ -145,7 +145,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private string? _cashboxConfiguration;
         [JsonPropertyName("cashboxConfigurationFile")]
-        public string? CashboxConfigurationFile { get => WithDefault(_cashboxConfiguration, () => (UseOffline ?? false && File.Exists("./cashbox.configuration.json")) ? "./cashbox.configuration.json" : Path.Join(ServiceFolder, "service", $"Configuration-{CashboxId}.json")); set => _cashboxConfiguration = value; }
+        public string? CashboxConfigurationFile { get => WithDefault(_cashboxConfiguration, () => Path.Join(ServiceFolder, "service", $"Configuration-{CashboxId}.json")); set => _cashboxConfiguration = value; }
 
         private SemanticVersioning.Range? _launcherVersion = null;
         [JsonPropertyName("launcherVersion")]
@@ -159,22 +159,22 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
             try
             {
-                if (source is null) { return; }
+            if (source is null) { return; }
 
-                foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
+            foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                var value = field.GetValue(source);
+
+                if (value is not null)
                 {
-                    var value = field.GetValue(source);
-
-                    if (value is not null)
-                    {
-                        field.SetValue(this, value);
-                    }
+                    field.SetValue(this, value);
                 }
+            }
             }
             finally
             {
-                _useDefaults = useDefaults;
-            }
+            _useDefaults = useDefaults;
+        }
         }
 
         public LauncherConfiguration Redacted()
