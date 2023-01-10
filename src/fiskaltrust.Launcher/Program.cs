@@ -12,6 +12,7 @@ var command = new RootCommand {
   new InstallCommand(),
   new UninstallCommand(),
   new ConfigCommand(),
+  new DoctorCommand(),
 };
 
 command.Handler = System.CommandLine.Invocation.CommandHandler.Create(() =>
@@ -41,7 +42,8 @@ await new CommandLineBuilder(command)
         .UseCommandHandler<InstallCommand, InstallCommandHandler>()
         .UseCommandHandler<UninstallCommand, UninstallCommandHandler>()
         .UseCommandHandler<ConfigGetCommand, ConfigGetCommandHandler>()
-        .UseCommandHandler<ConfigSetCommand, ConfigSetCommandHandler>();
+        .UseCommandHandler<ConfigSetCommand, ConfigSetCommandHandler>()
+        .UseCommandHandler<DoctorCommand, DoctorCommandHandler>();
   })
   .UseHelp()
   .UseVersionOption()

@@ -198,7 +198,7 @@ namespace fiskaltrust.Launcher.Commands
             return 0;
         }
 
-        public static async Task<ECDiffieHellman> LoadCurve(string accessToken, bool useOffline = false)
+        public static async Task<ECDiffieHellman> LoadCurve(string accessToken, bool useOffline = false, bool dryRun = false)
         {
             var dataProtector = DataProtectionExtensions.Create(accessToken).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
             var clientEcdhPath = Path.Combine(Common.Constants.Paths.CommonFolder, "fiskaltrust.Launcher", "client.ecdh");
@@ -211,7 +211,7 @@ namespace fiskaltrust.Launcher.Commands
                 const string offlineClientEcdhPath = "/client.ecdh";
                 ECDiffieHellman clientEcdh;
 
-                if (useOffline && File.Exists(offlineClientEcdhPath))
+                if (!dryRun && useOffline && File.Exists(offlineClientEcdhPath))
                 {
                     clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
                     try
@@ -225,7 +225,7 @@ namespace fiskaltrust.Launcher.Commands
                     clientEcdh = CashboxConfigEncryption.CreateCurve();
                 }
 
-                await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize()));
+                if (!dryRun) { await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize())); }
 
                 return clientEcdh;
             }

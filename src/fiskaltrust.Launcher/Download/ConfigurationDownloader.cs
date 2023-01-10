@@ -2,8 +2,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.Launcher.Helpers;
-using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.storage.serialization.V0;
 
@@ -23,11 +21,18 @@ namespace fiskaltrust.Launcher.Download
             }
         }
 
-        public async Task<bool> DownloadConfigurationAsync(ECDiffieHellman clientCurve)
+        public async Task<string> GetConfigurationAsync(ECDiffieHellman clientCurve)
         {
             if (_configuration.UseOffline!.Value)
             {
-                return File.Exists(_configuration.CashboxConfigurationFile!);
+                if (File.Exists(_configuration.CashboxConfigurationFile!))
+                {
+                    return await File.ReadAllTextAsync(_configuration.CashboxConfigurationFile!);
+                }
+                else
+                {
+                    throw new NoLocalConfig();
+                }
             }
 
             var clientPublicKey = Convert.ToBase64String(clientCurve.PublicKey.ExportSubjectPublicKeyInfo());
@@ -39,8 +44,28 @@ namespace fiskaltrust.Launcher.Download
             var response = await _httpClient!.SendAsync(request);
             response.EnsureSuccessStatusCode();
 
-            var cashboxConfiguration = await response.Content.ReadFromJsonAsync<ftCashBoxConfiguration>();
-            await File.WriteAllTextAsync(_configuration.CashboxConfigurationFile!, cashboxConfiguration?.Serialize());
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        public async Task<bool> DownloadConfigurationAsync(ECDiffieHellman clientCurve)
+        {
+            if (_configuration.UseOffline!.Value)
+            {
+                return File.Exists(_configuration.CashboxConfigurationFile!);
+            }
+
+            string cashboxConfiguration;
+
+            try
+            {
+                cashboxConfiguration = await GetConfigurationAsync(clientCurve);
+            }
+            catch (NoLocalConfig)
+            {
+                return false;
+            }
+
+            await File.WriteAllTextAsync(_configuration.CashboxConfigurationFile!, cashboxConfiguration);
 
             return true;
         }
@@ -50,4 +75,6 @@ namespace fiskaltrust.Launcher.Download
             _httpClient?.Dispose();
         }
     }
+
+    public class NoLocalConfig : Exception { }
 }

@@ -7,7 +7,6 @@ using ProtoBuf.Grpc.Server;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
-using Microsoft.AspNetCore.DataProtection;
 
 namespace fiskaltrust.Launcher.Commands
 {
