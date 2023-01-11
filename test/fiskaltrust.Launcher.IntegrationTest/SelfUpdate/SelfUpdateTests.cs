@@ -33,7 +33,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             }
 
             dummyProcess.Start();
-
+            DateTime updateStart;
             try
             {
                 var lifetime = new TestLifetime();
@@ -70,6 +70,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                     File.Copy(file, Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher", Path.GetFileName(file)), true);
                 }
 
+                updateStart = DateTime.UtcNow;
                 await lifetime.StopAsync(CancellationToken.None);
 
                 var exitCode = await command;
@@ -88,29 +89,12 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             }
             catch { }
 
+            var launcherFileCreation = File.GetLastWriteTimeUtc($"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}");
 
-            var versionProcess = new Process();
-
-            versionProcess.StartInfo.FileName = $"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}";
-            versionProcess.StartInfo.Arguments = "--version";
-            versionProcess.StartInfo.UseShellExecute = false;
-            versionProcess.StartInfo.RedirectStandardError = true;
-            versionProcess.StartInfo.RedirectStandardOutput = true;
-            versionProcess.StartInfo.CreateNoWindow = true;
-
-            versionProcess.Start();
-            try
+            if (launcherFileCreation < updateStart)
             {
-                await versionProcess.WaitForExitAsync(new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
+                throw new Exception("Launcher executable was not modified.");
             }
-            catch (OperationCanceledException)
-            {
-                versionProcess.Kill();
-            }
-
-            var version = versionProcess.StandardOutput.ReadLine();
-
-            new SemanticVersioning.Version(version).Should().BeGreaterThanOrEqualTo(new SemanticVersioning.Version("2.0.0-preview1"));
         }
     }
 }
