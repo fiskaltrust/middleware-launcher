@@ -89,11 +89,13 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             }
             catch { }
 
+            await Task.Delay(TimeSpan.FromSeconds(10));
+
             var launcherFileCreation = File.GetLastWriteTimeUtc($"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}");
 
             if (launcherFileCreation < updateStart)
             {
-                throw new Exception("Launcher executable was not modified.");
+                throw new Exception($"Launcher executable was not modified. {updateStart.ToLongTimeString()} {launcherFileCreation.ToLongTimeString()}");
             }
         }
     }

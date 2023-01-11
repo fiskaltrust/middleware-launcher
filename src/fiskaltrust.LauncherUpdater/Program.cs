@@ -93,7 +93,6 @@ async static Task<int> RootCommandHandler(int processId, string from, string to,
             withEnrichedContext(() => Log.Error(stdErr));
         }
 
-        Log.Error($"{process.ExitCode}");
         if (process.ExitCode != 0 || doctorCancelled)
         {
             Log.Error("Launcher healthcheck after update failed.");
@@ -134,6 +133,7 @@ static string LauncherConfigurationToArgs(LauncherConfiguration launcherConfigur
             result += $"\"{value}\"";
         }
     }
+    launcherConfiguration.EnableDefaults();
     return result;
 }
 

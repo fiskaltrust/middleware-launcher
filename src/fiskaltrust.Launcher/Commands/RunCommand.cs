@@ -138,7 +138,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (_updatePending)
                 {
-                    await _selfUpdater.StartSelfUpdate(Log.Logger, _launcherConfiguration);
+                    await _selfUpdater.StartSelfUpdate(Log.Logger, _launcherConfiguration, LauncherConfigurationFile);
                 }
             }
             catch (Exception e)
