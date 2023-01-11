@@ -65,7 +65,12 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                     File.Copy(file, Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher", Path.GetFileName(file)), true);
                 }
 
-                lifetime.ApplicationLifetimeSource.StopApplication();
+                foreach (string file in Directory.GetFiles("./"))
+                {
+                    File.Copy(file, Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher", Path.GetFileName(file)), true);
+                }
+
+                await lifetime.StopAsync(CancellationToken.None);
 
                 var exitCode = await command;
                 if (exitCode != 0) { throw new Exception($"Exitcode {exitCode}\n{Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file))}"); }

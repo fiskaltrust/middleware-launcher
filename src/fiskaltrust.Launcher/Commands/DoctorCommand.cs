@@ -27,10 +27,18 @@ namespace fiskaltrust.Launcher.Commands
         public DoctorCommand(string name = "doctor") : base(name) { }
     }
 
-    public class DoctorCommandHandler : CommonCommandHandler
+    public class DoctorCommandHandler : ICommandHandler
     {
+        public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
+        public string LauncherConfigurationFile { get; set; } = null!;
+        public string LegacyConfigurationFile { get; set; } = null!;
+        public bool MergeLegacyConfigIfExists { get; set; }
+
+        private const string SUCCESS = "✅";
+        private const string ERROR = "❌";
         private readonly ILifetime _lifetime;
         private readonly LauncherExecutablePath _launcherExecutablePath;
+        private bool _failed = false;
 
         public DoctorCommandHandler(ILifetime lifetime, LauncherExecutablePath launcherExecutablePath)
         {
@@ -38,174 +46,295 @@ namespace fiskaltrust.Launcher.Commands
             _launcherExecutablePath = launcherExecutablePath;
         }
 
-        public new async Task<int> InvokeAsync(InvocationContext context)
+        public async Task<int> InvokeAsync(InvocationContext context)
         {
-            Log.Logger = new LoggerConfiguration()
-                .AddLoggingConfiguration()
-                .CreateLogger();
-
-            if (File.Exists(LauncherConfigurationFile))
-            {
-                _launcherConfiguration = LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(LauncherConfigurationFile));
-            }
-
-            if (MergeLegacyConfigIfExists && File.Exists(LegacyConfigurationFile))
-            {
-                var legacyConfig = await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigurationFile);
-                _launcherConfiguration.OverwriteWith(legacyConfig);
-            }
-
-            _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
-
-            _launcherConfiguration.EnableDefaults();
-
-            _clientEcdh = await LoadCurve(_launcherConfiguration.AccessToken!, _launcherConfiguration.UseOffline!.Value, dryRun: true);
-
-            using var downloader = new ConfigurationDownloader(_launcherConfiguration);
-
-            string? cashboxConfiguration = null;
-
             try
             {
-                cashboxConfiguration = await downloader.GetConfigurationAsync(_clientEcdh);
-            }
-            catch
-            {
-                Log.Warning("No configuration file downloaded yet");
-            }
+                Log.Logger = new LoggerConfiguration()
+                    .AddLoggingConfiguration()
+                    .CreateLogger();
 
-            if (cashboxConfiguration is not null)
-            {
-                _launcherConfiguration.OverwriteWith(LauncherConfigurationInCashBoxConfiguration.Deserialize(cashboxConfiguration));
+                LauncherConfiguration launcherConfiguration = new();
 
-                _cashboxConfiguration = CashBoxConfigurationExt.Deserialize(cashboxConfiguration);
-                _cashboxConfiguration.Decrypt(_launcherConfiguration, _clientEcdh);
-            }
-
-            _dataProtectionProvider = DataProtectionExtensions.Create(_launcherConfiguration.AccessToken);
-
-            _launcherConfiguration.Decrypt(_dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
-
-            var doctorId = Guid.NewGuid();
-            var doctorProcessHostMonarch = new DoctorProcessHostMonarch();
-
-            var monarchBuilder = WebApplication.CreateBuilder();
-            monarchBuilder.Host
-                .UseSerilog(new LoggerConfiguration().CreateLogger())
-                .ConfigureServices((_, services) =>
+                if (File.Exists(LauncherConfigurationFile))
                 {
-                    services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
-                    services.AddSingleton(_ => _launcherConfiguration);
-                    services.AddSingleton(_ => _lifetime);
-                    services.AddSingleton(_ => _cashboxConfiguration);
-                    services.AddSingleton(_ => new Dictionary<Guid, IProcessHostMonarch>() {
+                    launcherConfiguration = await CheckAwait("Parse launcher configuration", async () => LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(LauncherConfigurationFile))) ?? new LauncherConfiguration();
+                }
+
+                if (MergeLegacyConfigIfExists && File.Exists(LegacyConfigurationFile))
+                {
+                    var legacyConfig = await CheckAwait("Parse legacy configuration file", async () => await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigurationFile));
+                    if (legacyConfig is not null)
+                    {
+                        launcherConfiguration.OverwriteWith(legacyConfig);
+                    }
+                }
+
+                launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
+
+                launcherConfiguration.EnableDefaults();
+
+                var clientEcdh = await CheckAwait("Load ECDH Curve", async () => await CommonCommandHandler.LoadCurve(launcherConfiguration.AccessToken!, launcherConfiguration.UseOffline!.Value, dryRun: true), critical: false);
+                ftCashBoxConfiguration cashboxConfiguration = new();
+
+                if (clientEcdh is not null)
+                {
+                    using var downloader = new ConfigurationDownloader(launcherConfiguration);
+
+                    string? cashboxConfigurationString = null;
+
+                    cashboxConfigurationString = await CheckAwait("Download cashbox configuration", async () => await downloader.GetConfigurationAsync(clientEcdh));
+
+                    if (cashboxConfigurationString is null)
+                    {
+                        if (launcherConfiguration.UseOffline!.Value)
                         {
-                            doctorId,
-                            doctorProcessHostMonarch
+                            Log.Warning("No configuration file downloaded yet");
                         }
-                });
-                    services.AddSingleton(_ => Log.Logger);
-                    services.AddSingleton(_ => _launcherExecutablePath);
-                });
+                    }
+                    else
+                    {
+                        var launcherConfigurationInCashBoxConfiguration = Check("Parse cashbox configuration in launcher configuration", () => LauncherConfigurationInCashBoxConfiguration.Deserialize(cashboxConfigurationString));
+                        if (launcherConfigurationInCashBoxConfiguration is not null)
+                        {
+                            launcherConfiguration.OverwriteWith(launcherConfigurationInCashBoxConfiguration);
+                        }
 
-            monarchBuilder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrelForGrpc(options, new Uri($"http://[::1]:{_launcherConfiguration.LauncherPort}")));
+                        var cashboxConfigurationInner = Check("Parse cashbox configuration", () => CashBoxConfigurationExt.Deserialize(cashboxConfigurationString));
+                        if (cashboxConfigurationInner is not null)
+                        {
+                            Check("Decrypt cashbox configuration", () => cashboxConfigurationInner.Decrypt(launcherConfiguration, clientEcdh));
+                            cashboxConfiguration = cashboxConfigurationInner;
+                        }
+                    }
+                }
 
-            monarchBuilder.Services.AddCodeFirstGrpc();
+                var dataProtectionProvider = Check("Setup data protection", () => DataProtectionExtensions.Create(launcherConfiguration.AccessToken));
+                if (dataProtectionProvider is not null)
+                {
+                    Check("Decrypt launcher configuration", () => launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE)));
+                }
 
-            var monarchApp = monarchBuilder.Build();
+                var doctorId = Guid.NewGuid();
+                var doctorProcessHostMonarch = new DoctorProcessHostMonarch();
 
-            monarchApp.UseRouting();
+                var monarchBuilder = WebApplication.CreateBuilder();
+                monarchBuilder.Host
+                    .UseSerilog(new LoggerConfiguration().CreateLogger())
+                    .ConfigureServices((_, services) =>
+                    {
+                        Check("Setup monarch services", () =>
+                        {
+                            services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
+                            services.AddSingleton(_ => launcherConfiguration);
+                            services.AddSingleton(_ => _lifetime);
+                            services.AddSingleton(_ => cashboxConfiguration);
+                            services.AddSingleton(_ => new Dictionary<Guid, IProcessHostMonarch>() {
+                            {
+                                doctorId,
+                                doctorProcessHostMonarch
+                            }
+                            });
+                            services.AddSingleton(_ => Log.Logger);
+                            services.AddSingleton(_ => _launcherExecutablePath);
+                        }, throws: true);
+                    });
+
+                Check("Setup monarch ProcessHostService", () =>
+                {
+                    monarchBuilder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrelForGrpc(options, new Uri($"http://[::1]:{launcherConfiguration.LauncherPort}")));
+
+                    monarchBuilder.Services.AddCodeFirstGrpc();
+                }, throws: true);
+
+                var monarchApp = Check("Build monarch WebApplication", monarchBuilder.Build, throws: true)!;
+
+                monarchApp.UseRouting();
 #pragma warning disable ASP0014
-            monarchApp.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
+                monarchApp.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 #pragma warning restore ASP0014
 
-            try
-            {
-                await monarchApp.StartAsync(_lifetime.ApplicationLifetime.ApplicationStopping);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "An unhandled exception occured.");
-                Log.CloseAndFlush();
-                return 1;
-            }
+                await CheckAwait("Start monarch WebApplication", async () => await WithTimeout(async () => await monarchApp.StartAsync(_lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)), throws: true);
 
-            var plebianConfiguration = new PlebianConfiguration
-            {
-                PackageId = doctorId,
-                PackageType = Constants.PackageType.Queue
-            };
-
-            var packageConfiguration = new PackageConfiguration
-            {
-                Configuration = new(),
-                Id = plebianConfiguration.PackageId,
-                Package = "none",
-                Url = Array.Empty<string>(),
-                Version = "1.0.0"
-            };
-
-            IProcessHostService? processHostService = null;
-            processHostService = GrpcChannel.ForAddress($"http://localhost:{_launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>();
-
-            var plebianBuilder = Host.CreateDefaultBuilder()
-                .UseSerilog(new LoggerConfiguration().CreateLogger())
-                .ConfigureServices(services =>
+                var plebianConfiguration = new PlebianConfiguration
                 {
-                    services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
-                    services.AddSingleton(_ => _launcherConfiguration);
-                    services.AddSingleton(_ => packageConfiguration);
-                    services.AddSingleton(_ => plebianConfiguration);
+                    PackageId = doctorId,
+                    PackageType = Constants.PackageType.Queue
+                };
 
-                    var pluginLoader = new PluginLoader();
-                    services.AddSingleton(_ => pluginLoader);
+                var packageConfiguration = new PackageConfiguration
+                {
+                    Configuration = new(),
+                    Id = plebianConfiguration.PackageId,
+                    Package = "none",
+                    Url = Array.Empty<string>(),
+                    Version = "1.0.0"
+                };
 
-                    if (processHostService is not null)
+                IProcessHostService? processHostService = Check("Start plebian processhostservice client", () => GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>());
+
+                var plebianBuilder = Host.CreateDefaultBuilder()
+                    .UseSerilog(new LoggerConfiguration().CreateLogger())
+                    .ConfigureServices(services =>
                     {
-                        services.AddSingleton(_ => processHostService);
-                    }
+                        Check("Setup plebian services", () =>
+                        {
+                            services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
+                            services.AddSingleton(_ => launcherConfiguration);
+                            services.AddSingleton(_ => packageConfiguration);
+                            services.AddSingleton(_ => plebianConfiguration);
 
-                    services.AddSingleton<HostingService>();
-                    services.AddHostedService<ProcessHostPlebian>();
+                            var pluginLoader = new PluginLoader();
+                            services.AddSingleton(_ => pluginLoader);
 
-                    services.AddSingleton<IClientFactory<IDESSCD>, DESSCDClientFactory>();
-                    services.AddSingleton<IClientFactory<IPOS>, POSClientFactory>();
+                            if (processHostService is not null)
+                            {
+                                services.AddSingleton(_ => processHostService);
+                            }
 
-                    var bootstrapper = new DoctorMiddlewareBootstrapper
+                            services.AddSingleton<HostingService>();
+                            services.AddHostedService<ProcessHostPlebian>();
+
+                            services.AddSingleton<IClientFactory<IDESSCD>, DESSCDClientFactory>();
+                            services.AddSingleton<IClientFactory<IPOS>, POSClientFactory>();
+
+                            var bootstrapper = new DoctorMiddlewareBootstrapper
+                            {
+                                Id = packageConfiguration.Id,
+                                Configuration = packageConfiguration.Configuration.ToDictionary(c => c.Key, c => (object?)c.Value.ToString())!
+                            };
+
+                            bootstrapper.ConfigureServices(services);
+
+                            services.AddSingleton(_ => bootstrapper);
+                        }, throws: true);
+                    });
+
+                var plebianApp = Check("Build plebian Host", plebianBuilder.Build, throws: true)!;
+
+                await CheckAwait("Start plebian Host", async () => await WithTimeout(async () => await plebianApp.StartAsync(_lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)));
+
+                await doctorProcessHostMonarch.IsStarted.Task;
+
+                await CheckAwait("Shutdown launcher gracefully", async () => await WithTimeout(async () =>
                     {
-                        Id = packageConfiguration.Id,
-                        Configuration = packageConfiguration.Configuration.ToDictionary(c => c.Key, c => (object?)c.Value.ToString())!
-                    };
+                        await _lifetime.StopAsync(new CancellationToken());
 
-                    bootstrapper.ConfigureServices(services);
+                        await monarchApp.StopAsync();
+                        await monarchApp.WaitForShutdownAsync();
 
-                    services.AddSingleton(_ => bootstrapper);
-                });
-
-            var plebianApp = plebianBuilder.Build();
-            try
-            {
-                await plebianApp.StartAsync(_lifetime.ApplicationLifetime.ApplicationStopping);
+                        await plebianApp.StopAsync();
+                        await plebianApp.WaitForShutdownAsync();
+                    }, TimeSpan.FromSeconds(5))
+                );
             }
             catch (Exception e)
             {
-                Log.Error(e, "An unhandled exception occured.");
-                Log.CloseAndFlush();
-                return 1;
+                _failed = true;
+                Log.Error(e, "Doctor found errors.");
             }
 
-            await doctorProcessHostMonarch.IsStarted.Task;
+            if (_failed)
+            {
+                return 1;
+            }
+            else
+            {
+                Log.Information($"Doctor found no issues.");
+                return 0;
+            }
+        }
 
-            await _lifetime.StopAsync(new CancellationToken());
+        private static async Task WithTimeout(Func<Task> action, TimeSpan timeout)
+        {
+            var actionTask = action();
+            var completed = await Task.WhenAny(new[] {
+                Task.Delay(timeout),
+                actionTask
+            });
 
-            await monarchApp.StopAsync();
-            await monarchApp.WaitForShutdownAsync();
+            if (completed != actionTask)
+            {
+                throw new TimeoutException("Exceeded timeout.");
+            }
+        }
 
-            await plebianApp.StopAsync();
-            await plebianApp.WaitForShutdownAsync();
+        private async Task<T?> CheckAwait<T>(string operation, Func<Task<T>> action, bool critical = true, bool throws = false)
+        {
+            try
+            {
+                T result = await action();
+                Log.Information($"{SUCCESS} {operation}");
+                return result;
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, $"{ERROR} {operation}");
+                if (critical)
+                {
+                    _failed = true;
+                }
+                if (throws) { throw; }
+                return default;
+            }
+        }
 
-            Log.Information("Doctor found no issues.");
-            return 0;
+        private async Task CheckAwait(string operation, Func<Task> action, bool critical = true, bool throws = false)
+        {
+            try
+            {
+                await action();
+                Log.Information($"{SUCCESS} {operation}");
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, $"{ERROR} {operation}");
+                if (critical)
+                {
+                    _failed = true;
+                }
+                if (throws) { throw; }
+            }
+        }
+
+        private T? Check<T>(string operation, Func<T> action, bool critical = true, bool throws = false)
+        {
+            try
+            {
+                T result = action();
+                Log.Information($"{SUCCESS} {operation}");
+                return result;
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, $"{ERROR} {operation}");
+                if (critical)
+                {
+                    _failed = true;
+                }
+                if (throws) { throw; }
+                return default;
+            }
+        }
+
+        private bool Check(string operation, Action action, bool critical = true, bool throws = false)
+        {
+            try
+            {
+                action();
+                Log.Information($"{SUCCESS} {operation}");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, $"{ERROR} {operation}");
+                if (critical)
+                {
+                    _failed = true;
+                }
+                if (throws) { throw; }
+                return false;
+            }
         }
     }
 
