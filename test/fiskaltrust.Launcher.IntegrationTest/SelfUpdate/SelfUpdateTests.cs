@@ -100,6 +100,11 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 
             await Task.Delay(TimeSpan.FromSeconds(10));
 
+            foreach (string file in Directory.GetFiles("./logs"))
+            {
+                output.WriteLine(await File.ReadAllTextAsync(file));
+            }
+
             var launcherFileCreation = File.GetLastAccessTimeUtc($"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}");
 
             if (launcherFileCreation < updateStart)

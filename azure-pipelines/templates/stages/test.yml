@@ -17,7 +17,7 @@ stages:
     - pwsh: dotnet build -c ${{ parameters.config }}
       displayName: Build
   
-    - pwsh: dotnet test -c ${{ parameters.config }} --logger trx
+    - pwsh: dotnet test -c ${{ parameters.config }} --logger "consoletrxconsole;verbosity=detailed"
       displayName: Test
 
     - task: PublishTestResults@2
