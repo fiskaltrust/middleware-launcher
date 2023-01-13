@@ -18,8 +18,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             this.output = output;
         }
 
-        // Test is not working on linux right now 🥲
-        [FactSkipIf(OsIs: new[] { "linux", "macos" })]
+        // [Fact(Skip = "Not working on CI")]
+        [Fact]
         public async Task Test()
         {
             LauncherConfiguration launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(Guid.Parse("c813ffc2-e129-45aa-8b51-9f2342bdfa08"), "BFHGxJScfQz7OJwIfH4QSYpVJj7mDkC4UYZQDiINXW6PED34hdJQ791wlFXKL+q3vPg/vYgaBSeB9oqyolQgtkE=");
@@ -93,8 +93,9 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                 var updaterProcess = Process.GetProcessesByName("fiskaltrust.LauncherUpdater").First();
 
                 await updaterProcess.WaitForExitAsync();
-                output.WriteLine(await updaterProcess.StandardOutput.ReadToEndAsync());
-                output.WriteLine(await updaterProcess.StandardError.ReadToEndAsync());
+
+                Console.WriteLine(await updaterProcess.StandardOutput.ReadToEndAsync());
+                Console.WriteLine(await updaterProcess.StandardError.ReadToEndAsync());
             }
             catch { }
 
