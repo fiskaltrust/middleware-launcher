@@ -5,12 +5,19 @@ using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.IntegrationTest.Helpers;
-using FluentAssertions;
+using Xunit.Abstractions;
 
 namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 {
     public class SelfUpdateTests
     {
+        private readonly ITestOutputHelper output;
+
+        public SelfUpdateTests(ITestOutputHelper output)
+        {
+            this.output = output;
+        }
+
         // Test is not working on linux right now 🥲
         [FactSkipIf(OsIs: new[] { "linux", "macos" })]
         public async Task Test()
@@ -47,7 +54,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                         ServiceFolder = launcherConfiguration.ServiceFolder,
                         Sandbox = true
                     },
-                    LauncherConfigurationFile = $"{launcherConfiguration.ServiceFolder}/launcher.configuration.json"
+                    LauncherConfigurationFile = $"{launcherConfiguration.ServiceFolder}launcher.configuration.json"
                 };
 
                 var command = runCommand.InvokeAsync(null!);
@@ -59,15 +66,10 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                     throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)));
                 }
 
-                Directory.CreateDirectory(Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher"));
+                Directory.CreateDirectory(Path.Combine(launcherConfiguration.ServiceFolder!, launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher"));
                 foreach (string file in Directory.GetFiles("fiskaltrust.LauncherUpdater"))
                 {
-                    File.Copy(file, Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher", Path.GetFileName(file)), true);
-                }
-
-                foreach (string file in Directory.GetFiles("./"))
-                {
-                    File.Copy(file, Path.Combine("service", launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher", Path.GetFileName(file)), true);
+                    File.Copy(file, Path.Combine(launcherConfiguration.ServiceFolder!, launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher", Path.GetFileName(file)), true);
                 }
 
                 updateStart = DateTime.UtcNow;
@@ -75,6 +77,11 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 
                 var exitCode = await command;
                 if (exitCode != 0) { throw new Exception($"Exitcode {exitCode}\n{Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file))}"); }
+
+                foreach (string file in Directory.GetFiles("./"))
+                {
+                    File.Copy(file, Path.Combine(launcherConfiguration.ServiceFolder!, launcherConfiguration.CashboxId.ToString()!, "fiskaltrust.Launcher", Path.GetFileName(file)), true);
+                }
             }
             finally
             {
@@ -86,12 +93,14 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                 var updaterProcess = Process.GetProcessesByName("fiskaltrust.LauncherUpdater").First();
 
                 await updaterProcess.WaitForExitAsync();
+                output.WriteLine(await updaterProcess.StandardOutput.ReadToEndAsync());
+                output.WriteLine(await updaterProcess.StandardError.ReadToEndAsync());
             }
             catch { }
 
             await Task.Delay(TimeSpan.FromSeconds(10));
 
-            var launcherFileCreation = File.GetLastWriteTimeUtc($"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}");
+            var launcherFileCreation = File.GetLastAccessTimeUtc($"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}");
 
             if (launcherFileCreation < updateStart)
             {

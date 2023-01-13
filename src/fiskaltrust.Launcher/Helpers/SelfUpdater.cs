@@ -34,7 +34,7 @@ namespace fiskaltrust.Launcher.Helpers
             process.StartInfo.Arguments = string.Join(" ", new string[] {
                 "--launcher-process-id", _processId.Id.ToString(),
                 "--from", $"\"{Path.Combine(newExecutablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
-                "--to", _executablePath.Path,
+                "--to", Path.GetFullPath(_executablePath.Path),
                 "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize()))}\"",
                 "--launcher-configuration-file", $"\"{launcherConfigurationFile}\"",
             });

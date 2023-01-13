@@ -49,6 +49,8 @@ async static Task<int> RootCommandHandler(int processId, string from, string to,
 
     cancellationToken.Register(() => Log.Warning("Shutdown requested."));
 
+    Log.Debug("Launcher Configuration: {@LauncherConfiguration}", launcherConfiguration.Redacted());
+
     try
     {
         await RunSelfUpdate(processId, from, to);
