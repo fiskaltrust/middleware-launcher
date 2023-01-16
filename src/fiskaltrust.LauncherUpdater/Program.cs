@@ -67,7 +67,6 @@ async static Task<int> RootCommandHandler(int processId, string from, string to,
             "--launcher-configuration", launcherConfigurationFile ?? "launcher.configuration.json",
         }) + LauncherConfigurationToArgs(launcherConfiguration);
 
-        Log.Information(process.StartInfo.Arguments);
         process.StartInfo.RedirectStandardError = true;
         process.StartInfo.RedirectStandardOutput = true;
 
@@ -86,13 +85,13 @@ async static Task<int> RootCommandHandler(int processId, string from, string to,
         var stdOut = await process.StandardOutput.ReadToEndAsync(CancellationToken.None);
         if (!string.IsNullOrEmpty(stdOut))
         {
-            withEnrichedContext(() => Log.Information(stdOut));
+            withEnrichedContext(() => Log.Information("\n" + stdOut));
         }
 
         var stdErr = await process.StandardError.ReadToEndAsync(CancellationToken.None);
         if (!string.IsNullOrEmpty(stdErr))
         {
-            withEnrichedContext(() => Log.Error(stdErr));
+            withEnrichedContext(() => Log.Error("\n" + stdErr));
         }
 
         if (process.ExitCode != 0 || doctorCancelled)
