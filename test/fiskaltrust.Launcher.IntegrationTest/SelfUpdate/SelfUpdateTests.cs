@@ -5,21 +5,13 @@ using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.IntegrationTest.Helpers;
-using Xunit.Abstractions;
 
 namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 {
     public class SelfUpdateTests
     {
-        private readonly ITestOutputHelper output;
 
-        public SelfUpdateTests(ITestOutputHelper output)
-        {
-            this.output = output;
-        }
-
-        // [Fact(Skip = "Not working on CI")]
-        [Fact]
+        [Fact(Skip = "Not working on CI")]
         public async Task Test()
         {
             LauncherConfiguration launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(Guid.Parse("c813ffc2-e129-45aa-8b51-9f2342bdfa08"), "BFHGxJScfQz7OJwIfH4QSYpVJj7mDkC4UYZQDiINXW6PED34hdJQ791wlFXKL+q3vPg/vYgaBSeB9oqyolQgtkE=");
@@ -100,11 +92,6 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             catch { }
 
             await Task.Delay(TimeSpan.FromSeconds(10));
-
-            foreach (string file in Directory.GetFiles("./logs"))
-            {
-                output.WriteLine(await File.ReadAllTextAsync(file));
-            }
 
             var launcherFileCreation = File.GetLastAccessTimeUtc($"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}");
 
