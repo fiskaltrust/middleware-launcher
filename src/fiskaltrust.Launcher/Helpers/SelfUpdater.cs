@@ -36,7 +36,7 @@ namespace fiskaltrust.Launcher.Helpers
                 "--from", $"\"{Path.Combine(newExecutablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
                 "--to", Path.GetFullPath(_executablePath.Path),
                 "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize()))}\"",
-                "--launcher-configuration-file", $"\"{launcherConfigurationFile}\"",
+                "--launcher-configuration-file", $"\"{Path.GetFullPath(launcherConfigurationFile)}\"",
             });
             launcherConfiguration.EnableDefaults();
 
