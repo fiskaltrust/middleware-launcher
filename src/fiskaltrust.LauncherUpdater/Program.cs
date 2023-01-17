@@ -158,7 +158,7 @@ async static Task RunSelfUpdate(int processId, string from, string to)
     var backup = $"{to}.backup";
     var update = $"{to}.update";
 
-    File.Copy(from, update, true);
+    File.Move(from, update, true);
     File.Copy(to, backup, true);
     File.Move(update, to, true);
 }

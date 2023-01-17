@@ -1,8 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.Launcher.Configuration;
-using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.Download
 {
@@ -30,7 +28,7 @@ namespace fiskaltrust.Launcher.Download
                 }
                 else
                 {
-                    throw new NoLocalConfig();
+                    throw new NoLocalConfigException();
                 }
             }
 
@@ -59,7 +57,7 @@ namespace fiskaltrust.Launcher.Download
             {
                 cashboxConfiguration = await GetConfigurationAsync(clientCurve);
             }
-            catch (NoLocalConfig)
+            catch (NoLocalConfigException)
             {
                 return false;
             }
@@ -75,5 +73,5 @@ namespace fiskaltrust.Launcher.Download
         }
     }
 
-    public class NoLocalConfig : Exception { }
+    public class NoLocalConfigException : Exception { }
 }

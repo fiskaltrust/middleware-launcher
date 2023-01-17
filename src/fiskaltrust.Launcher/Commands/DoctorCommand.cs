@@ -36,6 +36,7 @@ namespace fiskaltrust.Launcher.Commands
 
         private const string SUCCESS = "✅";
         private const string ERROR = "❌";
+        private const string WARNING = "⚠️";
         private readonly ILifetime _lifetime;
         private readonly LauncherExecutablePath _launcherExecutablePath;
         private bool _failed = false;
@@ -77,7 +78,9 @@ namespace fiskaltrust.Launcher.Commands
                 var clientEcdh = await CheckAwait("Load ECDH Curve", async () => await CommonCommandHandler.LoadCurve(launcherConfiguration.AccessToken!, launcherConfiguration.UseOffline!.Value, dryRun: true), critical: false);
                 ftCashBoxConfiguration cashboxConfiguration = new();
 
-                if (clientEcdh is not null)
+                if (clientEcdh is null)
+                { }
+                else
                 {
                     using var downloader = new ConfigurationDownloader(launcherConfiguration);
 
@@ -327,10 +330,14 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e, $"{ERROR} {operation}");
                 if (critical)
                 {
+                    Log.Error(e, $"{ERROR} {operation}");
                     _failed = true;
+                }
+                else
+                {
+                    Log.Warning(e, $"{WARNING} {operation}");
                 }
                 if (throws) { throw; }
                 return false;
