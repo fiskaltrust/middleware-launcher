@@ -7,7 +7,6 @@ using ProtoBuf.Grpc.Server;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
-using Microsoft.AspNetCore.DataProtection;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -139,7 +138,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (_updatePending)
                 {
-                    await _selfUpdater.StartSelfUpdate(Log.Logger, _launcherConfiguration);
+                    await _selfUpdater.StartSelfUpdate(Log.Logger, _launcherConfiguration, LauncherConfigurationFile);
                 }
             }
             catch (Exception e)

@@ -5,6 +5,7 @@ using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
+using System.Text;
 
 var command = new RootCommand {
   new RunCommand(),
@@ -12,6 +13,7 @@ var command = new RootCommand {
   new InstallCommand(),
   new UninstallCommand(),
   new ConfigCommand(),
+  new DoctorCommand(),
 };
 
 command.Handler = System.CommandLine.Invocation.CommandHandler.Create(() =>
@@ -22,9 +24,10 @@ command.Handler = System.CommandLine.Invocation.CommandHandler.Create(() =>
 var subArguments = new SubArguments(args.SkipWhile(a => a != "--").Skip(1));
 args = args.TakeWhile(a => a != "--").ToArray();
 
-await new CommandLineBuilder(command)
+return await new CommandLineBuilder(command)
   .UseHost(host =>
   {
+      Console.OutputEncoding = Encoding.UTF8;
       host.UseCustomHostLifetime();
 
       host.ConfigureServices(services => services
@@ -41,7 +44,8 @@ await new CommandLineBuilder(command)
         .UseCommandHandler<InstallCommand, InstallCommandHandler>()
         .UseCommandHandler<UninstallCommand, UninstallCommandHandler>()
         .UseCommandHandler<ConfigGetCommand, ConfigGetCommandHandler>()
-        .UseCommandHandler<ConfigSetCommand, ConfigSetCommandHandler>();
+        .UseCommandHandler<ConfigSetCommand, ConfigSetCommandHandler>()
+        .UseCommandHandler<DoctorCommand, DoctorCommandHandler>();
   })
   .UseHelp()
   .UseVersionOption()

@@ -1,5 +1,4 @@
 ﻿using System.Security.Cryptography;
-using System.Text;
 using fiskaltrust.storage.serialization.V0;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Helpers;
@@ -32,7 +31,7 @@ namespace fiskaltrust.Launcher.Configuration
             }
         }
 
-        public static ftCashBoxConfiguration Deserialize(string text) => JsonSerializer.Deserialize<ftCashBoxConfiguration>(text) ?? throw new Exception($"Could not deserialize {nameof(ftCashBoxConfiguration)}");
+        public static ftCashBoxConfiguration Deserialize(string text) => Newtonsoft.Json.JsonConvert.DeserializeObject<ftCashBoxConfiguration>(text) ?? throw new Exception($"Could not deserialize {nameof(ftCashBoxConfiguration)}");
 
         public static string Serialize(this ftCashBoxConfiguration cashboxConfiguration) => JsonSerializer.Serialize(cashboxConfiguration);
     }

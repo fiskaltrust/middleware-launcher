@@ -1,9 +1,6 @@
 
 using System.Diagnostics;
-using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.Launcher.Common.Helpers.Serialization;
-using Serilog;
 using Serilog.Context;
 
 namespace fiskaltrust.Launcher.Helpers
@@ -25,7 +22,7 @@ namespace fiskaltrust.Launcher.Helpers
             _executablePath = executablePath;
         }
 
-        public async Task StartSelfUpdate(Serilog.ILogger logger, LauncherConfiguration launcherConfiguration)
+        public async Task StartSelfUpdate(Serilog.ILogger logger, LauncherConfiguration launcherConfiguration, string launcherConfigurationFile)
         {
             var newExecutablePath = Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId?.ToString()!, "fiskaltrust.Launcher");
             var process = new Process();
@@ -33,12 +30,15 @@ namespace fiskaltrust.Launcher.Helpers
             process.StartInfo.FileName = Path.Combine(newExecutablePath, $"fiskaltrust.LauncherUpdater{(OperatingSystem.IsWindows() ? ".exe" : "")}");
             process.StartInfo.CreateNoWindow = false;
 
+            launcherConfiguration.DisableDefaults();
             process.StartInfo.Arguments = string.Join(" ", new string[] {
                 "--launcher-process-id", _processId.Id.ToString(),
                 "--from", $"\"{Path.Combine(newExecutablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
-                "--to", _executablePath.Path,
+                "--to", Path.GetFullPath(_executablePath.Path),
                 "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize()))}\"",
+                "--launcher-configuration-file", $"\"{Path.GetFullPath(launcherConfigurationFile)}\"",
             });
+            launcherConfiguration.EnableDefaults();
 
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardOutput = true;

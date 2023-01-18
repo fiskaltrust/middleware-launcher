@@ -5,8 +5,6 @@ using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Common.Constants;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
-using System.Security.Cryptography;
-using fiskaltrust.Launcher.Common.Helpers;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace fiskaltrust.Launcher.Common.Configuration
@@ -34,7 +32,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonConstructor]
         public LauncherConfiguration() { _useDefaults = false; }
 
-        public LauncherConfiguration(bool useDefaults = true)
+        public LauncherConfiguration(bool useDefaults)
         {
             _useDefaults = useDefaults;
         }
@@ -147,7 +145,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private string? _cashboxConfiguration;
         [JsonPropertyName("cashboxConfigurationFile")]
-        public string? CashboxConfigurationFile { get => WithDefault(_cashboxConfiguration, () => (UseOffline ?? false && File.Exists("./cashbox.configuration.json")) ? "./cashbox.configuration.json" : Path.Join(ServiceFolder, "service", $"Configuration-{CashboxId}.json")); set => _cashboxConfiguration = value; }
+        public string? CashboxConfigurationFile { get => WithDefault(_cashboxConfiguration, () => Path.Join(ServiceFolder, "service", $"Configuration-{CashboxId}.json")); set => _cashboxConfiguration = value; }
 
         private SemanticVersioning.Range? _launcherVersion = null;
         [JsonPropertyName("launcherVersion")]
@@ -159,6 +157,8 @@ namespace fiskaltrust.Launcher.Common.Configuration
             var useDefaults = _useDefaults;
             _useDefaults = false;
 
+            try
+            {
             if (source is null) { return; }
 
             foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
@@ -170,7 +170,11 @@ namespace fiskaltrust.Launcher.Common.Configuration
                     field.SetValue(this, value);
                 }
             }
+            }
+            finally
+            {
             _useDefaults = useDefaults;
+        }
         }
 
         public LauncherConfiguration Redacted()

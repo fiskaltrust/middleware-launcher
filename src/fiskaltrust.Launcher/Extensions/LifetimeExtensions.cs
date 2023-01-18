@@ -50,8 +50,7 @@ namespace fiskaltrust.Launcher.Extensions
 
         public IHostApplicationLifetime ApplicationLifetime { get; init; }
 
-        public Lifetime(
-            IHostApplicationLifetime applicationLifetime)
+        public Lifetime(IHostApplicationLifetime applicationLifetime)
         {
             ApplicationLifetime = applicationLifetime;
         }

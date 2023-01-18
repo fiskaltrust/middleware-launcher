@@ -1,6 +1,5 @@
 ﻿using fiskaltrust.Launcher.Helpers;
 using Serilog;
-using System.Diagnostics;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
 {
