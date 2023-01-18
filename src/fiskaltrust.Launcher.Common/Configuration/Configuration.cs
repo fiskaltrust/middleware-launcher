@@ -94,6 +94,11 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("logFolder")]
         public string? LogFolder { get => WithDefault(_logFolder, () => Path.Combine(ServiceFolder!, "logs")); set => _logFolder = value; }
 
+        private string? _packageCache;
+        [JsonPropertyName("packageCache")]
+        public string? PackageCache { get => WithDefault(_packageCache, () => Path.Combine(ServiceFolder!, "cache")); set => _packageCache = value; }
+
+
         private LogLevel? _logLevel;
         [JsonPropertyName("logLevel")]
         public LogLevel? LogLevel { get => WithDefault(_logLevel, Microsoft.Extensions.Logging.LogLevel.Information); set => _logLevel = value; }
@@ -159,22 +164,22 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
             try
             {
-            if (source is null) { return; }
+                if (source is null) { return; }
 
-            foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
-            {
-                var value = field.GetValue(source);
-
-                if (value is not null)
+                foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
                 {
-                    field.SetValue(this, value);
+                    var value = field.GetValue(source);
+
+                    if (value is not null)
+                    {
+                        field.SetValue(this, value);
+                    }
                 }
-            }
             }
             finally
             {
-            _useDefaults = useDefaults;
-        }
+                _useDefaults = useDefaults;
+            }
         }
 
         public LauncherConfiguration Redacted()
