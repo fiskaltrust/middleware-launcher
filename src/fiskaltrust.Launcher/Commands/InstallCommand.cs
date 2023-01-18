@@ -39,15 +39,6 @@ namespace fiskaltrust.Launcher.Commands
                 return 1;
             }
 
-            _launcherConfiguration.DisableDefaults();
-
-            _launcherConfiguration.CashboxConfigurationFile = MakeAbsolutePath(_launcherConfiguration.CashboxConfigurationFile);
-            _launcherConfiguration.ServiceFolder = MakeAbsolutePath(_launcherConfiguration.ServiceFolder);
-            _launcherConfiguration.LogFolder = MakeAbsolutePath(_launcherConfiguration.LogFolder);
-            LauncherConfigurationFile = MakeAbsolutePath(LauncherConfigurationFile)!;
-
-            _launcherConfiguration.EnableDefaults();
-
             var commandArgs = "run ";
             commandArgs += string.Join(" ", new[] {
                 "--cashbox-id", _launcherConfiguration.CashboxId!.Value.ToString(),
@@ -73,16 +64,6 @@ namespace fiskaltrust.Launcher.Commands
 
             Log.Error("For non windows or linux(systemd) service installation see: {link}", ""); // TODO
             return 1;
-        }
-
-        private static string? MakeAbsolutePath(string? path)
-        {
-            if (path is not null)
-            {
-                return Path.GetFullPath(path);
-            }
-
-            return null;
         }
     }
 }

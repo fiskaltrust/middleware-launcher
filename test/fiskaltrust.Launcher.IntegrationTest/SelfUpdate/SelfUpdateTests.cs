@@ -11,8 +11,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
     public class SelfUpdateTests
     {
 
-        [Fact(Skip = "Not working on CI")]
-        public async Task Test()
+        // [Fact(Skip = "Not working on CI")]
+        public static async Task Test()
         {
             LauncherConfiguration launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(Guid.Parse("c813ffc2-e129-45aa-8b51-9f2342bdfa08"), "BFHGxJScfQz7OJwIfH4QSYpVJj7mDkC4UYZQDiINXW6PED34hdJQ791wlFXKL+q3vPg/vYgaBSeB9oqyolQgtkE=");
             launcherConfiguration.LauncherVersion = new SemanticVersioning.Range("2.*.* || >=2.0.0-preview1");
@@ -36,7 +36,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             try
             {
                 var lifetime = new TestLifetime();
-                var launcherExecutablePath = new LauncherExecutablePath($"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}");
+                var launcherExecutablePath = new LauncherExecutablePath { Path = $"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}" };
                 var runCommand = new RunCommandHandler(lifetime, new SelfUpdater(new LauncherProcessId(dummyProcess.Id), launcherExecutablePath), launcherExecutablePath)
                 {
                     ArgsLauncherConfiguration = new LauncherConfiguration

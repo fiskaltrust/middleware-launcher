@@ -98,8 +98,6 @@ namespace fiskaltrust.Launcher.Commands
 
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
 
-            _launcherConfiguration.EnableDefaults();
-
             if (!_launcherConfiguration.UseOffline!.Value && (_launcherConfiguration.CashboxId is null || _launcherConfiguration.AccessToken is null))
             {
                 Log.Error("CashBoxId and AccessToken are not provided.");

@@ -6,7 +6,7 @@ namespace fiskaltrust.Launcher.IntegrationTest
     {
         public static LauncherConfiguration GetTestLauncherConfig(Guid? cashboxId = null, string? accessToken = null)
         {
-            var launcherConfiguration = new LauncherConfiguration(true)
+            var launcherConfiguration = new LauncherConfiguration()
             {
                 ServiceFolder = AppDomain.CurrentDomain.BaseDirectory,
                 CashboxId = cashboxId ?? Guid.Parse("f3661e3c-5101-4d77-9396-c6cfc5d01a2c"),

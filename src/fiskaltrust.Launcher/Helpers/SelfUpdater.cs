@@ -6,8 +6,11 @@ using Serilog.Context;
 namespace fiskaltrust.Launcher.Helpers
 {
     public record LauncherProcessId(int Id);
-    public record LauncherExecutablePath(string Path)
+    public record LauncherExecutablePath
     {
+        private string _path = null!;
+        public required string Path { get => System.IO.Path.GetFullPath(_path); init => _path = value; }
+
         public override string ToString() => Path.ToString();
     };
 
@@ -30,15 +33,13 @@ namespace fiskaltrust.Launcher.Helpers
             process.StartInfo.FileName = Path.Combine(newExecutablePath, $"fiskaltrust.LauncherUpdater{(OperatingSystem.IsWindows() ? ".exe" : "")}");
             process.StartInfo.CreateNoWindow = false;
 
-            launcherConfiguration.DisableDefaults();
             process.StartInfo.Arguments = string.Join(" ", new string[] {
                 "--launcher-process-id", _processId.Id.ToString(),
                 "--from", $"\"{Path.Combine(newExecutablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
-                "--to", Path.GetFullPath(_executablePath.Path),
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize()))}\"",
+                "--to", _executablePath.Path,
+                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Raw(l => l.Serialize(false, false, false))))}\"",
                 "--launcher-configuration-file", $"\"{Path.GetFullPath(launcherConfigurationFile)}\"",
             });
-            launcherConfiguration.EnableDefaults();
 
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardOutput = true;

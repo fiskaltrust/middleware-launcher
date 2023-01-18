@@ -27,29 +27,30 @@ namespace fiskaltrust.Launcher.Common.Configuration
     {
         public const string DATA_PROTECTION_DATA_PURPOSE = "fiskaltrust.Launcher.Configuration";
 
-        private bool _useDefaults;
+        private bool _raw;
 
         [JsonConstructor]
-        public LauncherConfiguration() { _useDefaults = false; }
+        public LauncherConfiguration() { _raw = false; }
 
-        public LauncherConfiguration(bool useDefaults)
+        public T Raw<T>(System.Linq.Expressions.Expression<Func<LauncherConfiguration, T>> accessor)
         {
-            _useDefaults = useDefaults;
-        }
-
-        public void EnableDefaults()
-        {
-            _useDefaults = true;
-        }
-
-        public void DisableDefaults()
-        {
-            _useDefaults = false;
+            lock (this)
+            {
+                try
+                {
+                    _raw = true;
+                    return accessor.Compile()(this);
+                }
+                finally
+                {
+                    _raw = false;
+                }
+            }
         }
 
         private T WithDefault<T>(T value, T defaultValue)
         {
-            if (!_useDefaults)
+            if (_raw)
             {
                 return value;
             }
@@ -58,7 +59,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private T WithDefault<T>(T value, Func<T> defaultValue)
         {
-            if (!_useDefaults)
+            if (_raw)
             {
                 return value;
             }
@@ -80,7 +81,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private string? _serviceFolder;
         [JsonPropertyName("serviceFolder")]
-        public string? ServiceFolder { get => WithDefault(_serviceFolder, Paths.ServiceFolder); set => _serviceFolder = value; }
+        public string? ServiceFolder { get => MakeAbsolutePath(WithDefault(_serviceFolder, Paths.ServiceFolder)); set => _serviceFolder = value; }
 
         private bool? _sandbox;
         [JsonPropertyName("sandbox")]
@@ -92,11 +93,11 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private string? _logFolder;
         [JsonPropertyName("logFolder")]
-        public string? LogFolder { get => WithDefault(_logFolder, () => Path.Combine(ServiceFolder!, "logs")); set => _logFolder = value; }
+        public string? LogFolder { get => MakeAbsolutePath(WithDefault(_logFolder, () => Path.Combine(ServiceFolder!, "logs"))); set => _logFolder = value; }
 
         private string? _packageCache;
         [JsonPropertyName("packageCache")]
-        public string? PackageCache { get => WithDefault(_packageCache, () => Path.Combine(ServiceFolder!, "cache")); set => _packageCache = value; }
+        public string? PackageCache { get => MakeAbsolutePath(WithDefault(_packageCache, () => Path.Combine(ServiceFolder!, "cache"))); set => _packageCache = value; }
 
 
         private LogLevel? _logLevel;
@@ -134,7 +135,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private string? _tlsCertificatePath;
         [JsonPropertyName("tlsCertificatePath")]
-        public string? TlsCertificatePath { get => _tlsCertificatePath; set => _tlsCertificatePath = value; }
+        public string? TlsCertificatePath { get => MakeAbsolutePath(_tlsCertificatePath); set => _tlsCertificatePath = value; }
 
         private string? _tlsCertificateBase64;
         [JsonPropertyName("tlsCertificateBase64")]
@@ -150,7 +151,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private string? _cashboxConfiguration;
         [JsonPropertyName("cashboxConfigurationFile")]
-        public string? CashboxConfigurationFile { get => WithDefault(_cashboxConfiguration, () => Path.Join(ServiceFolder, "service", $"Configuration-{CashboxId}.json")); set => _cashboxConfiguration = value; }
+        public string? CashboxConfigurationFile { get => MakeAbsolutePath(WithDefault(_cashboxConfiguration, () => Path.Join(ServiceFolder, "service", $"Configuration-{CashboxId}.json"))); set => _cashboxConfiguration = value; }
 
         private SemanticVersioning.Range? _launcherVersion = null;
         [JsonPropertyName("launcherVersion")]
@@ -159,26 +160,28 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         public void OverwriteWith(LauncherConfiguration? source)
         {
-            var useDefaults = _useDefaults;
-            _useDefaults = false;
-
-            try
+            lock (this)
             {
-                if (source is null) { return; }
+                _raw = true;
 
-                foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
+                try
                 {
-                    var value = field.GetValue(source);
+                    if (source is null) { return; }
 
-                    if (value is not null)
+                    foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
                     {
-                        field.SetValue(this, value);
+                        var value = field.GetValue(source);
+
+                        if (value is not null)
+                        {
+                            field.SetValue(this, value);
+                        }
                     }
                 }
-            }
-            finally
-            {
-                _useDefaults = useDefaults;
+                finally
+                {
+                    _raw = false;
+                }
             }
         }
 
@@ -304,6 +307,15 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
                 return dataProtector.Unprotect((string)value);
             });
+        }
+        private static string? MakeAbsolutePath(string? path)
+        {
+            if (path is not null)
+            {
+                return Path.GetFullPath(path);
+            }
+
+            return null;
         }
     }
 

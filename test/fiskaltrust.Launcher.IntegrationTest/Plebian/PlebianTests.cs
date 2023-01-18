@@ -116,8 +116,6 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 LogLevel = LogLevel.Debug
             };
 
-            launcherConfiguration.EnableDefaults();
-
             var plebianConfiguration = new PlebianConfiguration
             {
                 PackageId = packageConfiguration.Id,
