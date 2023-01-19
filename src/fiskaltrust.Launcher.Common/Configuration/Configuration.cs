@@ -27,30 +27,31 @@ namespace fiskaltrust.Launcher.Common.Configuration
     {
         public const string DATA_PROTECTION_DATA_PURPOSE = "fiskaltrust.Launcher.Configuration";
 
-        private bool _raw;
+        private bool _rawAccess;
+        private readonly object _rawAccessLock = new();
 
         [JsonConstructor]
-        public LauncherConfiguration() { _raw = false; }
+        public LauncherConfiguration() { _rawAccess = false; }
 
         public T Raw<T>(System.Linq.Expressions.Expression<Func<LauncherConfiguration, T>> accessor)
         {
-            lock (this)
+            lock (_rawAccessLock)
             {
                 try
                 {
-                    _raw = true;
+                    _rawAccess = true;
                     return accessor.Compile()(this);
                 }
                 finally
                 {
-                    _raw = false;
+                    _rawAccess = false;
                 }
             }
         }
 
         private T WithDefault<T>(T value, T defaultValue)
         {
-            if (_raw)
+            if (_rawAccess)
             {
                 return value;
             }
@@ -59,7 +60,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private T WithDefault<T>(T value, Func<T> defaultValue)
         {
-            if (_raw)
+            if (_rawAccess)
             {
                 return value;
             }
@@ -160,9 +161,9 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         public void OverwriteWith(LauncherConfiguration? source)
         {
-            lock (this)
+            lock (_rawAccessLock)
             {
-                _raw = true;
+                _rawAccess = true;
 
                 try
                 {
@@ -180,7 +181,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 }
                 finally
                 {
-                    _raw = false;
+                    _rawAccess = false;
                 }
             }
         }
