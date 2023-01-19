@@ -10,8 +10,6 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 {
     public class SelfUpdateTests
     {
-
-        // [Fact(Skip = "Not working on CI")]
         public static async Task Test()
         {
             LauncherConfiguration launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(Guid.Parse("c813ffc2-e129-45aa-8b51-9f2342bdfa08"), "BFHGxJScfQz7OJwIfH4QSYpVJj7mDkC4UYZQDiINXW6PED34hdJQ791wlFXKL+q3vPg/vYgaBSeB9oqyolQgtkE=");
@@ -93,7 +91,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 
             await Task.Delay(TimeSpan.FromSeconds(10));
 
-            var launcherFileCreation = File.GetLastAccessTimeUtc($"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}");
+            var launcherFileCreation = File.GetLastWriteTimeUtc($"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}");
 
             if (launcherFileCreation < updateStart)
             {
