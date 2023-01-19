@@ -27,7 +27,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
     {
         public const string DATA_PROTECTION_DATA_PURPOSE = "fiskaltrust.Launcher.Configuration";
 
-        private bool _rawAccess;
+        private bool _rawAccess; // Helper field for the Raw access method. If this is true the properties dont return default values
         private readonly object _rawAccessLock = new();
 
         [JsonConstructor]
@@ -161,27 +161,15 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         public void OverwriteWith(LauncherConfiguration? source)
         {
-            lock (_rawAccessLock)
+            if (source is null) { return; }
+
+            foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
             {
-                _rawAccess = true;
+                var value = field.GetValue(source);
 
-                try
+                if (value is not null)
                 {
-                    if (source is null) { return; }
-
-                    foreach (var field in typeof(LauncherConfiguration).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
-                    {
-                        var value = field.GetValue(source);
-
-                        if (value is not null)
-                        {
-                            field.SetValue(this, value);
-                        }
-                    }
-                }
-                finally
-                {
-                    _rawAccess = false;
+                    field.SetValue(this, value);
                 }
             }
         }
@@ -229,37 +217,49 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         internal void SetAlternateNames(string text)
         {
-            using var configuration = JsonDocument.Parse(text);
-            if (configuration is null) { return; }
-
-            foreach (var property in GetType().GetProperties())
+            lock (_rawAccessLock)
             {
-                if (property.GetValue(this) is not null)
+                try
                 {
-                    continue;
+                    _rawAccess = true;
+
+                    using var configuration = JsonDocument.Parse(text);
+                    if (configuration is null) { return; }
+
+                    foreach (var property in GetType().GetProperties())
+                    {
+                        if (property.GetValue(this) is not null)
+                        {
+                            continue;
+                        }
+
+                        var alternateNames = property.GetCustomAttributes<AlternateNameAttribute>().Select(a => a.Name);
+
+                        var values = configuration.RootElement.EnumerateObject().Where(property => alternateNames.Contains(property.Name)).Select(property => property.Value).ToList();
+
+                        if (values.Count == 0)
+                        {
+                            continue;
+                        }
+
+                        if (values.Count > 1)
+                        {
+                            throw new Exception($"{nameof(LauncherConfiguration)} contained multiple keys which could be use for {property.Name}");
+                        }
+
+                        var type = property.PropertyType;
+                        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                        {
+                            type = Nullable.GetUnderlyingType(type) ?? type;
+                        }
+
+                        property.SetValue(this, values[0].Deserialize(type, SerializerContext.Default));
+                    }
                 }
-
-                var alternateNames = property.GetCustomAttributes<AlternateNameAttribute>().Select(a => a.Name);
-
-                var values = configuration.RootElement.EnumerateObject().Where(property => alternateNames.Contains(property.Name)).Select(property => property.Value).ToList();
-
-                if (values.Count == 0)
+                finally
                 {
-                    continue;
+                    _rawAccess = false;
                 }
-
-                if (values.Count > 1)
-                {
-                    throw new Exception($"{nameof(LauncherConfiguration)} contained multiple keys which could be use for {property.Name}");
-                }
-
-                var type = property.PropertyType;
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
-                {
-                    type = Nullable.GetUnderlyingType(type) ?? type;
-                }
-
-                property.SetValue(this, values[0].Deserialize(type, SerializerContext.Default));
             }
         }
 
