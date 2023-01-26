@@ -77,7 +77,6 @@ namespace fiskaltrust.Launcher.IntegrationTest.Logging
                 LogFolder = "TestLogs",
                 Sandbox = true
             };
-            launcherConfiguration.EnableDefaults();
 
             using (var logger = new LoggerConfiguration().AddLoggingConfiguration(launcherConfiguration, new[] { "test" }).CreateLogger())
             {

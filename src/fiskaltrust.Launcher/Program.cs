@@ -34,7 +34,10 @@ return await new CommandLineBuilder(command)
         .Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(45))
         .AddSingleton(_ => subArguments)
         .AddSingleton(_ => new LauncherProcessId(Environment.ProcessId))
-        .AddSingleton(_ => new LauncherExecutablePath(Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")))
+        .AddSingleton(_ => new LauncherExecutablePath
+        {
+            Path = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")
+        })
         .AddSingleton<SelfUpdater>()
       );
 

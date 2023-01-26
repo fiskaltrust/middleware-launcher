@@ -40,7 +40,6 @@ return await rootCommand.InvokeAsync(args);
 async static Task<int> RootCommandHandler(int processId, string from, string to, string launcherConfigurationBase64, string? launcherConfigurationFile, CancellationToken cancellationToken)
 {
     var launcherConfiguration = LauncherConfiguration.Deserialize(Encoding.UTF8.GetString(Convert.FromBase64String(launcherConfigurationBase64)));
-    launcherConfiguration.EnableDefaults();
 
     Log.Logger = new LoggerConfiguration()
         .AddLoggingConfiguration(launcherConfiguration, new[] { "fiskaltrust.LauncherUpdater", launcherConfiguration.CashboxId!.Value.ToString() })
@@ -122,11 +121,10 @@ async static Task<int> RootCommandHandler(int processId, string from, string to,
 
 static string LauncherConfigurationToArgs(LauncherConfiguration launcherConfiguration)
 {
-    launcherConfiguration.DisableDefaults();
     var result = "";
     foreach (var property in typeof(LauncherConfiguration).GetProperties())
     {
-        var value = property.GetValue(launcherConfiguration);
+        var value = launcherConfiguration.Raw(l => property.GetValue(l));
         if (value is not null)
         {
             result += " -" + string.Concat(property.Name.Select(c => char.IsUpper(c) ? "-" + char.ToLower(c) : c.ToString()));
@@ -134,7 +132,6 @@ static string LauncherConfigurationToArgs(LauncherConfiguration launcherConfigur
             result += $"\"{value}\"";
         }
     }
-    launcherConfiguration.EnableDefaults();
     return result;
 }
 

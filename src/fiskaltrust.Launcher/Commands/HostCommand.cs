@@ -58,7 +58,6 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             var launcherConfiguration = Common.Configuration.LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration)));
-            launcherConfiguration.EnableDefaults();
 
             var plebianConfiguration = Configuration.PlebianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration)));
 

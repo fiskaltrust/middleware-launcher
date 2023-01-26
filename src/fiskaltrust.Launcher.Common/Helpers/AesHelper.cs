@@ -25,7 +25,7 @@ namespace fiskaltrust.Launcher.Common.Helpers
             {
                 sw.Write(plainText);
             }
-            
+
             return ms.ToArray();
         }
 

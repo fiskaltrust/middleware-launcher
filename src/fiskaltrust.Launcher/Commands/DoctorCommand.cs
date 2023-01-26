@@ -73,8 +73,6 @@ namespace fiskaltrust.Launcher.Commands
 
                 launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
 
-                launcherConfiguration.EnableDefaults();
-
                 var clientEcdh = await CheckAwait("Load ECDH Curve", async () => await CommonCommandHandler.LoadCurve(launcherConfiguration.AccessToken!, launcherConfiguration.UseOffline!.Value, dryRun: true), critical: false);
                 ftCashBoxConfiguration cashboxConfiguration = new();
 

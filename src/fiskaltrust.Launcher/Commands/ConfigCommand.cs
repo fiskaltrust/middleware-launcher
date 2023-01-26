@@ -100,10 +100,9 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
-            launcherConfiguration.DisableDefaults();
 
             string rawLauncherConfigurationNew;
-            rawLauncherConfigurationNew = launcherConfiguration.Serialize(true, true, true);
+            rawLauncherConfigurationNew = launcherConfiguration.Raw(l => l.Serialize(true, true, true));
 
             try
             {
@@ -116,7 +115,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                await File.WriteAllTextAsync(LauncherConfigurationFile, launcherConfiguration.Serialize(true, ignoreNullValues: true));
+                await File.WriteAllTextAsync(LauncherConfigurationFile, launcherConfiguration.Raw(l => l.Serialize(true, false, true)));
             }
             catch (Exception e)
             {
@@ -184,7 +183,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (localConfiguration is not null)
                 {
-                    Log.Information($"Local configuration {{LauncherConfigurationFile}}\n{localConfiguration.Serialize(true, true, true)}", LauncherConfigurationFile);
+                    Log.Information($"Local configuration {{LauncherConfigurationFile}}\n{localConfiguration.Raw(l => l.Serialize(true, true, true))}", LauncherConfigurationFile);
                 }
             }
 
@@ -194,18 +193,18 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (legacyConfiguration is not null)
                 {
-                    Log.Information($"Legacy configuration {{LegacyConfigFile}}\n{legacyConfiguration.Serialize(true, true, true)}", LegacyConfigFile);
+                    Log.Information($"Legacy configuration {{LegacyConfigFile}}\n{legacyConfiguration.Raw(l => l.Serialize(true, true, true))}", LegacyConfigFile);
                 }
             }
 
             CashBoxConfigurationFile ??= localConfiguration?.CashboxConfigurationFile;
-            if (CashBoxConfigurationFile is not null)
+            if (CashBoxConfigurationFile is not null && File.Exists(CashBoxConfigurationFile))
             {
                 LauncherConfiguration? remoteConfiguration = await ReadLauncherConfiguration(CashBoxConfigurationFile, LauncherConfigurationInCashBoxConfiguration.Deserialize);
 
                 if (remoteConfiguration is not null)
                 {
-                    Log.Information($"Remote configuration from {{CashBoxConfigurationFile}}\n{remoteConfiguration.Serialize(true, true, true)}", CashBoxConfigurationFile);
+                    Log.Information($"Remote configuration from {{CashBoxConfigurationFile}}\n{remoteConfiguration.Raw(l => l.Serialize(true, true, true))}", CashBoxConfigurationFile);
                 }
             }
 
@@ -241,8 +240,6 @@ namespace fiskaltrust.Launcher.Commands
                     Log.Warning(e, "Error decrypting launcher configuration file {file}.", launcherConfigurationFile);
                 }
             }
-
-            launcherConfiguration?.DisableDefaults();
 
             return launcherConfiguration;
         }
