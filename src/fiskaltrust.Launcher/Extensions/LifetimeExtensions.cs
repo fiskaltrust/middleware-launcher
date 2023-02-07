@@ -1,4 +1,5 @@
 using System.Runtime.Versioning;
+using System.Text;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Options;
 
@@ -29,6 +30,7 @@ namespace fiskaltrust.Launcher.Extensions
             }
             else
             {
+                Console.OutputEncoding = Encoding.UTF8;
                 builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
                 builder.UseConsoleLifetime();
                 return builder;
