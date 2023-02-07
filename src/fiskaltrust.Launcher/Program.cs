@@ -26,8 +26,7 @@ args = args.TakeWhile(a => a != "--").ToArray();
 
 return await new CommandLineBuilder(command)
   .UseHost(host =>
-  {
-      Console.OutputEncoding = Encoding.UTF8;
+  {     
       host.UseCustomHostLifetime();
 
       host.ConfigureServices(services => services
