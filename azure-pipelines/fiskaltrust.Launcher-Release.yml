@@ -3,8 +3,9 @@ resources:
     - pipeline: build
       source: fiskaltrust.Launcher
       trigger:
-        tags:
-          - refs/tags/v*
+        branches:
+          include:
+            - refs/tags/v*
 
 trigger: none
 pr: none
@@ -20,9 +21,15 @@ stages:
             storage: stdevwesteuropepackages
             serviceConnection: rg-dev-westeurope-packages
 
-        # - stage: Release_Production
-        #   dependsOn: Release-Sandbox
-        #   templateContext:
-        #     environment: production
-        #     storage: stwesteuropepackages
-        #     serviceConnection: rg-westeurope-packages
+  # - stage: Release_Production
+  #   dependsOn: Release-Sandbox
+  #   templateContext:
+  #     environment: production
+  #     storage: stwesteuropepackages
+  #     serviceConnection: rg-westeurope-packages
+
+  - template: templates/deb/release.yml
+    parameters:
+      artifact: build
+      serviceConnection: ft-acp-csp-austria-production
+      storage: fta102downloads

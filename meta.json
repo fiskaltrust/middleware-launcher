@@ -1,0 +1,22 @@
+{
+  "package": {
+    "name": "fiskaltrust-middleware-launcher",
+    "maintainer": "hello@fiskaltrust.eu",
+    "homepage": "https://github.com/fiskaltrust/middleware-launcher",
+    "description": "The Middleware Launcher is used to host fiskaltrust's Middleware for POS systems"
+  },
+  "deb": {
+    "repository": {
+      "origin": "fiskaltrust",
+      "description": "fiskaltrust apt repository"
+    },
+    "depends": [
+      "libc6"
+    ],
+    "architectures": {
+      "linux-x64": "amd64",
+      "linux-arm": "armhf",
+      "linux-arm64": "arm64"
+    }
+  }
+}

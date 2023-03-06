@@ -35,7 +35,6 @@ namespace fiskaltrust.Launcher.Commands
 
     public class RunCommandHandler : CommonCommandHandler
     {
-        private bool _updatePending = false;
         private readonly ILifetime _lifetime;
         private readonly SelfUpdater _selfUpdater;
         private readonly LauncherExecutablePath _launcherExecutablePath;
@@ -81,66 +80,13 @@ namespace fiskaltrust.Launcher.Commands
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 #pragma warning restore ASP0014
 
-            if (_launcherConfiguration.LauncherVersion is not null && Common.Constants.Version.CurrentVersion is not null)
-            {
-                var packageDownloader = app.Services.GetRequiredService<PackageDownloader>();
-                SemanticVersioning.Version? launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, _launcherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
-
-                if (launcherVersion is not null && Common.Constants.Version.CurrentVersion != launcherVersion)
-                {
-                    if (_launcherConfiguration.LauncherVersion.ToString() == launcherVersion.ToString())
-                    {
-                        if (Common.Constants.Version.CurrentVersion < launcherVersion)
-                        {
-                            Log.Information("A new Launcher version is set.");
-                        }
-                        else
-                        {
-                            Log.Information("An older Launcher version is set.");
-                        }
-                    }
-                    else
-                    {
-                        if (Common.Constants.Version.CurrentVersion < launcherVersion)
-                        {
-                            Log.Information("A new Launcher version is found for configured range \"{range}\".", _launcherConfiguration.LauncherVersion);
-                        }
-                        else
-                        {
-                            Log.Information("An older Launcher version is found for configured range \"{range}\".", _launcherConfiguration.LauncherVersion);
-                        }
-                    }
-
-                    Log.Information("Downloading new version {new}.", launcherVersion);
-
-                    try
-                    {
-                        await packageDownloader.DownloadLauncherAsync(launcherVersion);
-                        _updatePending = true;
-                        if (Common.Constants.Version.CurrentVersion < launcherVersion)
-                        {
-                            Log.Information("Launcher will be updated to version {new} on shutdown.", launcherVersion);
-                        }
-                        else
-                        {
-                            Log.Information("Launcher will be downgraded to version {old} on shutdown.", launcherVersion);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Error(e, "Could not download new Launcher version.");
-                    }
-                }
-            }
+            await _selfUpdater.PrepareSelfUpdate(Log.Logger, _launcherConfiguration, app.Services.GetRequiredService<PackageDownloader>());
 
             try
             {
                 await app.RunAsync(_lifetime.ApplicationLifetime.ApplicationStopping);
 
-                if (_updatePending)
-                {
-                    await _selfUpdater.StartSelfUpdate(Log.Logger, _launcherConfiguration, LauncherConfigurationFile);
-                }
+                await _selfUpdater.StartSelfUpdate(Log.Logger, _launcherConfiguration, LauncherConfigurationFile);
             }
             catch (Exception e)
             {

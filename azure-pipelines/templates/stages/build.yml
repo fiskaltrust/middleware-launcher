@@ -60,7 +60,7 @@ stages:
     - ${{ each project in parameters.projects }}:
       - pwsh: |
           Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
-        displayName: Copy ececutables
+        displayName: Copy executables
         
 
     - pwsh: |
