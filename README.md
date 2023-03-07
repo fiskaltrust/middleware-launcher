@@ -43,7 +43,7 @@ To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 
 ### Installation
 
-On debian based linux systems the Launcher can also be installed via `apt-get`.
+On debian based linux systems the Launcher can also be installed via `apt-get`. The executable will be installed at `/usr/bin/fiskaltrust.Launcher` and can be run like that `fiskaltrust.Launcher --help`.
 
 ```bash
 curl -L http://downloads.fiskaltrust.cloud/apt-repo/KEY.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/fiskaltrust-archive-keyring.gpg > /dev/null
