@@ -24,7 +24,7 @@ stages:
   jobs:
   - deployment: Release_Deb
 
-    # condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+    condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
 
     pool:
       vmImage: ubuntu-latest
