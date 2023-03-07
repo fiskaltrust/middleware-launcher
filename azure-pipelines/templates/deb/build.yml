@@ -1,0 +1,80 @@
+stages:
+- stage: Build_Deb
+  
+  displayName: Build debian package
+
+  jobs:
+  - job: build
+
+    strategy:
+      matrix:
+        linux-x64:
+          target: linux-x64
+
+        linux-arm:
+          target: linux-arm
+
+        linux-arm64:
+          target: linux-arm64
+
+    pool:
+      vmImage: ubuntu-latest
+
+    steps:
+    - template: ../restore.yml
+
+    - pwsh: |
+        mv ./Directory.build.props ./Directory.Build.props
+        dotnet publish ./src/fiskaltrust.Launcher/fiskaltrust.Launcher.csproj -c Release -o $(Pipeline.Workspace)/drop-$(target) -r $(target) -f net7.0 --self-contained true /p:SelfUpdate='false' /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true -p:PublishReadyToRun=true
+      displayName: Publish
+
+    - pwsh: |
+        $meta = Get-Content ./meta.json -Encoding UTF8 | ConvertFrom-Json
+        $arch = $meta.deb.architectures."$(target)"
+
+        $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
+
+        $base = "$(Pipeline.Workspace)/deb/$($meta.package.name)_$version-1_$arch"
+        New-Item -ItemType Directory -Path "$base";
+        New-Item -ItemType Directory -Path "$base/usr/bin";
+        New-Item -ItemType Directory -Path "$base/DEBIAN";
+
+        Move-Item "$(Pipeline.Workspace)/drop-$(target)/fiskaltrust.Launcher" "$base/usr/bin/"
+
+        @(
+          "Package: $($meta.package.name)";
+          "Version: $version";
+          "Maintainer: $($meta.package.maintainer)";
+          "Depends: $($meta.deb.depends -join ', ')";
+          "Architecture: $arch";
+          "Homepage: $($meta.package.homepage)";
+          "Description: $($meta.package.description)"
+        ) -join "`n" | Set-Content -Path "$base/DEBIAN/control"
+
+        dpkg --build $base
+
+        dpkg-deb --info "$base.deb" | Write-Host
+
+        dpkg-deb --contents "$base.deb" | Write-Host
+
+        New-Item -ItemType Directory -Path "$(Pipeline.Workspace)/deb-$(target)"
+        Move-Item "$base.deb" "$(Pipeline.Workspace)/deb-$(target)/"
+      displayName: Build deb package
+
+    - publish: $(Pipeline.Workspace)/deb-$(target)
+      artifact: deb-$(target)
+      displayName: Publish deb package
+
+  - job: meta
+
+    pool:
+      vmImage: ubuntu-latest
+
+    steps:
+      - pwsh: |
+          New-Item -ItemType Directory -Path "meta"
+          Move-Item meta.json meta/meta.json
+
+      - publish: meta
+        artifact: meta
+        displayName: Publish meta

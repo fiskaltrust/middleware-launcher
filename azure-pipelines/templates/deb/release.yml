@@ -1,0 +1,131 @@
+parameters:
+- name: artifact
+  type: string
+  default: current
+
+- name: serviceConnection
+  type: string
+
+- name: storage
+  type: string
+
+- name: targets
+  type: object
+  default:
+  - linux-x64
+  - linux-arm
+  - linux-arm64
+
+stages:
+- stage: Release_Deb
+  displayName: Release deb Packages
+  dependsOn: []
+
+  jobs:
+  - deployment: Release_Deb
+
+    condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+
+    pool:
+      vmImage: ubuntu-latest
+
+    environment: ${{ parameters.storage }}
+
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - pwsh: sudo apt-get install apt-utils -y
+
+          - task: DownloadSecureFile@1
+            name: pgpPrivateKey
+            displayName: Download pgp key
+            inputs:
+              secureFile: apt-repo-pgp-key.private
+
+          - download: ${{ parameters.artifact }}
+            artifact: meta
+            displayName: Download artifact meta
+
+          - bash: |
+              mkdir ~/.gnupg
+              echo "cert-digest-algo SHA256" >> ~/.gnupg/gpg.conf
+              echo "digest-algo SHA256" >> ~/.gnupg/gpg.conf
+
+          - ${{ each target in parameters.targets }}:
+            - download: ${{ parameters.artifact }}
+              artifact: deb-${{ target }}
+              displayName: "[${{ target }}] Download artifact"
+
+          - ${{ each target in parameters.targets }}:
+            - task: AzureCLI@2
+              displayName: "[${{ target }}] Download Packages file"
+              inputs:
+                azureSubscription: ${{ parameters.serviceConnection }}
+                scriptType: pscore
+                scriptLocation: inlineScript
+                inlineScript: |
+                  $meta = Get-Content "$(Pipeline.Workspace)/${{ parameters.artifact }}/meta/meta.json" -Encoding UTF8 | ConvertFrom-Json
+                  $arch = $meta.deb.architectures."${{ target }}"
+
+                  New-Item -ItemType Directory -Path $(Pipeline.Workspace)/apt-repo/pool/main -Force;
+                  New-Item -ItemType Directory -Path $(Pipeline.Workspace)/apt-repo/dists/stable/main/binary-$arch -Force;
+
+                  Move-Item "$(Pipeline.Workspace)/${{ parameters.artifact }}/deb-${{ target }}/*" "$(Pipeline.Workspace)/apt-repo/pool/main/"
+
+                  az storage blob download --account-name ${{ parameters.storage }} -c apt-repo -n "dists/stable/main/binary-$arch/Packages" -f "$(Pipeline.Workspace)/apt-repo/dists/stable/main/binary-$arch/Packages"
+
+          - ${{ each target in parameters.targets }}:
+            - pwsh: |
+                $meta = Get-Content "$(Pipeline.Workspace)/${{ parameters.artifact }}/meta/meta.json" -Encoding UTF8 | ConvertFrom-Json
+                $arch = $meta.deb.architectures."${{ target }}"
+
+                $packagesContent = $(Get-Content "$(Pipeline.Workspace)/apt-repo/dists/stable/main/binary-$arch/Packages") -join ' '
+
+                Get-ChildItem "$(Pipeline.Workspace)/apt-repo/pool/main" | % {
+
+                  if($packagesContent.Contains($_.Name)) {
+                    Remove-Item $_.FullName
+                    Write-Host "##[warning]File $($_.Name) was already released"
+                  }
+                }
+
+                cd "$(Pipeline.Workspace)/apt-repo"
+                apt-ftparchive --arch "$arch" packages pool | Add-Content "$(Pipeline.Workspace)/apt-repo/dists/stable/main/binary-$arch/Packages"
+
+                gzip -k -f $(Pipeline.Workspace)/apt-repo/dists/stable/main/binary-$arch/Packages
+              displayName: "[${{ target }}] Update Packages file"
+
+          - pwsh: |
+              $meta = Get-Content "$(Pipeline.Workspace)/${{ parameters.artifact }}/meta/meta.json" -Encoding UTF8 | ConvertFrom-Json
+
+              cd "$(Pipeline.Workspace)/apt-repo/dists/stable/"
+
+              @(
+                "Origin: $($meta.deb.repository.origin)";
+                "Suite: stable";
+                "Codename: stable";
+                "Version: 1.0";
+                "Components: main";
+                "Description: $($meta.deb.repository.description)";
+                "Architectures: $($($meta.deb.architectures.PsObject.Properties | select -ExpandProperty value) -join ' ')";
+              ) -join "`n" | Set-Content -Path Release
+              
+              apt-ftparchive release . | Add-Content Release
+            displayName: Generate Release file
+
+          - bash: |
+              cat "$(pgpPrivateKey.secureFilePath)" | gpg --import
+              cat "$(Pipeline.Workspace)/apt-repo/dists/stable/Release" | gpg --default-key fiskaltrust -abs > "$(Pipeline.Workspace)/apt-repo/dists/stable/Release.gpg"
+              cat "$(Pipeline.Workspace)/apt-repo/dists/stable/Release" | gpg --default-key fiskaltrust -abs --clearsign > "$(Pipeline.Workspace)/apt-repo/dists/stable/InRelease"
+            displayName: Sign Release file
+
+          - task: AzureCLI@2
+            displayName: Upload Release file
+            inputs:
+              azureSubscription: ${{ parameters.serviceConnection }}
+              scriptType: pscore
+              scriptLocation: inlineScript
+              inlineScript: |
+                az storage blob upload-batch --account-name ${{ parameters.storage }} -d "apt-repo" --destination-path "/pool" -s "$(Pipeline.Workspace)/apt-repo/pool" --pattern "*"
+                az storage blob upload-batch --account-name ${{ parameters.storage }} -d "apt-repo" --destination-path "/dists" -s "$(Pipeline.Workspace)/apt-repo/dists" --pattern "*" --overwrite

@@ -41,6 +41,22 @@ To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 > fiskaltrust.Launcher.exe --help
 > ```
 
+### Installation
+
+On debian based linux systems the Launcher can also be installed via `apt-get`. The executable will be installed at `/usr/bin/fiskaltrust.Launcher` and can be run like that `fiskaltrust.Launcher --help`.
+
+```bash
+curl -L http://downloads.fiskaltrust.cloud/apt-repo/KEY.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/fiskaltrust-archive-keyring.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/fiskaltrust-archive-keyring.gpg] http://downloads.fiskaltrust.cloud/apt-repo stable main" | sudo tee /etc/apt/sources.list.d/fiskaltrust.list
+sudo apt update
+sudo apt install fiskaltrust-middleware-launcher
+```
+
+> When installed this way the self-update funtionality of the launcher is disabled and it has to be updated via `apt-get`.
+> ```bash
+> sudo apt update && sudo apt install --only-upgrade fiskaltrust-middleware-launcher
+> ```
+
 ## Migration guide
 
 > Caution: To switch from a launcher version 1.3.x to a version 2.0 is possible using the version Launcher 2.0- Public Preview 3 onwards.
@@ -54,24 +70,8 @@ Create the [configuration file](#launcher-configuration), and make sure to inclu
 In the new launcher folder run the following command `.\fiskaltrust.Launcher.exe install --sandbox`.
 
 To check that the switch is successful, try send receipt to the middleware using our Postman collection.
-## Supported Packages in the Alpha
 
-In the sandbox configure a cashbox based on the list of supported packages below.
-
-| Name                                           | Versions               |
-| ---------------------------------------------- | ---------------------- |
-| fiskaltrust.Middleware.Queue.MySQL             | v1.3.37                |
-| fiskaltrust.Middleware.Queue.SQLite            | v1.3.38-ci-22221-55477 |
-| fiskaltrust.Middleware.SCU.DE.FiskalyCertified | v1.3.35                |
-| fiskaltrust.Middleware.SCU.DE.CryptoVision     | v1.3.34                |
-| fiskaltrust.Middleware.SCU.DE.DeutscheFiskal   | v1.3.35                |
-| fiskaltrust.Middleware.SCU.DE.DieboldNixdorf   | v1.3.20                |
-| fiskaltrust.Middleware.SCU.DE.Epson            | v1.3.19                |
-| fiskaltrust.Middleware.SCU.DE.Swissbit         | v1.3.35-rc1            |
-| fiskaltrust.Middleware.SCU.DE.SwissbitCloud    | v1.3.35                |
-| fiskaltrust.Middleware.Helper.Helipad          | v1.3.26                |
-
-### Launcher configuration
+## Launcher configuration
 
 The Launcher 2.0 configuration is now read from a json file (`launcher.configuration.json` in the working directory per default).The configuration has to be created mannually.
 
@@ -121,11 +121,6 @@ Or this can be set to a [semver range](https://devhints.io/semver#ranges) (e.g. 
 ## Getting Started for developers
 
 Clone this github repository and bild the project with Visual Studio.
-
-Start the Launcher via the commandline:
-```pwsh
-fiskaltrust.Launcher.exe run --cashbox-id <cashboxid> --access-token <accesstoken> --sandbox
-```
 
 When using VS Code, please ensure that the following command line parameters are passed to `dotnet build` to enable seamless debugging: `-p:PublishSingleFile=true -p:PublishReadyToRun=true`.
 

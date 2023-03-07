@@ -25,3 +25,5 @@ stages:
         config: release
       ${{ else }}:
         config: debug
+
+  - template: templates/deb/build.yml

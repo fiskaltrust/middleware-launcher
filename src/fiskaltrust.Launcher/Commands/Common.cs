@@ -60,6 +60,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
+                LauncherConfigurationFile = Path.GetFullPath(LauncherConfigurationFile);
                 _launcherConfiguration = LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(LauncherConfigurationFile));
             }
             catch (Exception e)

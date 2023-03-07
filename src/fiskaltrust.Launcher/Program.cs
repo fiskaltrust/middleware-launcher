@@ -5,7 +5,6 @@ using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
-using System.Text;
 
 var command = new RootCommand {
   new RunCommand(),
@@ -26,7 +25,7 @@ args = args.TakeWhile(a => a != "--").ToArray();
 
 return await new CommandLineBuilder(command)
   .UseHost(host =>
-  {     
+  {
       host.UseCustomHostLifetime();
 
       host.ConfigureServices(services => services

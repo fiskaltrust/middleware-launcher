@@ -6,6 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <DefineConstants></DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(SelfUpdate)'=='true' or '$(SelfUpdate)'==''">
+      <DefineConstants>$(DefineConstants);EnableSelfUpdate</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
