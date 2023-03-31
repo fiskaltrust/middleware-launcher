@@ -19,6 +19,7 @@ using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Services.Interfaces;
+using fiskaltrust.ifPOS.v1.it;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -107,6 +108,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddHostedService<ProcessHostPlebian>();
 
                     services.AddSingleton<IClientFactory<IDESSCD>, DESSCDClientFactory>();
+                    services.AddSingleton<IClientFactory<IITSSCD>, ITSSCDClientFactory>();
                     services.AddSingleton<IClientFactory<IPOS>, POSClientFactory>();
 
                     using var downloader = new PackageDownloader(services.BuildServiceProvider().GetRequiredService<ILogger<PackageDownloader>>(), launcherConfiguration);
@@ -120,8 +122,10 @@ namespace fiskaltrust.Launcher.Commands
                                     typeof(IMiddlewareBootstrapper),
                                     typeof(IPOS),
                                     typeof(IDESSCD),
+                                    typeof(IITSSCD),
                                     typeof(IClientFactory<IPOS>),
                                     typeof(IClientFactory<IDESSCD>),
+                                    typeof(IClientFactory<IITSSCD>),
                                     typeof(JournalRequest),
                                     typeof(JournalResponse),
                                     typeof(IHelper),

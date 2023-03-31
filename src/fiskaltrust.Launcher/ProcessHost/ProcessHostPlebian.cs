@@ -1,5 +1,6 @@
 using fiskaltrust.ifPOS.v1;
 using fiskaltrust.ifPOS.v1.de;
+using fiskaltrust.ifPOS.v1.it;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
@@ -102,29 +103,23 @@ namespace fiskaltrust.Launcher.ProcessHost
         {
             var hostingFailedCompletely = uris.Length > 0;
 
-            object instance = _plebianConfiguration.PackageType switch
+            (object instance, Action<WebApplication> addEndpoints) = _plebianConfiguration.PackageType switch
             {
-                PackageType.Queue => _services.GetRequiredService<IPOS>(),
-                PackageType.SCU => _services.GetRequiredService<IDESSCD>(),
-                PackageType.Helper => _services.GetRequiredService<IHelper>(),
+                PackageType.Queue => GetQueue(_services),
+                PackageType.SCU => GetScu(_services),
+                PackageType.Helper => (_services.GetRequiredService<IHelper>(), (WebApplication _) => { }),
                 _ => throw new NotImplementedException()
             };
+
 
             foreach (var uri in uris)
             {
                 var url = new Uri(uri);
                 var hostingType = GetHostingType(url);
 
-                Action<WebApplication, object>? addEndpoints = hostingType switch
+                Action<WebApplication>? addEndpointsInner = hostingType switch
                 {
-                    HostingType.REST => _plebianConfiguration.PackageType switch
-                    {
-                        PackageType.Queue => (app, instance) => app.AddQueueEndpoints((IPOS)instance),
-                        PackageType.SCU => (app, instance) => app.AddScuEndpoints((IDESSCD)instance),
-                        PackageType.Helper => (_, _) => { }
-                        ,
-                        _ => throw new NotImplementedException()
-                    },
+                    HostingType.REST => addEndpoints,
                     _ => null
                 };
 
@@ -133,13 +128,13 @@ namespace fiskaltrust.Launcher.ProcessHost
                     switch (_plebianConfiguration.PackageType)
                     {
                         case PackageType.SCU:
-                            await _hosting.HostService<IDESSCD>(url, hostingType, (IDESSCD)instance, addEndpoints);
+                            await _hosting.HostService(url, hostingType, (IDESSCD)instance, addEndpoints);
                             break;
                         case PackageType.Queue:
-                            await _hosting.HostService<IPOS>(url, hostingType, (IPOS)instance, addEndpoints);
+                            await _hosting.HostService(url, hostingType, (IPOS)instance, addEndpoints);
                             break;
                         case PackageType.Helper:
-                            await _hosting.HostService<IHelper>(url, hostingType, (IHelper)instance, addEndpoints);
+                            await _hosting.HostService(url, hostingType, (IHelper)instance, addEndpoints);
                             ((IHelper)instance).StartBegin();
                             ((IHelper)instance).StartEnd();
                             break;
@@ -159,6 +154,31 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 throw new Exception("No host could be started.");
             }
+        }
+
+        private static (object, Action<WebApplication>) GetQueue(IServiceProvider services)
+        {
+            var queue = services.GetRequiredService<IPOS>();
+
+            return (queue, (WebApplication app) => app.AddQueueEndpoints(queue));
+        }
+
+        private static (object, Action<WebApplication>) GetScu(IServiceProvider services)
+        {
+            var scuDe = services.GetService<IDESSCD>();
+
+            if (scuDe is not null)
+            {
+                return (scuDe, (WebApplication app) => app.AddScuDeEndpoints(scuDe));
+            }
+
+            var scuIt = services.GetService<IITSSCD>();
+            if (scuIt is not null)
+            {
+                return (scuIt, (WebApplication app) => app.AddScuItEndpoints(scuIt));
+            }
+
+            throw new Exception("Could not resolve SCU with supported country. (Curently supported are DE and IT)");
         }
 
         private static HostingType GetHostingType(Uri url)

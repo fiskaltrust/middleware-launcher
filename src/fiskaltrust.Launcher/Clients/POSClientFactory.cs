@@ -49,7 +49,6 @@ namespace fiskaltrust.Launcher.Clients
                 {
                     Url = new Uri(configuration.Url.Replace("rest://", isHttps ? "https://" : "http://")),
                     RetryPolicyOptions = retryPolicyoptions,
-                    DisableSslValidation = _launcherConfiguration?.SslValidation
                 }).Result,
                 "http" or "https" or "net.tcp" => SoapPosFactory.CreatePosAsync(new ClientOptions
                 {

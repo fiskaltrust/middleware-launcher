@@ -1,4 +1,4 @@
-﻿using fiskaltrust.ifPOS.v1.de;
+﻿using fiskaltrust.ifPOS.v1.it;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.Middleware.Interface.Client;
@@ -10,13 +10,13 @@ using Grpc.Net.Client;
 
 namespace fiskaltrust.Launcher.Clients
 {
-    public class DESSCDClientFactory : IClientFactory<IDESSCD>
+    public class ITSSCDClientFactory : IClientFactory<IITSSCD>
     {
         private readonly LauncherConfiguration _launcherConfiguration;
 
-        public DESSCDClientFactory(LauncherConfiguration launcherConfiguration) => _launcherConfiguration = launcherConfiguration;
+        public ITSSCDClientFactory(LauncherConfiguration launcherConfiguration) => _launcherConfiguration = launcherConfiguration;
 
-        public IDESSCD CreateClient(ClientConfiguration configuration)
+        public IITSSCD CreateClient(ClientConfiguration configuration)
         {
             if (configuration is null)
             {
@@ -35,7 +35,7 @@ namespace fiskaltrust.Launcher.Clients
 
             return configuration.UrlType switch
             {
-                "grpc" => GrpcDESSCDFactory.CreateSSCDAsync(new GrpcClientOptions
+                "grpc" => GrpcITSSCDFactory.CreateSSCDAsync(new GrpcClientOptions
                 {
                     Url = new Uri(configuration.Url.Replace("grpc://", isHttps ? "https://" : "http://")),
                     RetryPolicyOptions = retryPolicyoptions,
@@ -45,12 +45,12 @@ namespace fiskaltrust.Launcher.Clients
                         HttpHandler = isHttps && sslValidationDisabled ? new HttpClientHandler { ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true } : null
                     }
                 }).Result,
-                "rest" => HttpDESSCDFactory.CreateSSCDAsync(new ClientOptions
+                "rest" => HttpITSSCDFactory.CreateSSCDAsync(new ClientOptions
                 {
                     Url = new Uri(configuration.Url.Replace("rest://", isHttps ? "https://" : "http://")),
                     RetryPolicyOptions = retryPolicyoptions,
                 }).Result,
-                "http" or "https" or "net.tcp" => SoapDESSCDFactory.CreateSSCDAsync(new ClientOptions
+                "http" or "https" or "net.tcp" => SoapITSSCDFactory.CreateSSCDAsync(new ClientOptions
                 {
                     Url = new Uri(configuration.Url),
                     RetryPolicyOptions = retryPolicyoptions
