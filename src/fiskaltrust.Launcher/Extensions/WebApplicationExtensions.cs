@@ -60,11 +60,11 @@ namespace fiskaltrust.Launcher.Extensions
 
         public static WebApplication AddScuItEndpoints(this WebApplication app, IITSSCD sscd)
         {
-            app.MapMultiplePrefixed(_prefixesV1, "GetDeviceInfo", EndpointRouteBuilderExtensions.MapPost, async () => await sscd.GetDeviceInfoAsync());
+            app.MapMultiplePrefixed(_prefixesV1, "GetDeviceInfo", EndpointRouteBuilderExtensions.MapGet, async () => await sscd.GetDeviceInfoAsync());
             app.MapMultiplePrefixed(_prefixesV1, "Echo", EndpointRouteBuilderExtensions.MapPost, async (ScuItEchoRequest req) => await sscd.EchoAsync(req));
             app.MapMultiplePrefixed(_prefixesV1, "FiscalReceiptInvoice", EndpointRouteBuilderExtensions.MapPost, async (FiscalReceiptInvoice req) => await sscd.FiscalReceiptInvoiceAsync(req));
-            app.MapMultiplePrefixed(_prefixesV1, "FiscalReceiptRefund", EndpointRouteBuilderExtensions.MapGet, async (FiscalReceiptRefund req) => await sscd.FiscalReceiptRefundAsync(req));
-            app.MapMultiplePrefixed(_prefixesV1, "ExecuteDailyClosing", EndpointRouteBuilderExtensions.MapGet, async (DailyClosingRequest req) => await sscd.ExecuteDailyClosingAsync(req));
+            app.MapMultiplePrefixed(_prefixesV1, "FiscalReceiptRefund", EndpointRouteBuilderExtensions.MapPost, async (FiscalReceiptRefund req) => await sscd.FiscalReceiptRefundAsync(req));
+            app.MapMultiplePrefixed(_prefixesV1, "ExecuteDailyClosing", EndpointRouteBuilderExtensions.MapPost, async (DailyClosingRequest req) => await sscd.ExecuteDailyClosingAsync(req));
 
             return app;
         }
