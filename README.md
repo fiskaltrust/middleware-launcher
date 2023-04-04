@@ -126,9 +126,9 @@ When using VS Code, please ensure that the following command line parameters are
 
 ## FAQ
 
-**Question:** Are additional components required to be installed to be able to run the Launcher 2.0?
+**Q:** Are additional components required to be installed to be able to run the Launcher 2.0?
 
-**Answer:** The Launcher 2.0 does not require any additionnal components to be installed. 
+**A:** The Launcher 2.0 does not require any additionnal components to be installed. 
 
 **Q:** Which market can test the launcher 2.0?
 
