@@ -47,7 +47,7 @@ namespace fiskaltrust.Launcher.Services
             }
         }
 
-        public async Task<WebApplication> HostService<T>(Uri uri, HostingType hostingType, T instance, Action<WebApplication, object>? addEndpoints) where T : class
+        public async Task<WebApplication> HostService<T>(Uri uri, HostingType hostingType, T instance, Action<WebApplication>? addEndpoints) where T : class
         {
             var builder = WebApplication.CreateBuilder();
 
@@ -100,7 +100,7 @@ namespace fiskaltrust.Launcher.Services
             return app;
         }
 
-        private WebApplication CreateRestHost<T>(WebApplicationBuilder builder, Uri uri, T instance, Action<WebApplication, object> addEndpoints)
+        private WebApplication CreateRestHost<T>(WebApplicationBuilder builder, Uri uri, T instance, Action<WebApplication> addEndpoints)
         {
             builder.Services.Configure<JsonOptions>(options =>
             {
@@ -118,7 +118,7 @@ namespace fiskaltrust.Launcher.Services
             app.UsePathBase(uri.AbsolutePath);
 
             app.UseRouting();
-            addEndpoints(app, instance!);
+            addEndpoints(app);
 
             return app;
         }
