@@ -40,10 +40,10 @@ namespace fiskaltrust.Launcher.ProcessHost
                 "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize()))}\"",
             });
 
-            // if (Debugger.IsAttached)
-            // {
-            //     _process.StartInfo.Arguments += " --debugging";
-            // }
+            if (Debugger.IsAttached)
+            {
+                _process.StartInfo.Arguments += " --debugging";
+            }
             _process.StartInfo.RedirectStandardInput = true;
             _process.StartInfo.RedirectStandardError = true;
             _process.StartInfo.RedirectStandardOutput = true;

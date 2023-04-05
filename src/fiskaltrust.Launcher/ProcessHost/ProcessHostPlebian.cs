@@ -103,11 +103,11 @@ namespace fiskaltrust.Launcher.ProcessHost
         {
             var hostingFailedCompletely = uris.Length > 0;
 
-            (object instance, Action<WebApplication> addEndpoints) = _plebianConfiguration.PackageType switch
+            (object instance, Action<WebApplication> addEndpoints, Type instanceInterface) = _plebianConfiguration.PackageType switch
             {
                 PackageType.Queue => GetQueue(_services),
                 PackageType.SCU => GetScu(_services),
-                PackageType.Helper => (_services.GetRequiredService<IHelper>(), (WebApplication _) => { }),
+                PackageType.Helper => (_services.GetRequiredService<IHelper>(), (WebApplication _) => { }, typeof(IHelper)),
                 _ => throw new NotImplementedException()
             };
 
@@ -128,7 +128,14 @@ namespace fiskaltrust.Launcher.ProcessHost
                     switch (_plebianConfiguration.PackageType)
                     {
                         case PackageType.SCU:
-                            await _hosting.HostService(url, hostingType, (IDESSCD)instance, addEndpoints);
+                            if (instanceInterface == typeof(IDESSCD))
+                            {
+                                await _hosting.HostService(url, hostingType, (IDESSCD)instance, addEndpoints);
+                            }
+                            else if (instanceInterface == typeof(IITSSCD))
+                            {
+                                await _hosting.HostService(url, hostingType, (IITSSCD)instance, addEndpoints);
+                            }
                             break;
                         case PackageType.Queue:
                             await _hosting.HostService(url, hostingType, (IPOS)instance, addEndpoints);
@@ -156,26 +163,26 @@ namespace fiskaltrust.Launcher.ProcessHost
             }
         }
 
-        private static (object, Action<WebApplication>) GetQueue(IServiceProvider services)
+        private static (object, Action<WebApplication>, Type) GetQueue(IServiceProvider services)
         {
             var queue = services.GetRequiredService<IPOS>();
 
-            return (queue, (WebApplication app) => app.AddQueueEndpoints(queue));
+            return (queue, (WebApplication app) => app.AddQueueEndpoints(queue), typeof(IPOS));
         }
 
-        private static (object, Action<WebApplication>) GetScu(IServiceProvider services)
+        private static (object, Action<WebApplication>, Type) GetScu(IServiceProvider services)
         {
             var scuDe = services.GetService<IDESSCD>();
 
             if (scuDe is not null)
             {
-                return (scuDe, (WebApplication app) => app.AddScuDeEndpoints(scuDe));
+                return (scuDe, (WebApplication app) => app.AddScuDeEndpoints(scuDe), typeof(IDESSCD));
             }
 
             var scuIt = services.GetService<IITSSCD>();
             if (scuIt is not null)
             {
-                return (scuIt, (WebApplication app) => app.AddScuItEndpoints(scuIt));
+                return (scuIt, (WebApplication app) => app.AddScuItEndpoints(scuIt), typeof(IITSSCD));
             }
 
             throw new Exception("Could not resolve SCU with supported country. (Curently supported are DE and IT)");
