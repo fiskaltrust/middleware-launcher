@@ -42,7 +42,8 @@ async static Task<int> RootCommandHandler(int processId, string from, string to,
     var launcherConfiguration = LauncherConfiguration.Deserialize(Encoding.UTF8.GetString(Convert.FromBase64String(launcherConfigurationBase64)));
 
     Log.Logger = new LoggerConfiguration()
-        .AddLoggingConfiguration(launcherConfiguration, new[] { "fiskaltrust.LauncherUpdater", launcherConfiguration.CashboxId!.Value.ToString() })
+        .AddLoggingConfiguration(launcherConfiguration)
+        .AddFileLoggingConfiguration(launcherConfiguration, new[] { "fiskaltrust.LauncherUpdater", launcherConfiguration.CashboxId?.ToString() })
         .Enrich.FromLogContext()
         .CreateLogger();
 

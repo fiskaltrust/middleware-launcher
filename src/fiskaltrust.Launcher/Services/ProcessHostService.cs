@@ -13,34 +13,27 @@ namespace fiskaltrust.Launcher.Services
     {
         private readonly Dictionary<Guid, IProcessHostMonarch> _hosts;
         private readonly Serilog.ILogger _logger;
-        private readonly Mutex _logMutex;
+        private readonly object _logLock = new();
 
         public ProcessHostService(Dictionary<Guid, IProcessHostMonarch> hosts, Serilog.ILogger logger)
         {
             _hosts = hosts;
             _logger = logger;
-
-            _logMutex = new Mutex();
         }
 
         [OperationContract]
-        public Task Started(string id)
+        public void Started(string id)
         {
             _hosts[Guid.Parse(id)].Started();
-            return Task.CompletedTask;
         }
 
         [OperationContract]
-        public Task Ping()
-        {
-            return Task.CompletedTask;
-        }
+        public void Ping() { }
 
         [OperationContract]
-        public Task Log(LogEventDto payload)
+        public void Log(LogEventDto payload)
         {
-            _logMutex.WaitOne();
-            try
+            lock (_logLock)
             {
                 var reader = new LogEventReader(new StringReader(payload.LogEvent));
 
@@ -58,11 +51,6 @@ namespace fiskaltrust.Launcher.Services
 
                     foreach (var p in properties) { p.Dispose(); }
                 }
-                return Task.CompletedTask;
-            }
-            finally
-            {
-                _logMutex.ReleaseMutex();
             }
         }
     }

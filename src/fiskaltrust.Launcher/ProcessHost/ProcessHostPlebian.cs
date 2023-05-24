@@ -52,7 +52,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 return;
             }
 
-            await (_processHostService?.Started(_packageConfiguration.Id.ToString()) ?? Task.CompletedTask);
+            _processHostService?.Started(_packageConfiguration.Id.ToString());
 
             var promise = new TaskCompletionSource();
             cancellationToken.Register(() =>
@@ -86,7 +86,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                         await Task.Delay(_launcherConfiguration.ProcessHostPingPeriodSec!.Value * 1000);
                         try
                         {
-                            await (_processHostService?.Ping() ?? Task.CompletedTask);
+                            _processHostService?.Ping();
                         }
                         catch
                         {

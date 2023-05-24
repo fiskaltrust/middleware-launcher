@@ -7,7 +7,9 @@ namespace fiskaltrust.Launcher.Common.Extensions
 {
     public static class LoggerConfigurationExtensions
     {
-        public static LoggerConfiguration AddLoggingConfiguration(this LoggerConfiguration loggerConfiguration, LauncherConfiguration? launcherConfiguration = null, string[]? suffix = null, bool aspLogging = false)
+        private static string OutputTemplate(string timestamp) => $"[{{{timestamp}}} {{Level:u3}}{{EnrichedPackage}}{{EnrichedContext}}] {{Message:lj}}{{NewLine}}{{Exception}}";
+
+        public static LoggerConfiguration AddLoggingConfiguration(this LoggerConfiguration loggerConfiguration, LauncherConfiguration? launcherConfiguration = null, bool aspLogging = false)
         {
             if (launcherConfiguration is not null)
             {
@@ -15,7 +17,7 @@ namespace fiskaltrust.Launcher.Common.Extensions
             }
 
             loggerConfiguration = loggerConfiguration.WriteTo.Console(
-                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}{EnrichedPackage}{EnrichedId}{EnrichedContext}] {Message:lj}{NewLine}{Exception}",
+                outputTemplate: OutputTemplate("Timestamp:HH:mm:ss"),
                 standardErrorFromLevel: LogEventLevel.Error
             )
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -24,18 +26,19 @@ namespace fiskaltrust.Launcher.Common.Extensions
             .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
             .MinimumLevel.Override("ProtoBuf", LogEventLevel.Warning);
 
-            if (launcherConfiguration is not null)
-            {
+            return loggerConfiguration;
+        }
 
-                loggerConfiguration = loggerConfiguration.WriteTo.Logger(configuration =>
-                    configuration
-                        .Filter.ByExcluding(Matching.WithProperty("EnrichedId"))
-                        .WriteTo.File(
-                            Path.Join(launcherConfiguration.LogFolder, $"log{(suffix is null ? null : "_" + string.Join("_", suffix))}_.txt"),
-                            rollingInterval: RollingInterval.Day,
-                            shared: true,
-                            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}{EnrichedContext}] {Message:lj}{NewLine}{Exception}"));
-            }
+        public static LoggerConfiguration AddFileLoggingConfiguration(this LoggerConfiguration loggerConfiguration, LauncherConfiguration launcherConfiguration, string?[] logFileSuffix)
+        {
+            loggerConfiguration = loggerConfiguration.WriteTo.Logger(configuration =>
+                configuration
+                    .WriteTo.File(
+                        Path.Join(launcherConfiguration.LogFolder, $"log_{string.Join("_", logFileSuffix.Where(s => s is not null))}_.txt"),
+                        rollingInterval: RollingInterval.Day,
+                        shared: true,
+                        outputTemplate: OutputTemplate("Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz")
+                        ));
 
             return loggerConfiguration;
         }

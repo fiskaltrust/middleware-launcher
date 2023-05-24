@@ -78,9 +78,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.Logging
                 Sandbox = true
             };
 
-            using (var logger = new LoggerConfiguration().AddLoggingConfiguration(launcherConfiguration, new[] { "test" }).CreateLogger())
+            using (var logger = new LoggerConfiguration().AddLoggingConfiguration(launcherConfiguration).AddFileLoggingConfiguration(launcherConfiguration, new[] { "test" }).CreateLogger())
             {
-
                 logger.Error("testError");
                 logger.Information("testInformation");
 
@@ -96,9 +95,9 @@ namespace fiskaltrust.Launcher.IntegrationTest.Logging
             .Should()
             .HaveCount(3)
             .And
-            .Contain(l => new Regex("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3} \\+[0-9]{2}:[0-9]{2} \\[ERR\\] testError\r?").IsMatch(l))
+            .Contain(l => new Regex("\\[[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3} \\+[0-9]{2}:[0-9]{2} ERR\\] testError\r?").IsMatch(l))
             .And
-            .Contain(l => new Regex("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3} \\+[0-9]{2}:[0-9]{2} \\[INF\\] testInformation\r?").IsMatch(l));
+            .Contain(l => new Regex("\\[[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3} \\+[0-9]{2}:[0-9]{2} INF\\] testInformation\r?").IsMatch(l));
         }
     }
 }
