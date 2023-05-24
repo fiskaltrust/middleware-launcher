@@ -83,7 +83,7 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             Log.Logger = new LoggerConfiguration()
-                .AddLoggingConfiguration(launcherConfiguration, new[] { packageConfiguration.Package, packageConfiguration.Id.ToString() })
+                .AddLoggingConfiguration(launcherConfiguration, launcherConfiguration.CashboxId.HasValue ? new[] { "fiskaltrust.Launcher", launcherConfiguration.CashboxId.Value.ToString() } : null)
                 .WriteTo.GrpcSink(packageConfiguration, processHostService)
                 .CreateLogger();
 
