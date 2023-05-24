@@ -40,7 +40,7 @@ namespace fiskaltrust.Launcher.Logging
 
                 try
                 {
-                    Task.Run(async () => await _processHostService!.Log(new LogEventDto
+                    _processHostService!.Log(new LogEventDto
                     {
                         LogEvent = writer.ToString(),
                         Enrichment = new()
@@ -48,7 +48,7 @@ namespace fiskaltrust.Launcher.Logging
                             { "EnrichedId", _packageConfiguration.Id.ToString() },
                             { "EnrichedPackage", _packageConfiguration.Package }
                         }
-                    })).GetAwaiter().GetResult();
+                    });
                 }
                 catch { }
             }

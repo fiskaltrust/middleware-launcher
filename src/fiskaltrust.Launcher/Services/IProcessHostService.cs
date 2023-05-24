@@ -19,12 +19,12 @@ namespace fiskaltrust.Launcher.Services.Interfaces
     public interface IProcessHostService
     {
         [OperationContract]
-        Task Started(string id);
+        void Started(string id);
 
         [OperationContract]
-        Task Ping();
+        void Ping();
 
         [OperationContract]
-        Task Log(LogEventDto payload);
+        void Log(LogEventDto payload);
     }
 }

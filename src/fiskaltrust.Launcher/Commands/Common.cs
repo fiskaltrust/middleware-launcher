@@ -161,7 +161,8 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             Log.Logger = new LoggerConfiguration()
-                .AddLoggingConfiguration(_launcherConfiguration, _launcherConfiguration.CashboxId.HasValue ? new[] { "fiskaltrust.Launcher", _launcherConfiguration.CashboxId.Value.ToString() } : null)
+                .AddLoggingConfiguration(_launcherConfiguration)
+                .AddFileLoggingConfiguration(_launcherConfiguration, new[] { "fiskaltrust.Launcher", _launcherConfiguration.CashboxId?.ToString() })
                 .Enrich.FromLogContext()
                 .CreateLogger();
 

@@ -53,7 +53,7 @@ namespace fiskaltrust.Launcher.Services
 
             builder.Host.UseSerilog((_, __, loggerConfiguration) =>
                 loggerConfiguration
-                    .AddLoggingConfiguration(_launcherConfiguration, _launcherConfiguration.CashboxId.HasValue ? new[] { "fiskaltrust.Launcher", _launcherConfiguration.CashboxId.Value.ToString() } : null, true)
+                    .AddLoggingConfiguration(_launcherConfiguration, aspLogging: true)
                     .WriteTo.GrpcSink(_packageConfiguration, _processHostService));
 
             if (_launcherConfiguration.LogLevel == LogLevel.Debug)
