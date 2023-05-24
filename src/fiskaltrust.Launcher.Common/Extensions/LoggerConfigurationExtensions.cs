@@ -7,7 +7,8 @@ namespace fiskaltrust.Launcher.Common.Extensions
 {
     public static class LoggerConfigurationExtensions
     {
-        const string OUTPUT_TEMPLATE = "[{Timestamp:HH:mm:ss} {Level:u3}{EnrichedPackage}{EnrichedContext}] {Message:lj}{NewLine}{Exception}";
+        private static string OutputTemplate(string timestamp) => $"[{{{timestamp}}} {{Level:u3}}{{EnrichedPackage}}{{EnrichedContext}}] {{Message:lj}}{{NewLine}}{{Exception}}";
+
         public static LoggerConfiguration AddLoggingConfiguration(this LoggerConfiguration loggerConfiguration, LauncherConfiguration? launcherConfiguration = null, bool aspLogging = false)
         {
             if (launcherConfiguration is not null)
@@ -16,7 +17,7 @@ namespace fiskaltrust.Launcher.Common.Extensions
             }
 
             loggerConfiguration = loggerConfiguration.WriteTo.Console(
-                outputTemplate: OUTPUT_TEMPLATE,
+                outputTemplate: OutputTemplate("Timestamp:HH:mm:ss"),
                 standardErrorFromLevel: LogEventLevel.Error
             )
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -36,7 +37,7 @@ namespace fiskaltrust.Launcher.Common.Extensions
                         Path.Join(launcherConfiguration.LogFolder, $"log_{string.Join("_", logFileSuffix.Where(s => s is not null))}_.txt"),
                         rollingInterval: RollingInterval.Day,
                         shared: true,
-                        outputTemplate: OUTPUT_TEMPLATE
+                        outputTemplate: OutputTemplate("Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz")
                         ));
 
             return loggerConfiguration;
