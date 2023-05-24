@@ -143,7 +143,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 Check("Setup monarch ProcessHostService", () =>
                 {
-                    monarchBuilder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrelForGrpc(options, new Uri($"http://[::1]:{launcherConfiguration.LauncherPort}")));
+                    monarchBuilder.WebHost.ConfigureKestrelForGrpc(new Uri($"http://[::1]:{launcherConfiguration.LauncherPort}"));
 
                     monarchBuilder.Services.AddCodeFirstGrpc();
                 }, throws: true);
