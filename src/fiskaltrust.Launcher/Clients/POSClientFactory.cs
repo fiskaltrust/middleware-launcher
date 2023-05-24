@@ -31,7 +31,7 @@ namespace fiskaltrust.Launcher.Clients
             };
 
             var isHttps = !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64);
-            var sslValidationDisabled = _launcherConfiguration != null && _launcherConfiguration.SslValidation.HasValue && _launcherConfiguration.SslValidation.Value;
+            var sslValidationDisabled = _launcherConfiguration != null && _launcherConfiguration.SslValidation.HasValue && !_launcherConfiguration.SslValidation.Value;
 
             return configuration.UrlType switch
             {
@@ -49,6 +49,7 @@ namespace fiskaltrust.Launcher.Clients
                 {
                     Url = new Uri(configuration.Url.Replace("rest://", isHttps ? "https://" : "http://")),
                     RetryPolicyOptions = retryPolicyoptions,
+                    DisableSslValidation = sslValidationDisabled
                 }).Result,
                 "http" or "https" or "net.tcp" => SoapPosFactory.CreatePosAsync(new ClientOptions
                 {
