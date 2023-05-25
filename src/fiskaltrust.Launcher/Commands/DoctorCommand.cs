@@ -200,10 +200,10 @@ namespace fiskaltrust.Launcher.Commands
                             services.AddSingleton<IClientFactory<IPOS>, POSClientFactory>();
 
                             var bootstrapper = new DoctorMiddlewareBootstrapper
-                            {
-                                Id = packageConfiguration.Id,
-                                Configuration = packageConfiguration.Configuration.ToDictionary(c => c.Key, c => (object?)c.Value.ToString())!
-                            };
+                            (
+                                packageConfiguration.Id,
+                                packageConfiguration.Configuration.ToDictionary(c => c.Key, c => (object?)c.Value.ToString())!
+                            );
 
                             bootstrapper.ConfigureServices(services);
 
@@ -365,8 +365,14 @@ namespace fiskaltrust.Launcher.Commands
 
     public class DoctorMiddlewareBootstrapper : IMiddlewareBootstrapper
     {
-        public required Guid Id { get; set; }
-        public required Dictionary<string, object> Configuration { get; set; }
+        public Guid Id { get; set; }
+        public Dictionary<string, object> Configuration { get; set; }
+
+        public DoctorMiddlewareBootstrapper(Guid id, Dictionary<string, object> configuration)
+        {
+            Id = id;
+            Configuration = configuration;
+        }
 
         public void ConfigureServices(IServiceCollection serviceCollection)
         {

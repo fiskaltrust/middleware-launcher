@@ -15,18 +15,18 @@ namespace fiskaltrust.Launcher.Extensions
         private const Int64 KEYCTL = 250;
 
         // https://man7.org/linux/man-pages/man3/keyctl_read.3.html
-        [LibraryImport("libc", SetLastError = true, EntryPoint = "syscall")]
-        private static partial Int64 keyctl_read(Int64 syscall, Int32 cmd, Int32 key, byte* buffer, UIntPtr buflen);
+        [DllImport("libc", SetLastError = true, EntryPoint = "syscall")]
+        private static extern Int64 keyctl_read(Int64 syscall, Int32 cmd, Int32 key, byte* buffer, UIntPtr buflen);
 
         private const Int32 KEYCTL_READ = 11;
-        private const int MAX_CAPACITY = 32767;
+        private const UInt32 MAX_CAPACITY = 32767;
 
         public static IEnumerable<byte> Read(Int32 key)
         {
             var buffer = new byte[MAX_CAPACITY];
             fixed (byte* bufferPtr = buffer)
             {
-                var len = KeyUtils.keyctl_read(KEYCTL, KEYCTL_READ, key, bufferPtr, MAX_CAPACITY);
+                var len = KeyUtils.keyctl_read(KEYCTL, KEYCTL_READ, key, bufferPtr, new UIntPtr(MAX_CAPACITY));
 
                 if (len <= 0)
                 {
@@ -38,8 +38,8 @@ namespace fiskaltrust.Launcher.Extensions
         }
 
         // https://man7.org/linux/man-pages/man3/keyctl_get_keyring_ID.3.html
-        [LibraryImport("libc", SetLastError = true, EntryPoint = "syscall")]
-        private static partial Int32 keyctl_get_keyring_ID(Int64 syscall, Int32 cmd, Int32 id, [MarshalAs(UnmanagedType.Bool)] bool create);
+        [DllImport("libc", SetLastError = true, EntryPoint = "syscall")]
+        private static extern Int32 keyctl_get_keyring_ID(Int64 syscall, Int32 cmd, Int32 id, [MarshalAs(UnmanagedType.Bool)] bool create);
 
         private const Int32 KEYCTL_GET_KEYRING_ID = 0;
 
@@ -56,8 +56,8 @@ namespace fiskaltrust.Launcher.Extensions
         }
 
         // https://man7.org/linux/man-pages/man2/add_key.2.html
-        [LibraryImport("libc", SetLastError = true, EntryPoint = "syscall", StringMarshalling = StringMarshalling.Utf8)]
-        private static partial Int32 add_key(Int64 syscall, string type, string description, byte* payload, UIntPtr plen, Int32 keyring);
+        [DllImport("libc", SetLastError = true, EntryPoint = "syscall")]
+        private static extern Int32 add_key(Int64 syscall, string type, string description, byte* payload, UIntPtr plen, Int32 keyring);
 
         private const Int64 ADD_KEY = 248;
 
