@@ -223,6 +223,11 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Error(e, "Could not read launcher configuration {file}.", launcherConfigurationFile);
             }
 
+            if (launcherConfiguration is null)
+            {
+                return null;
+            }
+
             if (AccessToken is null && launcherConfiguration?.AccessToken is null)
             {
                 Log.Warning("To decrypt the encrypted values from the configuration file specify the --access-token parameter or set it in the provided launcher configuration file.");
