@@ -56,7 +56,7 @@ namespace fiskaltrust.Launcher.Extensions
         }
 
         // https://man7.org/linux/man-pages/man2/add_key.2.html
-        [DllImport("libc", SetLastError = true, EntryPoint = "syscall")]
+        [DllImport("libc", SetLastError = true, EntryPoint = "syscall", CharSet = CharSet.Ansi)]
         private static extern Int32 add_key(Int64 syscall, string type, string description, byte* payload, UIntPtr plen, Int32 keyring);
 
         private const Int64 ADD_KEY = 248;
@@ -108,7 +108,6 @@ namespace fiskaltrust.Launcher.Extensions
             var buffer = KeyUtils.Read(Int32.Parse(encryptedElement.Value));
 
             return XElement.Parse(Encoding.Unicode.GetString(buffer.ToArray()));
-
         }
     }
 
