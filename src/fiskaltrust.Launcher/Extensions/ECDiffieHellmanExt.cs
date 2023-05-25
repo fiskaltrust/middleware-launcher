@@ -6,12 +6,21 @@ namespace fiskaltrust.Launcher.Extensions
 {
     internal record ECDiffieHellmanDto
     {
-        public required byte[] D { get; init; }
-        public required byte[] QX { get; init; }
-        public required byte[] QY { get; init; }
-        public required byte[] PrivateKeyEC { get; init; }
-        public required byte[] PrivateKeyPkcs { get; init; }
-        public required byte[] PublicKey { get; init; }
+        public ECDiffieHellmanDto(byte[] d, byte[] qx, byte[] qy, byte[] privateKeyEC, byte[] privateKeyPkcs, byte[] publicKey)
+        {
+            D = d;
+            QX = qx; QY = qy;
+            PrivateKeyEC = privateKeyEC;
+            PublicKey = publicKey;
+            PrivateKeyPkcs = privateKeyPkcs;
+        }
+
+        public byte[] D { get; init; }
+        public byte[] QX { get; init; }
+        public byte[] QY { get; init; }
+        public byte[] PrivateKeyEC { get; init; }
+        public byte[] PrivateKeyPkcs { get; init; }
+        public byte[] PublicKey { get; init; }
     }
 
     static class ECDiffieHellmanExt
@@ -21,14 +30,14 @@ namespace fiskaltrust.Launcher.Extensions
             var ecParameters = curve.ExportParameters(true);
 
             return JsonSerializer.Serialize(new ECDiffieHellmanDto
-            {
-                D = ecParameters.D!,
-                QX = ecParameters.Q.X!,
-                QY = ecParameters.Q.Y!,
-                PrivateKeyEC = curve.ExportECPrivateKey(),
-                PrivateKeyPkcs = curve.ExportPkcs8PrivateKey(),
-                PublicKey = curve.ExportSubjectPublicKeyInfo()
-            });
+            (
+                ecParameters.D!,
+                ecParameters.Q.X!,
+                ecParameters.Q.Y!,
+                curve.ExportECPrivateKey(),
+                curve.ExportPkcs8PrivateKey(),
+                curve.ExportSubjectPublicKeyInfo()
+            ));
         }
 
         public static ECDiffieHellman Deserialize(string json)

@@ -108,7 +108,11 @@ namespace fiskaltrust.Launcher.Services
                 options.SerializerOptions.Converters.Add(new NumberToStringConverter());
             });
 
-            builder.WebHost.ConfigureKestrel(new Uri(GetRestUri(uri)), listenOptions => ConfigureTls(listenOptions), allowSynchronousIO: true);
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                ConfigureKestrel(options, new Uri(GetRestUri(uri)), listenOptions => ConfigureTls(listenOptions));
+                options.AllowSynchronousIO = true;
+            });
 
             var app = builder.Build();
             app.UsePathBase(uri.AbsolutePath);
@@ -127,7 +131,11 @@ namespace fiskaltrust.Launcher.Services
 
         private WebApplication CreateSoapHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
-            builder.WebHost.ConfigureKestrel(uri, ConfigureTls, allowSynchronousIO: true);
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                ConfigureKestrel(options, uri, listenOptions => ConfigureTls(listenOptions));
+                options.AllowSynchronousIO = true;
+            });
 
             // Add WSDL support
             builder.Services.AddServiceModelServices().AddServiceModelMetadata();
@@ -201,7 +209,7 @@ namespace fiskaltrust.Launcher.Services
 
         private WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
-            builder.WebHost.ConfigureKestrelForGrpc(uri, ConfigureTls);
+            builder.WebHost.ConfigureKestrel(options => ConfigureKestrelForGrpc(options, uri, listenOptions => ConfigureTls(listenOptions)));
             builder.Services.AddCodeFirstGrpc(options => options.EnableDetailedErrors = true);
             builder.Services.AddSingleton(instance);
 
@@ -243,41 +251,26 @@ namespace fiskaltrust.Launcher.Services
             }
         }
 
-    }
-
-    public static class WebHostExtensions
-    {
-        public static IWebHostBuilder ConfigureKestrel(this IWebHostBuilder hostBuilder, Uri uri, Action<ListenOptions> configureListeners, bool? allowSynchronousIO = null)
+        private static void ConfigureKestrel(KestrelServerOptions options, Uri uri, Action<ListenOptions> configureListeners)
         {
-            hostBuilder.ConfigureKestrel(options =>
+            if (uri.IsLoopback && uri.Port != 0)
             {
-                if (uri.IsLoopback && uri.Port != 0)
-                {
-                    options.ListenLocalhost(uri.Port, configureListeners);
-                }
-                else if (IPAddress.TryParse(uri.Host, out var ip))
-                {
-                    options.Listen(new IPEndPoint(ip, uri.Port), configureListeners);
-                }
-                else
-                {
-                    options.ListenAnyIP(uri.Port, configureListeners);
-                }
-
-                if (allowSynchronousIO is not null) { options.AllowSynchronousIO = allowSynchronousIO.Value; }
-            });
-            // hostBuilder.UseUrls(uri.ToString());
-            return hostBuilder;
+                options.ListenLocalhost(uri.Port, configureListeners);
+            }
+            else if (IPAddress.TryParse(uri.Host, out var ip))
+            {
+                options.Listen(new IPEndPoint(ip, uri.Port), configureListeners);
+            }
+            else
+            {
+                options.ListenAnyIP(uri.Port, configureListeners);
+            }
         }
-        public static IWebHostBuilder ConfigureKestrelForGrpc(this IWebHostBuilder hostBuilder, Uri uri, Action<ListenOptions>? configureListeners = null, bool? allowSynchronousIO = null) =>
-            hostBuilder.ConfigureKestrel(
-                uri,
-                listenOptions =>
-                {
-                    listenOptions.Protocols = HttpProtocols.Http2;
-                    configureListeners?.Invoke(listenOptions);
-                },
-                allowSynchronousIO
-            );
+
+        public static void ConfigureKestrelForGrpc(KestrelServerOptions options, Uri uri, Action<ListenOptions>? configureListeners = null) => ConfigureKestrel(options, uri, listenOptions =>
+        {
+            listenOptions.Protocols = HttpProtocols.Http2;
+            configureListeners?.Invoke(listenOptions);
+        });
     }
 }

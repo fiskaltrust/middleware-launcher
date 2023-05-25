@@ -82,13 +82,13 @@ async static Task<int> RootCommandHandler(int processId, string from, string to,
             log();
         };
 
-        var stdOut = await process.StandardOutput.ReadToEndAsync(CancellationToken.None);
+        var stdOut = await process.StandardOutput.ReadToEndAsync();
         if (!string.IsNullOrEmpty(stdOut))
         {
             withEnrichedContext(() => Log.Information("\n" + stdOut));
         }
 
-        var stdErr = await process.StandardError.ReadToEndAsync(CancellationToken.None);
+        var stdErr = await process.StandardError.ReadToEndAsync();
         if (!string.IsNullOrEmpty(stdErr))
         {
             withEnrichedContext(() => Log.Error("\n" + stdErr));
