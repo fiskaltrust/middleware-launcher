@@ -44,6 +44,14 @@ namespace fiskaltrust.Launcher.ProcessHost
             try
             {
                 await StartHosting(_packageConfiguration.Url);
+
+                if (_plebianConfiguration.PackageType == PackageType.Helper)
+                {
+                    _logger.LogDebug("Helper StartBegin() and StartEnd()");
+                    var helper = _services.GetRequiredService<IHelper>();
+                    helper.StartBegin();
+                    helper.StartEnd();
+                }
             }
             catch (Exception e)
             {
@@ -142,8 +150,6 @@ namespace fiskaltrust.Launcher.ProcessHost
                             break;
                         case PackageType.Helper:
                             await _hosting.HostService(url, hostingType, (IHelper)instance, addEndpoints);
-                            ((IHelper)instance).StartBegin();
-                            ((IHelper)instance).StartEnd();
                             break;
                         default:
                             throw new NotImplementedException();
