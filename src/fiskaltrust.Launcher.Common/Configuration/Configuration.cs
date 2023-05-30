@@ -86,11 +86,11 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private bool? _sandbox;
         [JsonPropertyName("sandbox")]
-        public bool? Sandbox { get => WithDefault<bool?>(_sandbox.GetValueOrDefault(false) ? true : null, false); set => _sandbox = value; }
+        public bool? Sandbox { get => WithDefault(_sandbox, false); set => _sandbox = value; }
 
         private bool? _useOffline;
         [JsonPropertyName("useOffline")]
-        public bool? UseOffline { get => WithDefault<bool?>(_useOffline.GetValueOrDefault(false) ? true : null, false); set => _useOffline = value; }
+        public bool? UseOffline { get => WithDefault(_useOffline, false); set => _useOffline = value; }
 
         private string? _logFolder;
         [JsonPropertyName("logFolder")]
@@ -193,27 +193,27 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 {
                     Converters = {
                         new JsonStringEnumConverter()
-                    }
+                    },
                 })
             ) as LauncherConfiguration ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
             configuration.SetAlternateNames(text);
             return configuration;
         }
 
-        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false, bool ignoreNullValues = false)
-            => JsonSerializer.Serialize(
-                this,
+        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false)
+            => Raw(raw => JsonSerializer.Serialize(
+                raw,
                 typeof(LauncherConfiguration),
                 new SerializerContext(new JsonSerializerOptions
                 {
                     WriteIndented = writeIndented,
                     Encoder = useUnsafeEncoding ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default,
-                    DefaultIgnoreCondition = ignoreNullValues ? JsonIgnoreCondition.WhenWritingNull : JsonIgnoreCondition.Never,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
                     Converters = {
                         new JsonStringEnumConverter()
                     }
                 })
-            );
+            ));
 
         internal void SetAlternateNames(string text)
         {
@@ -309,6 +309,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 return dataProtector.Unprotect((string)value);
             });
         }
+
         private static string? MakeAbsolutePath(string? path)
         {
             if (path is not null)

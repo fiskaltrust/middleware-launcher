@@ -1,3 +1,4 @@
+using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Helpers;
 using Serilog;
 
@@ -15,9 +16,8 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         {
             if (OperatingSystem.IsWindows())
             {
-                using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
-                var principal = new System.Security.Principal.WindowsPrincipal(identity);
-                if (!principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator))
+
+                if (!Runtime.IsAdministrator!.Value)
                 {
                     Log.Error("Run as admin to install service {link}", ""); // TODO
                     return 1;
@@ -67,9 +67,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         {
             if (OperatingSystem.IsWindows())
             {
-                using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
-                var principal = new System.Security.Principal.WindowsPrincipal(identity);
-                if (!principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator))
+                if (!Runtime.IsAdministrator!.Value)
                 {
                     Log.Error("Run as admin to uninstall service {link}", ""); // TODO
                     return 1;
