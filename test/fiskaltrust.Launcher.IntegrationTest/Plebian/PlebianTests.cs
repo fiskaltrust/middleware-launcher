@@ -13,24 +13,52 @@ using fiskaltrust.ifPOS.v1;
 using fiskaltrust.Launcher.Clients;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.Launcher.Constants;
+using System.Net;
+using System.Diagnostics.Metrics;
 
 namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 {
+    public enum Binding
+    {
+        Localhost,
+        Loopback,
+        Ip,
+        Hostname
+    }
+
     public class PlebianTests
     {
         [SkippableTheory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public async Task PlebianScu_WithGrpcAndRestAndSoapShouldRespond(bool useHttpSysBinding)
+        [InlineData(Binding.Localhost, true)]
+        [InlineData(Binding.Localhost, false)]
+        [InlineData(Binding.Loopback, true)]
+        [InlineData(Binding.Loopback, false)]
+        [InlineData(Binding.Ip, true)]
+        [InlineData(Binding.Ip, false)]
+        [InlineData(Binding.Hostname, true)]
+        [InlineData(Binding.Hostname, false)]
+        public async Task PlebianScu_WithGrpcAndRestAndSoapShouldRespond(Binding binding, bool useHttpSysBinding)
         {
-            Skip.If(!OperatingSystem.IsWindows() && useHttpSysBinding);
+            Skip.If(!OperatingSystem.IsWindows() && useHttpSysBinding, "HttpSysBinding is only supported on windows");
+            Skip.If(OperatingSystem.IsWindows() && useHttpSysBinding && (binding is Binding.Ip or Binding.Hostname) && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
+
+            string? host = binding switch
+            {
+                Binding.Localhost => "localhost",
+                Binding.Loopback => "127.0.0.1",
+                Binding.Ip => Dns.GetHostAddresses(Dns.GetHostName()).Where(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && i != IPAddress.Parse("127.0.0.1")).Select(i => i.ToString()).FirstOrDefault(),
+                Binding.Hostname => Dns.GetHostName(),
+                _ => throw new NotImplementedException(),
+            };
+
+            Skip.If(host is null, "Could not get host");
 
             var packageConfiguration = new PackageConfiguration
             {
                 Configuration = new(),
                 Id = Guid.NewGuid(),
                 Package = "test",
-                Url = new[] { "grpc://localhost:1500", "rest://localhost:1501", "http://localhost:1502" },
+                Url = new[] { $"grpc://{host}:1500", $"rest://{host}:1501", $"http://{host}:1502" },
                 Version = "1.0.0"
             };
 
@@ -70,18 +98,36 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 
 
         [SkippableTheory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public async Task PlebianQueue_WithGrpcAndRestAndSoapShouldRespond(bool useHttpSysBinding)
+        [InlineData(Binding.Localhost, true)]
+        [InlineData(Binding.Localhost, false)]
+        [InlineData(Binding.Loopback, true)]
+        [InlineData(Binding.Loopback, false)]
+        [InlineData(Binding.Ip, true)]
+        [InlineData(Binding.Ip, false)]
+        [InlineData(Binding.Hostname, true)]
+        [InlineData(Binding.Hostname, false)]
+        public async Task PlebianQueue_WithGrpcAndRestAndSoapShouldRespond(Binding binding, bool useHttpSysBinding)
         {
-            Skip.If(!OperatingSystem.IsWindows() && useHttpSysBinding);
+            Skip.If(!OperatingSystem.IsWindows() && useHttpSysBinding, "HttpSysBinding is only supported on windows");
+            Skip.If(OperatingSystem.IsWindows() && useHttpSysBinding && (binding is Binding.Ip or Binding.Hostname) && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
+
+            string? host = binding switch
+            {
+                Binding.Localhost => "localhost",
+                Binding.Loopback => "127.0.0.1",
+                Binding.Ip => Dns.GetHostAddresses(Dns.GetHostName()).Where(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && i != IPAddress.Parse("127.0.0.1")).Select(i => i.ToString()).FirstOrDefault(),
+                Binding.Hostname => Dns.GetHostName(),
+                _ => throw new NotImplementedException(),
+            };
+
+            Skip.If(host is null, "Could not get host");
 
             var packageConfiguration = new PackageConfiguration
             {
                 Configuration = new(),
                 Id = Guid.NewGuid(),
                 Package = "test",
-                Url = new[] { "grpc://localhost:1505", "rest://localhost:1506", "http://localhost:1507" },
+                Url = new[] { $"grpc://{host}:1503", $"rest://{host}:1504", $"http://{host}:1505" },
                 Version = "1.0.0"
             };
 
@@ -116,6 +162,60 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 });
 
                 (await soapClientHttp.EchoAsync(new EchoRequest { Message = "test" })).Should().NotBeNull().And.Match<EchoResponse>(r => r.Message == "test");
+            });
+        }
+
+        [SkippableTheory]
+        [InlineData(Binding.Localhost)]
+        [InlineData(Binding.Loopback)]
+        [InlineData(Binding.Ip)]
+        [InlineData(Binding.Hostname)]
+        public async Task PlebianQueue_WithSamePort(Binding binding)
+        {
+            Skip.If(!OperatingSystem.IsWindows(), "HttpSysBinding is only supported on windows");
+            Skip.If(OperatingSystem.IsWindows() && (binding is Binding.Ip or Binding.Hostname) && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
+
+            string? host = binding switch
+            {
+                Binding.Localhost => "localhost",
+                Binding.Loopback => "127.0.0.1",
+                Binding.Ip => Dns.GetHostAddresses(Dns.GetHostName()).Where(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && i != IPAddress.Parse("127.0.0.1")).Select(i => i.ToString()).FirstOrDefault(),
+                Binding.Hostname => Dns.GetHostName(),
+                _ => throw new NotImplementedException(),
+            };
+
+            Skip.If(host is null, "Could not get host");
+
+            var packageConfiguration = new PackageConfiguration
+            {
+                Configuration = new(),
+                Id = Guid.NewGuid(),
+                Package = "test",
+                Url = new[] { $"rest://{host}:1506/test1", $"rest://{host}:1506/test2" },
+                Version = "1.0.0"
+            };
+
+            await RunTest<IPOS>(new DummyPos(), PackageType.Queue, packageConfiguration, true, async () =>
+            {
+                var restClient1 = new POSClientFactory(new LauncherConfiguration()).CreateClient(new ClientConfiguration
+                {
+                    Url = packageConfiguration.Url[0],
+                    UrlType = "rest",
+                    RetryCount = 1,
+                    Timeout = TimeSpan.FromSeconds(10)
+                });
+
+                (await restClient1.EchoAsync(new EchoRequest { Message = "test" })).Should().Match<EchoResponse>(r => r.Message == "test");
+
+                var restClient2 = new POSClientFactory(new LauncherConfiguration()).CreateClient(new ClientConfiguration
+                {
+                    Url = packageConfiguration.Url[1],
+                    UrlType = "rest",
+                    RetryCount = 1,
+                    Timeout = TimeSpan.FromSeconds(10)
+                });
+
+                (await restClient2.EchoAsync(new EchoRequest { Message = "test" })).Should().Match<EchoResponse>(r => r.Message == "test");
             });
         }
 

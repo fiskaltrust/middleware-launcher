@@ -17,6 +17,7 @@ using CoreWCF.Channels;
 using CoreWCF.Description;
 using System.Security.Cryptography.X509Certificates;
 using System.Runtime.Versioning;
+using Microsoft.AspNetCore.Server.HttpSys;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -227,7 +228,12 @@ namespace fiskaltrust.Launcher.Services
 
         private WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
-            builder.WebHost.ConfigureBinding(uri, listenOptions => ConfigureTls(listenOptions), isHttps: !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64), protocols: HttpProtocols.Http2, useHttpSys: _launcherConfiguration.UseHttpSysBinding!.Value);
+            if(OperatingSystem.IsWindows() && _launcherConfiguration.UseHttpSysBinding!.Value)
+            {
+                _logger.LogWarning($"{nameof(_launcherConfiguration.UseHttpSysBinding)} is not supported for grpc.");
+            }
+
+            builder.WebHost.BindKestrel(uri, listenOptions => ConfigureTls(listenOptions), false,  HttpProtocols.Http2);
             builder.Services.AddCodeFirstGrpc(options => options.EnableDetailedErrors = true);
             builder.Services.AddSingleton(instance);
 
