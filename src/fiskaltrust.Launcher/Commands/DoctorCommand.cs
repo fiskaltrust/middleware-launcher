@@ -19,6 +19,7 @@ using fiskaltrust.Launcher.AssemblyLoading;
 using fiskaltrust.Launcher.Clients;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.ifPOS.v1;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -143,7 +144,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 Check("Setup monarch ProcessHostService", () =>
                 {
-                    monarchBuilder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrelForGrpc(options, new Uri($"http://[::1]:{launcherConfiguration.LauncherPort}")));
+                    monarchBuilder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{launcherConfiguration.LauncherPort}"), protocols: HttpProtocols.Http2);
 
                     monarchBuilder.Services.AddCodeFirstGrpc();
                 }, throws: true);

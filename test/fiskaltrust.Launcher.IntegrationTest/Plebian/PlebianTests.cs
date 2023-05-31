@@ -18,9 +18,13 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 {
     public class PlebianTests
     {
-        [Fact]
-        public async Task PlebianScu_WithGrpcAndRestAndSoapShouldRespond()
+        [SkippableTheory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task PlebianScu_WithGrpcAndRestAndSoapShouldRespond(bool useHttpSysBinding)
         {
+            Skip.If(!OperatingSystem.IsWindows() && useHttpSysBinding);
+
             var packageConfiguration = new PackageConfiguration
             {
                 Configuration = new(),
@@ -30,13 +34,14 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 Version = "1.0.0"
             };
 
-            await RunTest<IDESSCD>(new DummyDeSscd(), PackageType.SCU, packageConfiguration, async () =>
+            await RunTest<IDESSCD>(new DummyDeSscd(), PackageType.SCU, packageConfiguration, useHttpSysBinding, async () =>
             {
                 var grpcClient = new DESSCDClientFactory(new LauncherConfiguration()).CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[0],
                     UrlType = "grpc",
-                    RetryCount = 1
+                    RetryCount = 1,
+                    Timeout = TimeSpan.FromSeconds(10)
                 });
 
                 (await grpcClient.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().Match<ScuDeEchoResponse>(r => r.Message == "test");
@@ -46,7 +51,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                     Url = packageConfiguration.Url[1],
                     UrlType = "rest",
                     RetryCount = 1,
-                    Timeout = TimeSpan.FromSeconds(30)
+                    Timeout = TimeSpan.FromSeconds(10)
                 });
 
                 (await restClient.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().NotBeNull().And.Match<ScuDeEchoResponse>(r => r.Message == "test");
@@ -56,7 +61,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                     Url = packageConfiguration.Url[2],
                     UrlType = "http",
                     RetryCount = 1,
-                    Timeout = TimeSpan.FromSeconds(30)
+                    Timeout = TimeSpan.FromSeconds(10)
                 });
 
                 (await soapClientHttp.EchoAsync(new ScuDeEchoRequest { Message = "test" })).Should().NotBeNull().And.Match<ScuDeEchoResponse>(r => r.Message == "test");
@@ -64,9 +69,13 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
         }
 
 
-        [Fact]
-        public async Task PlebianQueue_WithGrpcAndRestAndSoapShouldRespond()
+        [SkippableTheory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task PlebianQueue_WithGrpcAndRestAndSoapShouldRespond(bool useHttpSysBinding)
         {
+            Skip.If(!OperatingSystem.IsWindows() && useHttpSysBinding);
+
             var packageConfiguration = new PackageConfiguration
             {
                 Configuration = new(),
@@ -76,13 +85,14 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 Version = "1.0.0"
             };
 
-            await RunTest<IPOS>(new DummyPos(), PackageType.Queue, packageConfiguration, async () =>
+            await RunTest<IPOS>(new DummyPos(), PackageType.Queue, packageConfiguration, useHttpSysBinding, async () =>
             {
                 var grpcClient = new POSClientFactory(new LauncherConfiguration()).CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[0],
                     UrlType = "grpc",
-                    RetryCount = null
+                    RetryCount = 1,
+                    Timeout = TimeSpan.FromSeconds(10)
                 });
 
                 (await grpcClient.EchoAsync(new EchoRequest { Message = "test" })).Should().Match<EchoResponse>(r => r.Message == "test");
@@ -91,7 +101,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 {
                     Url = packageConfiguration.Url[1],
                     UrlType = "rest",
-                    RetryCount = null
+                    RetryCount = 1,
+                    Timeout = TimeSpan.FromSeconds(10)
                 });
 
                 (await restClient.EchoAsync(new EchoRequest { Message = "test" })).Should().Match<EchoResponse>(r => r.Message == "test");
@@ -100,20 +111,22 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 {
                     Url = packageConfiguration.Url[2],
                     UrlType = "http",
-                    RetryCount = null,
+                    RetryCount = 1,
+                    Timeout = TimeSpan.FromSeconds(10)
                 });
 
                 (await soapClientHttp.EchoAsync(new EchoRequest { Message = "test" })).Should().NotBeNull().And.Match<EchoResponse>(r => r.Message == "test");
             });
         }
 
-        private static async Task RunTest<T>(T instance, PackageType packageType, PackageConfiguration packageConfiguration, Func<Task> checks) where T : class
+        private static async Task RunTest<T>(T instance, PackageType packageType, PackageConfiguration packageConfiguration, bool useHttpSysBinding, Func<Task> checks) where T : class
         {
             var launcherConfiguration = new LauncherConfiguration
             {
                 CashboxId = Guid.NewGuid(),
                 ServiceFolder = "TestService",
-                LogLevel = LogLevel.Debug
+                LogLevel = LogLevel.Debug,
+                UseHttpSysBinding = useHttpSysBinding
             };
 
             var plebianConfiguration = new PlebianConfiguration

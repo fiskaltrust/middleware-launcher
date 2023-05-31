@@ -100,7 +100,6 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("packageCache")]
         public string? PackageCache { get => MakeAbsolutePath(WithDefault(_packageCache, () => Path.Combine(ServiceFolder!, "cache"))); set => _packageCache = value; }
 
-
         private LogLevel? _logLevel;
         [JsonPropertyName("logLevel")]
         public LogLevel? LogLevel { get => WithDefault(_logLevel, Microsoft.Extensions.Logging.LogLevel.Information); set => _logLevel = value; }
@@ -153,6 +152,10 @@ namespace fiskaltrust.Launcher.Common.Configuration
         private string? _cashboxConfiguration;
         [JsonPropertyName("cashboxConfigurationFile")]
         public string? CashboxConfigurationFile { get => MakeAbsolutePath(WithDefault(_cashboxConfiguration, () => Path.Join(ServiceFolder, "service", $"Configuration-{CashboxId}.json"))); set => _cashboxConfiguration = value; }
+
+        private bool? _useHttpSysBinding;
+        [JsonPropertyName("useHttpSysBinding")]
+        public bool? UseHttpSysBinding { get => WithDefault(_useHttpSysBinding, false); set => _useHttpSysBinding = value; }
 
         private SemanticVersioning.Range? _launcherVersion = null;
         [JsonPropertyName("launcherVersion")]
