@@ -98,7 +98,8 @@ The configuration file should contain the following config keys:
   "configurationUrl": "<configurationUrl>",                 // string (default: "https://configuration[-sandbox].fiskaltrust.cloud")
   "downloadTimeoutSec": "<downloadTimeoutSec>",             // int (default: 15)
   "processHostPingPeriodSec": "<processHostPingPeriodSec>", // int (default: 10)
-  "cashboxConfigurationFile": "<cashboxConfigurationFile>"  // string (default: "configuration-<ftCashBoxId>.json")
+  "cashboxConfigurationFile": "<cashboxConfigurationFile>", // string (default: "configuration-<ftCashBoxId>.json")
+  "useHttpSysBinding": "useHttpSysBinding",                 // bool (default: false)
 }
 ```
 All of these config keys can be overridden using the corresponding cli arguments.
@@ -130,13 +131,30 @@ When using VS Code, please ensure that the following command line parameters are
 
 **A:** The Launcher 2.0 does not require any additionnal components to be installed. 
 
+---
+
 **Q:** Which market can test the launcher 2.0?
 
 **A:** Right now only the German market can test the launcher 2.0. It is possible for everyone to register to the German sandbox and test the launcher 2.0.  Also, we are working on making the launcher available for all market.
 
-**Q:** Is it possible to update the launcher version (e.g. from 1.3 to 2.0) ?
+---
+
+**Q:** Is it possible to update the launcher version (e.g. from 1.3 to 2.0)?
 
 **A:** It is possible to switch the launcher version from 1.3 to 2.0 using the version Launcher 2.0-Public Preview 3 and later versions.
+
+---
+
+**Q:** Can I use portsharing to run multiple Queues or SCUs on the same port (e.g. `rest://localhost:1500/queue1` and `rest://localhost:1500/queue2`)
+
+**A:** Yes this is possible by setting the launcher config parameter `useHttpSysBinding` to true.
+
+HttpSysBinding has some limitations:
+* It is only supported on windows
+* It is not supported for grpc communication
+* The launcher may need to be run as an administrator
+* No Tls certificates can be set
+
 
 ## Contributing
 We welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!
