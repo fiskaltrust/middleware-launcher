@@ -14,7 +14,7 @@ using fiskaltrust.Launcher.Clients;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.Launcher.Constants;
 using System.Net;
-using System.Diagnostics.Metrics;
+using Xunit.Abstractions;
 
 namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 {
@@ -29,18 +29,18 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
     public class PlebianTests
     {
         [SkippableTheory]
-        [InlineData(Binding.Localhost, true)]
-        [InlineData(Binding.Localhost, false)]
-        [InlineData(Binding.Loopback, true)]
-        [InlineData(Binding.Loopback, false)]
-        [InlineData(Binding.Ip, true)]
-        [InlineData(Binding.Ip, false)]
-        [InlineData(Binding.Hostname, true)]
-        [InlineData(Binding.Hostname, false)]
-        public async Task PlebianScu_WithGrpcAndRestAndSoapShouldRespond(Binding binding, bool useHttpSysBinding)
+        [InlineData(Binding.Localhost, true, new[] { 0, 1, 2 })]
+        [InlineData(Binding.Localhost, false, new[] { 4, 5, 6 })]
+        [InlineData(Binding.Loopback, true, new[] { 7, 8, 9 })]
+        [InlineData(Binding.Loopback, false, new[] { 10, 11, 12 })]
+        [InlineData(Binding.Ip, true, new[] { 13, 14, 15 })]
+        [InlineData(Binding.Ip, false, new[] { 16, 17, 18 })]
+        [InlineData(Binding.Hostname, true, new[] { 19, 20, 21 })]
+        [InlineData(Binding.Hostname, false, new[] { 22, 23, 24 })]
+        public async Task PlebianScu_WithGrpcAndRestAndSoapShouldRespond(Binding binding, bool useHttpSysBinding, int[] ports)
         {
             Skip.If(!OperatingSystem.IsWindows() && useHttpSysBinding, "HttpSysBinding is only supported on windows");
-            Skip.If(OperatingSystem.IsWindows() && useHttpSysBinding && (binding is Binding.Ip or Binding.Hostname) && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
+            Skip.If(OperatingSystem.IsWindows() && useHttpSysBinding && binding is not Binding.Localhost && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
 
             string? host = binding switch
             {
@@ -58,7 +58,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 Configuration = new(),
                 Id = Guid.NewGuid(),
                 Package = "test",
-                Url = new[] { $"grpc://{host}:1500", $"rest://{host}:1501", $"http://{host}:1502" },
+                Url = new[] { $"grpc://{host}:{1500 + ports[0]}", $"rest://{host}:{1500 + ports[1]}", $"http://{host}:{1500 + ports[2]}" },
                 Version = "1.0.0"
             };
 
@@ -98,18 +98,18 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 
 
         [SkippableTheory]
-        [InlineData(Binding.Localhost, true)]
-        [InlineData(Binding.Localhost, false)]
-        [InlineData(Binding.Loopback, true)]
-        [InlineData(Binding.Loopback, false)]
-        [InlineData(Binding.Ip, true)]
-        [InlineData(Binding.Ip, false)]
-        [InlineData(Binding.Hostname, true)]
-        [InlineData(Binding.Hostname, false)]
-        public async Task PlebianQueue_WithGrpcAndRestAndSoapShouldRespond(Binding binding, bool useHttpSysBinding)
+        [InlineData(Binding.Localhost, true, new[] { 25, 26, 27 })]
+        [InlineData(Binding.Localhost, false, new[] { 28, 29, 30 })]
+        [InlineData(Binding.Loopback, true, new[] { 31, 32, 33 })]
+        [InlineData(Binding.Loopback, false, new[] { 34, 35, 36 })]
+        [InlineData(Binding.Ip, true, new[] { 37, 38, 39 })]
+        [InlineData(Binding.Ip, false, new[] { 40, 41, 42 })]
+        [InlineData(Binding.Hostname, true, new[] { 43, 44, 45 })]
+        [InlineData(Binding.Hostname, false, new[] { 46, 47, 48 })]
+        public async Task PlebianQueue_WithGrpcAndRestAndSoapShouldRespond(Binding binding, bool useHttpSysBinding, int[] ports)
         {
             Skip.If(!OperatingSystem.IsWindows() && useHttpSysBinding, "HttpSysBinding is only supported on windows");
-            Skip.If(OperatingSystem.IsWindows() && useHttpSysBinding && (binding is Binding.Ip or Binding.Hostname) && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
+            Skip.If(OperatingSystem.IsWindows() && useHttpSysBinding && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
 
             string? host = binding switch
             {
@@ -127,7 +127,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 Configuration = new(),
                 Id = Guid.NewGuid(),
                 Package = "test",
-                Url = new[] { $"grpc://{host}:1503", $"rest://{host}:1504", $"http://{host}:1505" },
+                Url = new[] { $"grpc://{host}:{1500 + ports[0]}", $"rest://{host}:{1500 + ports[1]}", $"http://{host}:{1500 + ports[2]}" },
                 Version = "1.0.0"
             };
 
@@ -166,14 +166,14 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
         }
 
         [SkippableTheory]
-        [InlineData(Binding.Localhost)]
-        [InlineData(Binding.Loopback)]
-        [InlineData(Binding.Ip)]
-        [InlineData(Binding.Hostname)]
-        public async Task PlebianQueue_WithSamePort(Binding binding)
+        [InlineData(Binding.Localhost, 49)]
+        [InlineData(Binding.Loopback, 50)]
+        [InlineData(Binding.Ip, 51)]
+        [InlineData(Binding.Hostname, 52)]
+        public async Task PlebianQueue_WithSamePort(Binding binding, int port)
         {
             Skip.If(!OperatingSystem.IsWindows(), "HttpSysBinding is only supported on windows");
-            Skip.If(OperatingSystem.IsWindows() && (binding is Binding.Ip or Binding.Hostname) && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
+            Skip.If(OperatingSystem.IsWindows() && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
 
             string? host = binding switch
             {
@@ -191,12 +191,13 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 Configuration = new(),
                 Id = Guid.NewGuid(),
                 Package = "test",
-                Url = new[] { $"rest://{host}:1506/test1", $"rest://{host}:1506/test2" },
+                Url = new[] { $"rest://{host}:{1500 + port}/test1", $"rest://{host}:{1500 + port}/test2" },
                 Version = "1.0.0"
             };
 
             await RunTest<IPOS>(new DummyPos(), PackageType.Queue, packageConfiguration, true, async () =>
             {
+
                 var restClient1 = new POSClientFactory(new LauncherConfiguration()).CreateClient(new ClientConfiguration
                 {
                     Url = packageConfiguration.Url[0],
@@ -219,7 +220,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
             });
         }
 
-        private static async Task RunTest<T>(T instance, PackageType packageType, PackageConfiguration packageConfiguration, bool useHttpSysBinding, Func<Task> checks) where T : class
+        private async Task RunTest<T>(T instance, PackageType packageType, PackageConfiguration packageConfiguration, bool useHttpSysBinding, Func<Task> checks) where T : class
         {
             var launcherConfiguration = new LauncherConfiguration
             {
@@ -237,6 +238,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 
             var started = new TaskCompletionSource();
             var monarch = Mock.Of<IProcessHostMonarch>();
+            var logger = Mock.Of<Serilog.ILogger>(MockBehavior.Strict);
+            Mock.Get(logger).Setup(x => x.Information(It.IsAny<string>())).Verifiable();
             Mock.Get(monarch).Setup(x => x.Started()).Callback(() => started.SetResult());
             var processHostService = new ProcessHostService(new Dictionary<Guid, IProcessHostMonarch> { { packageConfiguration.Id, monarch } }, Mock.Of<Serilog.ILogger>());
 
@@ -246,14 +249,42 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
 
             var lifetime = new HostApplicationLifetime();
 
-            var hostingService = new HostingService(Mock.Of<ILogger<HostingService>>(), packageConfiguration, launcherConfiguration, processHostService);
-            using var plebian = new ProcessHostPlebian(Mock.Of<ILogger<ProcessHostPlebian>>(), hostingService, launcherConfiguration, packageConfiguration, plebianConfiguration, services.BuildServiceProvider(), lifetime, processHostService);
+            var loggerHostingService = Mock.Of<ILogger<HostingService>>(MockBehavior.Strict);
+            Mock.Get(loggerHostingService)
+                .Setup(x => x.Log(
+                    It.IsNotIn(new[] { LogLevel.Error, LogLevel.Critical }),
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ))
+                .Verifiable();
 
+            var loggerProcessHostPlebian = Mock.Of<ILogger<ProcessHostPlebian>>(MockBehavior.Strict);
+            Mock.Get(loggerProcessHostPlebian)
+                .Setup(x => x.Log(
+                    It.IsNotIn(new[] { LogLevel.Error, LogLevel.Critical }),
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ))
+                .Verifiable();
+
+            var hostingService = new HostingService(loggerHostingService, packageConfiguration, launcherConfiguration, processHostService);
+            using var plebian = new ProcessHostPlebian(loggerProcessHostPlebian, hostingService, launcherConfiguration, packageConfiguration, plebianConfiguration, services.BuildServiceProvider(), lifetime, processHostService);
             await plebian.StartAsync(new CancellationToken());
 
-            await started.Task;
+            if (started.Task != await Task.WhenAny(started.Task, Task.Delay(TimeSpan.FromSeconds(10))))
+            {
+                throw new TimeoutException("plebian did not start in time");
+            }
 
-            await checks();
+            await Task.Run(checks);
+            Mock.Get(logger).Verify(x => x.Error(It.IsAny<string>()), Times.Never);
+            Mock.Get(loggerHostingService).Verify();
+            Mock.Get(loggerProcessHostPlebian).Verify();
         }
+
     }
 }
