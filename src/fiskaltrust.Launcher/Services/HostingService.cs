@@ -228,12 +228,12 @@ namespace fiskaltrust.Launcher.Services
 
         private WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
-            if(OperatingSystem.IsWindows() && _launcherConfiguration.UseHttpSysBinding!.Value)
+            if (OperatingSystem.IsWindows() && _launcherConfiguration.UseHttpSysBinding!.Value)
             {
                 _logger.LogWarning($"{nameof(_launcherConfiguration.UseHttpSysBinding)} is not supported for grpc.");
             }
 
-            builder.WebHost.BindKestrel(uri, listenOptions => ConfigureTls(listenOptions), false,  HttpProtocols.Http2);
+            builder.WebHost.BindKestrel(uri, listenOptions => ConfigureTls(listenOptions), false, HttpProtocols.Http2);
             builder.Services.AddCodeFirstGrpc(options => options.EnableDetailedErrors = true);
             builder.Services.AddSingleton(instance);
 
@@ -331,7 +331,7 @@ namespace fiskaltrust.Launcher.Services
             });
 
             builder.UseUrls(uri.ToString());
-
+            builder.ConfigureServices(services => services.AddHostFiltering(options => options.AllowedHosts.Add("*")));
             return builder;
         }
 
@@ -350,6 +350,8 @@ namespace fiskaltrust.Launcher.Services
             });
 
             builder.UseUrls(uri.ToString());
+
+            builder.ConfigureServices(services => services.AddHostFiltering(options => options.AllowedHosts.Add("*")));
 
             return builder;
         }
