@@ -58,7 +58,7 @@ namespace fiskaltrust.Launcher.Services
                     .AddLoggingConfiguration(_launcherConfiguration, aspLogging: true)
                     .WriteTo.GrpcSink(_packageConfiguration, _processHostService));
 
-            if (_launcherConfiguration.LogLevel == LogLevel.Debug)
+            if (_launcherConfiguration.LogLevel <= LogLevel.Debug)
             {
                 builder.Services.AddHttpLogging(options =>
                 options.LoggingFields =
@@ -116,7 +116,7 @@ namespace fiskaltrust.Launcher.Services
                     throw new NotImplementedException();
             }
 
-            if (_launcherConfiguration.LogLevel == LogLevel.Debug)
+            if (_launcherConfiguration.LogLevel <= LogLevel.Debug)
             {
                 app.UseHttpLogging();
             }
@@ -138,7 +138,7 @@ namespace fiskaltrust.Launcher.Services
             builder.WebHost.ConfigureBinding(uri, listenOptions => ConfigureTls(listenOptions), isHttps: !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64), allowSynchronousIO: true, useHttpSys: _launcherConfiguration.UseHttpSysBinding!.Value);
 
             var app = builder.Build();
-            //app.UsePathBase(uri.AbsolutePath);
+            if (!OperatingSystem.IsWindows() || _launcherConfiguration.UseHttpSysBinding!.Value == false) { app.UsePathBase(uri.AbsolutePath); }
 
             app.UseRouting();
             addEndpoints(app);
@@ -164,6 +164,7 @@ namespace fiskaltrust.Launcher.Services
             builder.Services.AddSingleton(instance.GetType(), _ => instance);
 
             var app = builder.Build();
+            if (!OperatingSystem.IsWindows() || _launcherConfiguration.UseHttpSysBinding!.Value == false) { app.UsePathBase(uri.AbsolutePath); }
 
             app.UseServiceModel(builder =>
             {
@@ -238,6 +239,7 @@ namespace fiskaltrust.Launcher.Services
             builder.Services.AddSingleton(instance);
 
             var app = builder.Build();
+            if (!OperatingSystem.IsWindows() || _launcherConfiguration.UseHttpSysBinding!.Value == false) { app.UsePathBase(uri.AbsolutePath); }
 
             app.UseRouting();
 #pragma warning disable ASP0014
@@ -278,20 +280,13 @@ namespace fiskaltrust.Launcher.Services
 
     public static class BindingExtensions
     {
-
-        private static Uri GetUriWithCleanScheme(Uri uri, bool isHttps)
-        {
-            var scheme = isHttps ? "https://" : "http://";
-            return new Uri(uri.ToString().Replace("rest://", scheme).Replace("grpc://", scheme));
-        }
-
         public static ConfigureWebHostBuilder ConfigureBinding(this ConfigureWebHostBuilder builder, Uri uri, Action<ListenOptions>? configureListeners = null, bool isHttps = false, bool? allowSynchronousIO = null, HttpProtocols? protocols = null, bool useHttpSys = false)
         {
             if (OperatingSystem.IsWindows())
             {
                 if (useHttpSys)
                 {
-                    return builder.BindHttpSys(GetUriWithCleanScheme(uri, isHttps), allowSynchronousIO);
+                    return builder.BindHttpSys(uri, isHttps, allowSynchronousIO);
                 }
             }
             return builder.BindKestrel(uri, configureListeners, allowSynchronousIO, protocols);
@@ -316,28 +311,27 @@ namespace fiskaltrust.Launcher.Services
                     options.AllowSynchronousIO = allowSynchronousIO.Value;
                 }
 
-                if (uri.IsLoopback && uri.Port != 0)
-                {
-                    options.ListenLocalhost(uri.Port, configureListenersInner);
-                }
-                else if (IPAddress.TryParse(uri.Host, out var ip))
-                {
-                    options.Listen(new IPEndPoint(ip, uri.Port), configureListenersInner);
-                }
-                else
-                {
-                    options.ListenAnyIP(uri.Port, configureListenersInner);
-                }
+                // if (uri.IsLoopback && uri.Port != 0)
+                // {
+                //     options.ListenLocalhost(uri.Port, configureListenersInner);
+                // }
+                // else if (IPAddress.TryParse(uri.Host, out var ip))
+                // {
+                //     options.Listen(new IPEndPoint(ip, uri.Port), configureListenersInner);
+                // }
+                // else
+                // {
+                options.ListenAnyIP(uri.Port, configureListenersInner);
+                // }
             });
 
-            builder.UseUrls(uri.ToString());
-            builder.ConfigureServices(services => services.AddHostFiltering(options => options.AllowedHosts.Add("*")));
+            // builder.ConfigureServices(services => services.AddHostFiltering(options => options.AllowedHosts.Add("*")));
             return builder;
         }
 
 
         [SupportedOSPlatform("windows")]
-        private static ConfigureWebHostBuilder BindHttpSys(this ConfigureWebHostBuilder builder, Uri uri, bool? allowSynchronousIO)
+        private static ConfigureWebHostBuilder BindHttpSys(this ConfigureWebHostBuilder builder, Uri uri, bool isHttps, bool? allowSynchronousIO)
         {
             builder.UseHttpSys(options =>
             {
@@ -346,10 +340,8 @@ namespace fiskaltrust.Launcher.Services
                     options.AllowSynchronousIO = allowSynchronousIO.Value;
                 }
 
-                options.UrlPrefixes.Add(uri.ToString());
+                options.UrlPrefixes.Add(UrlPrefix.Create(isHttps ? "https" : "http", "*", uri.Port, uri.AbsolutePath));
             });
-
-            builder.UseUrls(uri.ToString());
 
             builder.ConfigureServices(services => services.AddHostFiltering(options => options.AllowedHosts.Add("*")));
 
