@@ -4,7 +4,7 @@
   "steps": [
     {
       "title": "Introduction",
-      "description": "# Intruduction\r\n\r\nThis tour will give you an overview of the Launcher architecture. It will not go into detail but exists to provide a baseline for the later tours.\r\n\r\nAll code tours provided here assume basic knowledge on how to use the fiskaltrust.Launcher, Middleware and Portal. You can familiarize yourself with these on our [documentation platform](https://docs.fiskaltrust.cloud/).\r\n\r\n\r\n# Overview\r\n\r\nThe Launcher hosts Middleware packages like Queues, SCUs and Helpers.\r\n\r\nIt does that by starting a main process (we call this process the **Monarch**) which downloads configs and packages and then starts secondary processes (we call **Plebians**) for each package.",
+      "description": "# Intruduction\r\n\r\nThis tour will give you an overview of the Launcher architecture. It will not go into detail but exists to provide a baseline for the later tours.\r\n\r\nAll code tours provided here assume basic knowledge on how to use the fiskaltrust.Launcher, Middleware, Cashbox and Portal. You can familiarize yourself with these on our [documentation platform](https://docs.fiskaltrust.cloud/).\r\n\r\n\r\n# Overview\r\n\r\nThe Launcher hosts Middleware packages like Queues, SCUs and Helpers.\r\n\r\nIt does that by starting a main process (we call this process the **Monarch**) which downloads configs and packages and then starts secondary processes (we call **Plebians**) for each package.\r\n\r\nYou can think of the Launcher as an orchestrator of all the components running inside a cashbox.",
       "selection": {
         "start": {
           "line": 5,
@@ -284,7 +284,7 @@
     },
     {
       "title": "Outro",
-      "description": "Congratulations 🎉 you've made it through the Overview Code Tour. You can jump right into coding or go more indepth in one of the Advanced Tours.\r\n\r\n* [Monarch](command:codetour.startTour?[\"Monarch\"])\r\n* [Plebian](command:codetour.startTour?[\"Plebian\"])\r\n* [Debugging](command:codetour.startTour?[\"Debugging\"])\r\n* [Logging](command:codetour.startTour?[\"Logging\"])\r\n* [Self Update](command:codetour.startTour?[\"Self Update\"])"
+      "description": "Congratulations 🎉 you've made it through the Overview Code Tour. You can jump right into coding or go more indepth in one of the Advanced Tours.\r\n\r\n* [Monarch](command:codetour.startTour?[\"Monarch\"])\r\n* [Plebian](command:codetour.startTour?[\"Plebian\"])\r\n* [Debugging](command:codetour.startTour?[\"Debugging\"])\r\n* [Logging](command:codetour.startTour?[\"Logging\"])\r\n* [Self Update](command:codetour.startTour?[\"Self Update\"])\r\n* [Launcher Configuration](command:codetour.startTour?[\"Launcher Configuration\"])\r\n* [Un/install Commands](command:codetour.startTour?[\"Un/install Commands\"])\r\n* [Config Command](command:codetour.startTour?[\"Config Command\"])\r\n* [Package and Configuration Download](command:codetour.startTour?[\"Package and Configuration Download\"])"
     }
   ]
 }

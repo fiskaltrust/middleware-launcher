@@ -1,5 +1,97 @@
 {
   "$schema": "https://aka.ms/codetour-schema",
   "title": "Monarch",
-  "steps": []
+  "steps": [
+    {
+      "title": "Introduction",
+      "description": "In this tour we'll go over the inner workings of the Launcher Monarch process.\r\n\r\nIf you're not familiar with the Launcher architecture and the concept of Monarch and Plebian consider taking the [Overview Tour](command:codetour.startTour?[\"Monarch\"]) first."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "In the `ProcessHostMonarchStartup` class the Launcher starts a `ProcessHostMonarch` for each package configured in the Cashbox.",
+      "line": 11
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "First the Monarch loggs some information about the executing environment and configuration.",
+      "line": 39
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "Here we want to log all information about the environment and configuration which can prove helpful when reading a logfile.",
+      "line": 149
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "Next we start a `ProcessHostMonarch` for each Queue, SCU and Helper configured in the cashbox.",
+      "selection": {
+        "start": {
+          "line": 43,
+          "character": 1
+        },
+        "end": {
+          "line": 56,
+          "character": 18
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "If a critical error occurs during the startup (e.g. a package could not be downloaded) the Launcher will shutdown.\r\n\r\nA critical failure here is a failure in the orchestration. When a Middleware package crashes or cannot start (e.g. A Queue which cannot connect to the database) the Launcher is not shutdown, the other packages will continue running.",
+      "line": 62,
+      "selection": {
+        "start": {
+          "line": 60,
+          "character": 1
+        },
+        "end": {
+          "line": 62,
+          "character": 24
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "The `StartProcessHostMonarch` method first downloads the package it is instructed to start.\r\n\r\n> More on package download in this [Package and Configuration Download](command:codetour.startTourByTitle?[\"Package and Configuration Download\"]) tour.",
+      "line": 104
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "Then a `ProcessHostMonarch` is constructed (and started in line 129) and a reference to it is added to the `Dictionary<Guid, IProcessHostMonarch> _hosts` dictionary.",
+      "selection": {
+        "start": {
+          "line": 121,
+          "character": 1
+        },
+        "end": {
+          "line": 124,
+          "character": 19
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "After all `ProcessHostMonarch`s are started we wait for all of them to stop before shutting down.\r\n\r\nCritical errors in the orchestration process are logged in the catch below. Again errors in the packages should not lead to the Monarch crashing but be handled in the Plebian or Monarch without crashing the Launcher.",
+      "line": 84
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
+      "description": "In the `ProcessHostMonarch` a new Launcher process is created. This Launcher process is started with the `host` command and given the base64 encoded Plebian configuration and Launcher configuration as CLI parameters.",
+      "selection": {
+        "start": {
+          "line": 29,
+          "character": 1
+        },
+        "end": {
+          "line": 53,
+          "character": 51
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
+      "description": "The `CancellationToken` passed to the `Start` method by the `ProcessHostMonarchStartup` is cancelled when the Launcher receives a shutdown request.\r\n\r\nWhen run from the console this can be a `ctrl+c` signal and when run as a service this is sent by the service manager.",
+      "line": 56
+    }
+  ]
 }
