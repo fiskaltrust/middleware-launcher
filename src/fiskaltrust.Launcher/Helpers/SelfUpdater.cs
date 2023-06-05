@@ -107,12 +107,12 @@ namespace fiskaltrust.Launcher.Helpers
                 process.StartInfo.CreateNoWindow = false;
 
                 process.StartInfo.Arguments = string.Join(" ", new string[] {
-                "--launcher-process-id", _processId.Id.ToString(),
-                "--from", $"\"{Path.Combine(newExecutablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
-                "--to", _executablePath.Path,
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize(false, false)))}\"",
-                "--launcher-configuration-file", $"\"{Path.GetFullPath(launcherConfigurationFile)}\"",
-            });
+                    "--launcher-process-id", _processId.Id.ToString(),
+                    "--from", $"\"{Path.Combine(newExecutablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
+                    "--to", _executablePath.Path,
+                    "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize(false, false)))}\"",
+                    "--launcher-configuration-file", $"\"{Path.GetFullPath(launcherConfigurationFile)}\"",
+                });
 
                 process.StartInfo.RedirectStandardError = true;
                 process.StartInfo.RedirectStandardOutput = true;

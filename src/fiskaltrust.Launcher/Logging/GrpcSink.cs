@@ -11,28 +11,28 @@ namespace fiskaltrust.Launcher.Logging
 {
     public static class GrpcSinkExtensions
     {
-        public static LoggerConfiguration GrpcSink(this LoggerSinkConfiguration loggerConfiguration, PackageConfiguration packageConfiguration, IProcessHostService? processHostService = null)
+        public static LoggerConfiguration GrpcSink(this LoggerSinkConfiguration loggerConfiguration, PackageConfiguration packageConfiguration, ILauncherService? launcherService = null)
         {
-            return loggerConfiguration.Sink(new GrpcSink(packageConfiguration, processHostService));
+            return loggerConfiguration.Sink(new GrpcSink(packageConfiguration, launcherService));
         }
     }
 
     public class GrpcSink : ILogEventSink
     {
-        private readonly IProcessHostService? _processHostService;
+        private readonly ILauncherService? _launcherService;
         private readonly CompactJsonFormatter _formatter;
         private readonly PackageConfiguration _packageConfiguration;
 
-        public GrpcSink(PackageConfiguration packageConfiguration, IProcessHostService? processHostService = null)
+        public GrpcSink(PackageConfiguration packageConfiguration, ILauncherService? launcherService = null)
         {
             _formatter = new CompactJsonFormatter();
-            _processHostService = processHostService;
+            _launcherService = launcherService;
             _packageConfiguration = packageConfiguration;
         }
 
         public void Emit(LogEvent logEvent)
         {
-            if (_processHostService is not null)
+            if (_launcherService is not null)
             {
                 var writer = new StringWriter();
                 _formatter.Format(logEvent, writer);
@@ -40,7 +40,7 @@ namespace fiskaltrust.Launcher.Logging
 
                 try
                 {
-                    _processHostService!.Log(new LogEventDto
+                    _launcherService!.Log(new LogEventDto
                     {
                         LogEvent = writer.ToString(),
                         Enrichment = new()

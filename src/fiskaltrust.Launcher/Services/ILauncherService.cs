@@ -16,7 +16,7 @@ namespace fiskaltrust.Launcher.Services.Interfaces
 
 
     [ServiceContract]
-    public interface IProcessHostService
+    public interface ILauncherService
     {
         [OperationContract]
         void Started(string id);

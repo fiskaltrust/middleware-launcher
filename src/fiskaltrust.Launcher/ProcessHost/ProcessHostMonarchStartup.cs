@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting.WindowsServices;
 
 namespace fiskaltrust.Launcher.ProcessHost
 {
-    public class ProcessHostMonarcStartup : BackgroundService
+    public class ProcessHostMonarchStartup : BackgroundService
     {
         public class AlreadyLoggedException : Exception { }
 
@@ -21,7 +21,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly ILifetime _lifetime;
         private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, IProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, ILifetime lifetime, LauncherExecutablePath launcherExecutablePath)
+        public ProcessHostMonarchStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarchStartup> logger, Dictionary<Guid, IProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, ILifetime lifetime, LauncherExecutablePath launcherExecutablePath)
         {
             _loggerFactory = loggerFactory;
             _logger = logger;
@@ -75,7 +75,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             if (_hosts.Count == 0)
             {
                 // Wait for shutdown of the launcher (ctrl+c or windows service stop)
-                // if we dont have this and the ProcessHostMonarcStartup BackgroundService finished the Launcher shuts down with a TaskCancelledException
+                // if we dont have this and the ProcessHostMonarchStartup BackgroundService finished the Launcher shuts down with a TaskCancelledException
                 await new TaskCompletionSource().Task;
             }
 

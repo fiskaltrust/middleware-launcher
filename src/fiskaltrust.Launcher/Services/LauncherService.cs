@@ -9,13 +9,13 @@ using Serilog.Formatting.Compact.Reader;
 namespace fiskaltrust.Launcher.Services
 {
     [ServiceContract]
-    public class ProcessHostService : IProcessHostService
+    public class LauncherService : ILauncherService
     {
         private readonly Dictionary<Guid, IProcessHostMonarch> _hosts;
         private readonly Serilog.ILogger _logger;
         private readonly object _logLock = new();
 
-        public ProcessHostService(Dictionary<Guid, IProcessHostMonarch> hosts, Serilog.ILogger logger)
+        public LauncherService(Dictionary<Guid, IProcessHostMonarch> hosts, Serilog.ILogger logger)
         {
             _hosts = hosts;
             _logger = logger;

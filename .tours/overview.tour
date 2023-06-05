@@ -4,18 +4,28 @@
   "steps": [
     {
       "title": "Introduction",
-      "description": "# Intruduction\r\n\r\nThis tour will give you an overview of the Launcher architecture.\r\n\r\nThe Launcher hosts Middleware packages like Queues, SCUs and Helpers.\r\n\r\nIt does that by starting a main process (we call this process the Monarch) which downloads configs and packages and then starts secondary processes (we call Plebians) for each package."
+      "description": "# Intruduction\r\n\r\nThis tour will give you an overview of the Launcher architecture. It will not go into detail but exists to provide a baseline for the later tours.\r\n\r\nAll code tours provided here assume basic knowledge on how to use the fiskaltrust.Launcher, Middleware and Portal. You can familiarize yourself with these on our [documentation platform](https://docs.fiskaltrust.cloud/).\r\n\r\n\r\n# Overview\r\n\r\nThe Launcher hosts Middleware packages like Queues, SCUs and Helpers.\r\n\r\nIt does that by starting a main process (we call this process the **Monarch**) which downloads configs and packages and then starts secondary processes (we call **Plebians**) for each package.",
+      "selection": {
+        "start": {
+          "line": 5,
+          "character": 53
+        },
+        "end": {
+          "line": 5,
+          "character": 55
+        }
+      }
     },
     {
       "file": "src/fiskaltrust.Launcher/Program.cs",
-      "description": "# Commands\r\n\r\nThe Launcher can be started uwing different commands which are defined here using the `System.CommandLine` library.",
+      "description": "# Commands\r\n\r\nThe Launcher can be started using different commands which are defined here using the `System.CommandLine` library. `System.Commandline` is currently still in beta and we still use the `alpha` version of this library in the launcher ATM.\r\n\r\n> When the Launcher is started from the commandline like this `fiskaltrust.Launcher run --help` the `RunCommand` is executed.",
       "selection": {
         "start": {
-          "line": 8,
+          "line": 9,
           "character": 1
         },
         "end": {
-          "line": 13,
+          "line": 16,
           "character": 3
         }
       }
@@ -24,23 +34,80 @@
       "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
       "selection": {
         "start": {
+          "line": 14,
+          "character": 1
+        },
+        "end": {
+          "line": 15,
+          "character": 1
+        }
+      },
+      "description": "# Run Command\r\n\r\nThe `RunCommand` command is the most used command of the Launcher. Using this command a Casbox that is configured in the Portal is started.\r\n\r\nWhen the Launcher is started using the `RunCommand` it acts as the Monarch.\r\n\r\nIt deserializes the Launcher config files and downloads and deserializes the Cashbox config from the Portal.\r\n\r\nIt then starts a new instance of the Launcher using the `HostCommand` for each Queue, SCU and Helper configured in the cashbox.\r\n\r\nThese other Launcher instances act as Plebians. They actually start the Middleware package (e.g. a Queue) they are instructed to host.\r\n\r\nThe Plebian processes communicate their state to the Monarch process and the Monarch handles shutdown and restart (in case of a crash) of the Plegian processes."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "The commandline options of the `Run` command are defined here and in the [`CommonCommand`](./src/fiskaltrust.Launcher/Commands/Common.cs) it inherits from.\r\n\r\nBelow you can find the `RunCommandHandler` which is executed when this command is run.",
+      "title": "Run Command - CLI",
+      "selection": {
+        "start": {
           "line": 18,
           "character": 1
         },
         "end": {
-          "line": 31,
-          "character": 10
+          "line": 34,
+          "character": 70
         }
-      },
-      "description": "# Run Command\r\n\r\nThe `RunCommand` command is used to start the Launcher. Its options are defined here and in the [`CommonCommand`](./Common.cs) it inherits from.\r\n\r\nBelow you can find the `RunCommandHandler` which is executed when this command is run."
+      }
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
-      "description": "The Launcher uses an `AcpNetCore` `WebApplication` to start its components and the `ProcessHostService` which is used for communication between Monarch and Plebians.",
-      "line": 65
+      "description": "In the `Run` and `Install`/`Uninstall` commands the `CommonCommandHandler` is invoked like that before executing the handler.",
+      "line": 53,
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 89
+        },
+        "end": {
+          "line": 1,
+          "character": 98
+        }
+      },
+      "title": "Run Command - Invoke Common Command"
     },
     {
-      "file": "src/fiskaltrust.Launcher/Services/IProcessHostService.cs",
+      "file": "src/fiskaltrust.Launcher/Commands/Common.cs",
+      "description": "The `CommonCommand` specifies some sommon cli flags and the `CommonCommandHandler` manages logging setup and loading of the launcher and cashbox configurations.",
+      "title": "Common Command",
+      "selection": {
+        "start": {
+          "line": 24,
+          "character": 1
+        },
+        "end": {
+          "line": 36,
+          "character": 10
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "The Launcher uses an `AcpNetCore` `WebApplication` to start its components and the `LauncherService` which is used for communication between Monarch and Plebians.",
+      "line": 58,
+      "selection": {
+        "start": {
+          "line": 58,
+          "character": 13
+        },
+        "end": {
+          "line": 58,
+          "character": 58
+        }
+      },
+      "title": "Run Command - WebApplication"
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Services/ILauncherService.cs",
       "selection": {
         "start": {
           "line": 18,
@@ -51,24 +118,26 @@
           "character": 6
         }
       },
-      "description": "# ProcessHostService\r\n\r\nThis is a hosted as a grpc service on the port configured in the [`LauncherConfiguration`](../../fiskaltrust.Launcher.Common/Configuration/LauncherConfiguration) as `LauncherPort`.\r\n\r\nIt is used by the Plebians to send status information and logs to the Launcher."
+      "description": "# LauncherService\r\n\r\nThis is a hosted as a grpc service on the port configured in the [`LauncherConfiguration`](../../fiskaltrust.Launcher.Common/Configuration/LauncherConfiguration) as `LauncherPort`.\r\n\r\nIt is used by the Plebians to send status information and logs to the Monarch."
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
       "selection": {
         "start": {
-          "line": 61,
+          "line": 69,
           "character": 21
         },
         "end": {
-          "line": 61,
-          "character": 75
+          "line": 69,
+          "character": 76
         }
       },
-      "description": "The `ProcessHostMonarch` is added as a `HostedService`. This is the main componend that is doing the work of the Monarch."
+      "description": "The `ProcessHostMonarchStartup` is added as a `HostedService`. This class in tandem with the `ProcessHostMonarch` handle the work of the Monarch.",
+      "title": "Run Command - Monarch Startup"
     },
     {
-      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "# ProcessHostMonarchStartup\r\n\r\nHere the `ProcessHostMonarch` startup class is starting a `ProcessHostMonarch` for each package with the correct configurations.",
       "selection": {
         "start": {
           "line": 43,
@@ -78,8 +147,7 @@
           "line": 56,
           "character": 18
         }
-      },
-      "description": "# ProcessHostMonarchStartup\r\n\r\nHere the `ProcessHostMonarch` startup class is starting a `ProcessHostMonarch` for each package with the correct configurations."
+      }
     },
     {
       "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
@@ -93,93 +161,126 @@
           "character": 51
         }
       },
-      "description": "# ProcessHostMonarch\r\nThe `ProcessHostMonarch` creates the process of the Plebian.\r\n\r\nThis process is another instance of the Launcher started with the `host` command.\r\n\r\nBelow in the `Start` Method the process is started, stopped and restarted if it crashed.\r\n\r\n> You can view this [followup tour](command:codetour.startTour?[\"Monarch\"]) to go into detail"
+      "description": "# ProcessHostMonarch\r\nThe `ProcessHostMonarch` creates the process of the Plebian.\r\n\r\nThis process is another instance of the Launcher started with the `host` CLI command which runs the `HostCommand`\r\n\r\nBelow in the `Start` Method the Plebian process is started, stopped and restarted if it crashed.\r\n\r\n> You can view this [followup tour](command:codetour.startTour?[\"Monarch\"]) to go into detail",
+      "line": 27
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
       "selection": {
         "start": {
-          "line": 29,
+          "line": 26,
           "character": 1
         },
         "end": {
           "line": 35,
-          "character": 10
+          "character": 6
         }
       },
-      "description": "# Host Command\r\n\r\nThe `host` command is used to start a Launcher instance as a Plebian. "
+      "description": "# Host Command\r\n\r\nThe `HostCommand` is used to start a Launcher instance as a Plebian. "
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
-      "description": "The Plebian connects to the Munarch via the ProcessHostService.",
-      "line": 83
+      "description": "The Plebian connects to the Monarch via the `LauncherService`.",
+      "selection": {
+        "start": {
+          "line": 79,
+          "character": 1
+        },
+        "end": {
+          "line": 83,
+          "character": 14
+        }
+      },
+      "title": "Host Command - LauncherService"
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
       "description": "The Plebian uses a general `IHost` for dependency injection purposes.",
-      "line": 91
-    },
-    {
-      "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
+      "line": 90,
       "selection": {
         "start": {
-          "line": 117,
+          "line": 90,
           "character": 1
         },
         "end": {
-          "line": 140,
-          "character": 66
+          "line": 90,
+          "character": 54
         }
       },
-      "description": "Here the package (The Queue, SCU or Helper) assembly is loaded and the IMiddlewareBootstrapper configured."
+      "title": "Host Command - IHost"
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
       "selection": {
         "start": {
-          "line": 109,
-          "character": 21
+          "line": 118,
+          "character": 1
         },
         "end": {
-          "line": 109,
+          "line": 143,
+          "character": 66
+        }
+      },
+      "description": "Here the package (Queue, SCU or Helper) assembly is loaded and the `IMiddlewareBootstrapper` configured.\r\n\r\n> The code for these packages can be found in the [middleware](https://github.com/fiskaltrust/middleware) repository.",
+      "title": "Host Command -Middleware Bootstrapper"
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
+      "selection": {
+        "start": {
+          "line": 108,
+          "character": 1
+        },
+        "end": {
+          "line": 108,
           "character": 69
         }
       },
-      "description": "The `ProcessHostPlebian` does most of the Plebians work."
+      "description": "The `ProcessHostPlebian` does most of the Plebians work.",
+      "title": "Host Command - Plebian"
     },
     {
       "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostPlebian.cs",
       "selection": {
         "start": {
-          "line": 45,
-          "character": 17
+          "line": 46,
+          "character": 1
         },
         "end": {
-          "line": 45,
+          "line": 46,
           "character": 63
         }
       },
-      "description": "# ProcessHostPlebian\r\n\r\nThe most importan thing the Plebian does is start the hosting of the package.\r\n\r\nThis means hosting the http or grpc service and starting the package.\r\n\r\n> You can view this [followup tour](command:codetour.startTour?[\"Plebian\"]) later to go into more detail",
-      "line": 85
+      "description": "# ProcessHostPlebian\r\n\r\nThe most important thing the Plebian does is start the hosting of the package.\r\n\r\nThis means hosting the rest, grpc or soap web services and starting the package.\r\n\r\n> You can view this [followup tour](command:codetour.startTour?[\"Plebian\"]) later to go into more detail"
     },
     {
       "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostPlebian.cs",
       "selection": {
         "start": {
-          "line": 118,
-          "character": 21
+          "line": 123,
+          "character": 1
         },
         "end": {
-          "line": 118,
-          "character": 96
+          "line": 164,
+          "character": 14
         }
       },
-      "description": "The hosting is started here by the `HostingService` for each configured url."
+      "description": "The hosting is started here by the [`HostingService`](./src/fiskaltrust.Launcher/Services/HostingService.cs) for each configured url.\r\n",
+      "title": "ProcessHostPlebian - HostingService"
     },
     {
       "file": "src/fiskaltrust.Launcher/Services/HostingService.cs",
       "description": "# HostingService\r\n\r\nThe `HostingService` starts up an `AspNetCore` `WebApplication` and adds the relevant endpoints.",
-      "line": 30
+      "selection": {
+        "start": {
+          "line": 23,
+          "character": 1
+        },
+        "end": {
+          "line": 23,
+          "character": 32
+        }
+      }
     },
     {
       "title": "Outro",

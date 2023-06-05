@@ -142,7 +142,7 @@ namespace fiskaltrust.Launcher.Commands
                         }, throws: true);
                     });
 
-                Check("Setup monarch ProcessHostService", () =>
+                Check("Setup monarch LauncherService", () =>
                 {
                     monarchBuilder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{launcherConfiguration.LauncherPort}"), protocols: HttpProtocols.Http2);
 
@@ -153,7 +153,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 monarchApp.UseRouting();
 #pragma warning disable ASP0014
-                monarchApp.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
+                monarchApp.UseEndpoints(endpoints => endpoints.MapGrpcService<LauncherService>());
 #pragma warning restore ASP0014
 
                 await CheckAwait("Start monarch WebApplication", async () => await WithTimeout(async () => await monarchApp.StartAsync(_lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)), throws: true);
@@ -173,7 +173,7 @@ namespace fiskaltrust.Launcher.Commands
                     Version = "1.0.0"
                 };
 
-                IProcessHostService? processHostService = Check("Start plebian processhostservice client", () => GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>());
+                ILauncherService? launcherService = Check("Start plebian processhostservice client", () => GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<ILauncherService>());
 
                 var plebianBuilder = Host.CreateDefaultBuilder()
                     .UseSerilog(new LoggerConfiguration().CreateLogger())
@@ -189,9 +189,9 @@ namespace fiskaltrust.Launcher.Commands
                             var pluginLoader = new PluginLoader();
                             services.AddSingleton(_ => pluginLoader);
 
-                            if (processHostService is not null)
+                            if (launcherService is not null)
                             {
-                                services.AddSingleton(_ => processHostService);
+                                services.AddSingleton(_ => launcherService);
                             }
 
                             services.AddSingleton<HostingService>();

@@ -17,7 +17,6 @@ using CoreWCF.Channels;
 using CoreWCF.Description;
 using System.Security.Cryptography.X509Certificates;
 using System.Runtime.Versioning;
-using Microsoft.AspNetCore.Server.HttpSys;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -25,18 +24,18 @@ namespace fiskaltrust.Launcher.Services
     {
         private readonly PackageConfiguration _packageConfiguration;
         private readonly LauncherConfiguration _launcherConfiguration;
-        private readonly IProcessHostService? _processHostService;
+        private readonly ILauncherService? _launcherService;
         private readonly ILogger<HostingService> _logger;
 
         private readonly long _messageSize = 16 * 1024 * 1024;
         private readonly TimeSpan _sendTimeout = TimeSpan.FromSeconds(15);
         private readonly TimeSpan _receiveTimeout = TimeSpan.FromDays(20);
 
-        public HostingService(ILogger<HostingService> logger, PackageConfiguration packageConfiguration, LauncherConfiguration launcherConfiguration, IProcessHostService? processHostService = null)
+        public HostingService(ILogger<HostingService> logger, PackageConfiguration packageConfiguration, LauncherConfiguration launcherConfiguration, ILauncherService? launcherService = null)
         {
             _packageConfiguration = packageConfiguration;
             _launcherConfiguration = launcherConfiguration;
-            _processHostService = processHostService;
+            _launcherService = launcherService;
             _logger = logger;
 
             if (packageConfiguration.Configuration.TryGetValue("messagesize", out var messageSizeStr) && long.TryParse(messageSizeStr.ToString(), out var messageSize))
@@ -56,7 +55,7 @@ namespace fiskaltrust.Launcher.Services
             builder.Host.UseSerilog((_, __, loggerConfiguration) =>
                 loggerConfiguration
                     .AddLoggingConfiguration(_launcherConfiguration, aspLogging: true)
-                    .WriteTo.GrpcSink(_packageConfiguration, _processHostService));
+                    .WriteTo.GrpcSink(_packageConfiguration, _launcherService));
 
             if (_launcherConfiguration.LogLevel <= LogLevel.Debug)
             {

@@ -38,7 +38,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public string LauncherConfiguration { get; set; } = null!;
         public string PlebianConfiguration { get; set; } = null!;
-        public bool NoProcessHostService { get; set; }
+        public bool NoLauncherService { get; set; }
         public bool Debugging { get; set; }
 
         private readonly CancellationToken _cancellationToken;
@@ -76,15 +76,15 @@ namespace fiskaltrust.Launcher.Commands
 
             packageConfiguration.Configuration = ProcessPackageConfiguration(packageConfiguration.Configuration, launcherConfiguration, cashboxConfiguration);
 
-            IProcessHostService? processHostService = null;
-            if (!NoProcessHostService)
+            ILauncherService? launcherService = null;
+            if (!NoLauncherService)
             {
-                processHostService = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>();
+                launcherService = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<ILauncherService>();
             }
 
             Log.Logger = new LoggerConfiguration()
                 .AddLoggingConfiguration(launcherConfiguration)
-                .WriteTo.GrpcSink(packageConfiguration, processHostService)
+                .WriteTo.GrpcSink(packageConfiguration, launcherService)
                 .CreateLogger();
 
             var builder = Host.CreateDefaultBuilder()
@@ -99,9 +99,9 @@ namespace fiskaltrust.Launcher.Commands
                     var pluginLoader = new PluginLoader();
                     services.AddSingleton(_ => pluginLoader);
 
-                    if (processHostService is not null)
+                    if (launcherService is not null)
                     {
-                        services.AddSingleton(_ => processHostService);
+                        services.AddSingleton(_ => launcherService);
                     }
 
                     services.AddSingleton<HostingService>();

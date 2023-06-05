@@ -4,72 +4,146 @@
   "steps": [
     {
       "title": "Overview",
-      "description": "The self update mechanism of the Launcher works in the following way:\r\n\r\n1. On startup detect need for update\r\n2. Download new binaries\r\n3. On exit start the LaucherUpdater\r\n4. Shutdown Launcher\r\n5. LauncherUpdater overwrites the Laucher executable"
-    },
-    {
-      "file": "src/fiskaltrust.Launcher.Common/Configuration/Configuration.cs",
-      "description": "# Configuration\r\n\r\nThe Launcher version which should be used is set in the Configuration.",
-      "line": 117
-    },
-    {
-      "file": "src/fiskaltrust.Launcher.Common/Configuration/Converters.cs",
-      "description": "# Parsing\r\n\r\nIt is parsed through this JsonConverter.",
-      "line": 8
-    },
-    {
-      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
-      "description": "# Download\r\n\r\nIn the `RunCommand` the `LauncherVersion` is checked against the Version of the Assembly and the new version is downloaded if needed.",
-      "line": 74
-    },
-    {
-      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
-      "description": "The `_updatePending` flag is set to indicate the Launcher should be updated.",
-      "line": 81
-    },
-    {
-      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
-      "description": "The new Launcher version including the new LauncherUpdater are extracted to the service folder similar to how Packages are extracted.",
-      "line": 73
-    },
-    {
-      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
-      "description": "If the update is pending the Launcher Update is started on shutdown.",
-      "line": 95
-    },
-    {
-      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
-      "description": "# Start Updater\r\n\r\nThe LauncherUpdater process is started with:\r\n\r\n| parameter | description |\r\n|---|---|\r\n| `launcher-process-id` | Id of the Launcher process so the Updater can wait for the Launcher to shutdown. |\r\n| `from` | The location of the newly downloaded Launcher executable. |\r\n| `to` | The location of the current Launcher executable. |\r\n| `launcher-configuration` | The current `LauncherConfiguration` as Base64. |",
-      "line": 125,
+      "description": "The self update mechanism of the Launcher works in the following way:\r\n\r\n1. On Launcher startup detect if an update is available and needed\r\n2. Download new binaries Launcher and LauncherUpdater\r\n3. Before Launcher exit start the LaucherUpdater\r\n4. Shutdown Launcher\r\n5. The LauncherUpdater backs up the Launcher executable and overwrites it with the updated version\r\n6. The LauncherUpdater starts the updated Launcher with the `Doctor` command\r\n7. The `Doctor` command checks if everything is working correctly\r\n8. If the `Doctor` command does not exit succesfully the update is reverted",
       "selection": {
         "start": {
-          "line": 129,
-          "character": 20
+          "line": 7,
+          "character": 25
         },
         "end": {
-          "line": 129,
-          "character": 42
+          "line": 8,
+          "character": 25
         }
       }
     },
     {
-      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
-      "description": "The Launcher waits 10 seconds so its able to detect crashes of the LauncherUpdater.",
-      "line": 139
+      "file": "src/fiskaltrust.Launcher.Common/Configuration/Configuration.cs",
+      "description": "# Configuration\r\n\r\nThe Launcher version which should be used is set in the Configuration as a semver range.",
+      "selection": {
+        "start": {
+          "line": 160,
+          "character": 1
+        },
+        "end": {
+          "line": 163,
+          "character": 189
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher.Common/Configuration/Converters.cs",
+      "description": "# Parsing\r\n\r\nThe version is parsed through this `JsonConverter`.",
+      "line": 8
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
-      "description": "If the LauncherUpdater has crashed its output is logged by the Launcher.",
-      "line": 141
+      "description": "# Download\r\n\r\nIn the `RunCommand` in the `PrepareSelfUpdate` method of the `SelfUpdater` the `LauncherVersion` is checked against the Current Version of the Assembly and the new version is downloaded if needed.",
+      "selection": {
+        "start": {
+          "line": 85,
+          "character": 1
+        },
+        "end": {
+          "line": 85,
+          "character": 140
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Helpers/SelfUpdater.cs",
+      "description": "The `_updatePending` flag is set to indicate the Launcher should be updated.",
+      "line": 86,
+      "title": "SelfUpdater - Update Pending"
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Helpers/SelfUpdater.cs",
+      "description": "The new Launcher version including the new LauncherUpdater are extracted to the service folder similar to how Packages are extracted.",
+      "line": 76,
+      "title": "SelfUpdater - Download"
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "On shutdown the `StartSelfUpdate` method is called and if the update is pending the Launcher Update is executed.",
+      "line": 91,
+      "title": "StartSelfUpdate"
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Helpers/SelfUpdater.cs",
+      "description": "# Start Updater\r\n\r\nThe LauncherUpdater process is started with:\r\n\r\n| parameter | description |\r\n|---|---|\r\n| `launcher-process-id` | Id of the Launcher process so the Updater can wait for the Launcher to shutdown. |\r\n| `from` | The location of the newly downloaded Launcher executable. |\r\n| `to` | The location of the current Launcher executable. |\r\n| `launcher-configuration` | The current `LauncherConfiguration` as Base64. |",
+      "line": 103,
+      "title": "SelfUpdater - Start Update"
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Helpers/SelfUpdater.cs",
+      "description": "The Launcher waits 3 seconds so its able to detect and print immediate crashes of the LauncherUpdater.",
+      "title": "SelfUpdater - Detect Crash",
+      "selection": {
+        "start": {
+          "line": 124,
+          "character": 1
+        },
+        "end": {
+          "line": 124,
+          "character": 59
+        }
+      },
+      "line": 124
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Helpers/SelfUpdater.cs",
+      "description": "If the LauncherUpdater has crashed its output is logged by the Launcher.\r\n\r\nOtherwise the Launcher just shuts down and the LauncherUpdater proceeds.",
+      "selection": {
+        "start": {
+          "line": 126,
+          "character": 1
+        },
+        "end": {
+          "line": 145,
+          "character": 18
+        }
+      },
+      "title": "SelfUpdater - Log Failure"
     },
     {
       "file": "src/fiskaltrust.LauncherUpdater/Program.cs",
-      "description": "# LauncherUpdater\r\n\r\nThe LauncherUpdater waits for the Launcher process to exit.",
-      "line": 68
+      "description": "# LauncherUpdater\r\n\r\nThe LauncherUpdater starts the updadte in `RunSelfUpdate` where it waits for the Launcher process to exit does the executable backup and overwrites the old executable with the udpated one.",
+      "selection": {
+        "start": {
+          "line": 56,
+          "character": 1
+        },
+        "end": {
+          "line": 56,
+          "character": 50
+        }
+      }
     },
     {
       "file": "src/fiskaltrust.LauncherUpdater/Program.cs",
-      "description": "And then copies over the new Launcher executable.",
-      "line": 75
+      "description": "Next the updadted launcher is started with the [`DoctorCommand`](./src/fiskaltrust.Launcher/Commands/DoctorCommand.cs) where it performs some checks.",
+      "selection": {
+        "start": {
+          "line": 60,
+          "character": 1
+        },
+        "end": {
+          "line": 95,
+          "character": 10
+        }
+      },
+      "title": "LauncherUpdater - Start Doctor"
+    },
+    {
+      "file": "src/fiskaltrust.LauncherUpdater/Program.cs",
+      "description": "If the `Doctor` command detects issues the update is rollded back.",
+      "line": 97,
+      "title": "LauncherUpdater - Rollback"
+    },
+    {
+      "file": "src/fiskaltrust.LauncherUpdater/Program.cs",
+      "description": "Otherwise the update went through successfully 🎉",
+      "line": 108,
+      "title": "LauncherUpdater - Success"
     }
   ]
 }

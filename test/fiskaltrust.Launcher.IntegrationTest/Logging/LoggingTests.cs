@@ -38,14 +38,14 @@ namespace fiskaltrust.Launcher.IntegrationTest.Logging
         {
             var collectionSink = new CollectionSink();
 
-            var processHostService = new ProcessHostService(new(), new LoggerConfiguration().WriteTo.Sink(collectionSink).CreateLogger());
+            var launcherService = new LauncherService(new(), new LoggerConfiguration().WriteTo.Sink(collectionSink).CreateLogger());
             var packageConfiguration = new PackageConfiguration
             {
                 Id = Guid.NewGuid(),
                 Package = Guid.NewGuid().ToString()
             };
 
-            var logger = new LoggerConfiguration().WriteTo.Sink(new GrpcSink(packageConfiguration, processHostService)).CreateLogger();
+            var logger = new LoggerConfiguration().WriteTo.Sink(new GrpcSink(packageConfiguration, launcherService)).CreateLogger();
 
             logger.Error("testError");
             logger.Warning("testWarning");

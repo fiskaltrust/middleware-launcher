@@ -16,7 +16,7 @@ namespace fiskaltrust.Launcher.ProcessHost
     public class ProcessHostPlebian : BackgroundService
     {
         private readonly PackageConfiguration _packageConfiguration;
-        private readonly IProcessHostService? _processHostService;
+        private readonly ILauncherService? _launcherService;
         private readonly HostingService _hosting;
         private readonly PlebianConfiguration _plebianConfiguration;
         private readonly LauncherConfiguration _launcherConfiguration;
@@ -24,7 +24,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly IServiceProvider _services;
         private readonly IHostApplicationLifetime _lifetime;
 
-        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services, IHostApplicationLifetime lifetime, IProcessHostService? processHostService = null)
+        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services, IHostApplicationLifetime lifetime, ILauncherService? launcherService = null)
         {
             _logger = logger;
             _hosting = hosting;
@@ -32,7 +32,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             _packageConfiguration = packageConfiguration;
             _plebianConfiguration = plebianConfiguration;
             _services = services;
-            _processHostService = processHostService;
+            _launcherService = launcherService;
             _lifetime = lifetime;
         }
 
@@ -60,7 +60,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 return;
             }
 
-            _processHostService?.Started(_packageConfiguration.Id.ToString());
+            _launcherService?.Started(_packageConfiguration.Id.ToString());
 
             var promise = new TaskCompletionSource();
             cancellationToken.Register(() =>
@@ -85,7 +85,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 promise.SetResult();
             });
 
-            if (_processHostService is not null)
+            if (_launcherService is not null)
             {
                 _ = Task.Run(async () =>
                 {
@@ -94,7 +94,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                         await Task.Delay(_launcherConfiguration.ProcessHostPingPeriodSec!.Value * 1000);
                         try
                         {
-                            _processHostService?.Ping();
+                            _launcherService?.Ping();
                         }
                         catch
                         {

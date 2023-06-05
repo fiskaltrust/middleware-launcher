@@ -241,7 +241,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
             var logger = Mock.Of<Serilog.ILogger>(MockBehavior.Strict);
             Mock.Get(logger).Setup(x => x.Information(It.IsAny<string>())).Verifiable();
             Mock.Get(monarch).Setup(x => x.Started()).Callback(() => started.SetResult());
-            var processHostService = new ProcessHostService(new Dictionary<Guid, IProcessHostMonarch> { { packageConfiguration.Id, monarch } }, Mock.Of<Serilog.ILogger>());
+            var launcherService = new LauncherService(new Dictionary<Guid, IProcessHostMonarch> { { packageConfiguration.Id, monarch } }, Mock.Of<Serilog.ILogger>());
 
             var services = new ServiceCollection();
 
@@ -271,8 +271,8 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebian
                 ))
                 .Verifiable();
 
-            var hostingService = new HostingService(loggerHostingService, packageConfiguration, launcherConfiguration, processHostService);
-            using var plebian = new ProcessHostPlebian(loggerProcessHostPlebian, hostingService, launcherConfiguration, packageConfiguration, plebianConfiguration, services.BuildServiceProvider(), lifetime, processHostService);
+            var hostingService = new HostingService(loggerHostingService, packageConfiguration, launcherConfiguration, launcherService);
+            using var plebian = new ProcessHostPlebian(loggerProcessHostPlebian, hostingService, launcherConfiguration, packageConfiguration, plebianConfiguration, services.BuildServiceProvider(), lifetime, launcherService);
             await plebian.StartAsync(new CancellationToken());
 
             if (started.Task != await Task.WhenAny(started.Task, Task.Delay(TimeSpan.FromSeconds(10))))
