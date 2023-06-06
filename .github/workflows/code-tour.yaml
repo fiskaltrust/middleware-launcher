@@ -8,10 +8,10 @@ jobs:
   codetour-watch:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v2
+      - name: "Checkout source code"
+        uses: actions/checkout@v3
 
-      - name: Watch CodeTour changes
-        uses: pozil/codetour-watch@v1.6.1
+      - name: "Watch CodeTour changes"
+        uses: pozil/codetour-watch@v1.6.3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
