@@ -1,4 +1,4 @@
-﻿using fiskaltrust.Launcher.Constants;
+using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
@@ -311,21 +311,9 @@ namespace fiskaltrust.Launcher.Services
                     options.AllowSynchronousIO = allowSynchronousIO.Value;
                 }
 
-                // if (uri.IsLoopback && uri.Port != 0)
-                // {
-                //     options.ListenLocalhost(uri.Port, configureListenersInner);
-                // }
-                // else if (IPAddress.TryParse(uri.Host, out var ip))
-                // {
-                //     options.Listen(new IPEndPoint(ip, uri.Port), configureListenersInner);
-                // }
-                // else
-                // {
                 options.ListenAnyIP(uri.Port, configureListenersInner);
-                // }
             });
 
-            // builder.ConfigureServices(services => services.AddHostFiltering(options => options.AllowedHosts.Add("*")));
             return builder;
         }
 
@@ -342,8 +330,6 @@ namespace fiskaltrust.Launcher.Services
 
                 options.UrlPrefixes.Add(UrlPrefix.Create(isHttps ? "https" : "http", "*", uri.Port, uri.AbsolutePath));
             });
-
-            builder.ConfigureServices(services => services.AddHostFiltering(options => options.AllowedHosts.Add("*")));
 
             return builder;
         }
