@@ -270,7 +270,7 @@
     },
     {
       "file": "src/fiskaltrust.Launcher/Services/HostingService.cs",
-      "description": "# HostingService\r\n\r\nThe `HostingService` starts up an `AspNetCore` `WebApplication` and adds the relevant endpoints.",
+      "description": "# HostingService\r\n\r\nThe `HostingService` starts up an `AspNetCore` `WebApplication` and adds the relevant endpoints.\r\n\r\nThis starts the `rest`, `gRPC` or `SOAP` hosting of the packages.",
       "selection": {
         "start": {
           "line": 23,
