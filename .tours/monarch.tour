@@ -70,8 +70,13 @@
       }
     },
     {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "This `_hosts` dictionary is injected into the `ProcessHostMonarchStartup` class from the service collection.",
+      "line": 67
+    },
+    {
       "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
-      "description": "After all `ProcessHostMonarch`s are started we wait for all of them to stop before shutting down.\r\n\r\nCritical errors in the orchestration process are logged in the catch below. Again errors in the packages should not lead to the Monarch crashing but be handled in the Plebian or Monarch without crashing the Launcher.",
+      "description": "The `_hosts` dictionary is used here to wait for all Monarchs to stop but will also be needed later.\r\n\r\nAfter all `ProcessHostMonarch`s are started we wait for all of them to stop before shutting down.\r\n\r\nCritical errors in the orchestration process are logged in the catch below. Again errors in the packages should not lead to the Monarch crashing but be handled in the Plebian or Monarch without crashing the Launcher.",
       "line": 84
     },
     {
@@ -90,8 +95,76 @@
     },
     {
       "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
-      "description": "The `CancellationToken` passed to the `Start` method by the `ProcessHostMonarchStartup` is cancelled when the Launcher receives a shutdown request.\r\n\r\nWhen run from the console this can be a `ctrl+c` signal and when run as a service this is sent by the service manager.",
+      "description": "The `CancellationToken` passed to the `Start` method by the `ProcessHostMonarchStartup` is cancelled when the Launcher receives a shutdown request.\r\n\r\nWhen run from the console this is triggered for example by pressing `ctrl+c` and when run as a service this is sent by the service manager.",
       "line": 56
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
+      "description": "When shutdown is signaled we gracefully shutdown the plebian process.",
+      "selection": {
+        "start": {
+          "line": 58,
+          "character": 1
+        },
+        "end": {
+          "line": 69,
+          "character": 16
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
+      "description": "When the Plebian process exits we try to restart it if shotdown was not requested.",
+      "line": 71
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
+      "description": "At the end of the asynchronous `Start` method we return the `_started` `TaskCompletionSource`.\r\n\r\nThe `Start` method is awaited in the `StartProcessHostMonarch` method `ProcessHostMonarchStartup` class. This means the `StartProcessHostMonarch` method will only continue execution if the `_started` `TaskCompletionSource` is completed or cancelled.",
+      "line": 130,
+      "selection": {
+        "start": {
+          "line": 3,
+          "character": 190
+        },
+        "end": {
+          "line": 3,
+          "character": 223
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
+      "description": "Ths `_started` `TaskCompletionSource` is completed in this method which is called when the Plebian signals that it has started successfully.",
+      "line": 135
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Services/LauncherService.cs",
+      "description": "The Plebian signals that it has is completed startup by calling the `Started` method of the `LauncherService` via grpc.\r\n\r\nIn the overview tour we discussed that this service is hosted by the Monarch and used by the Plebian to communicate status updates and logs. This is such a status update.",
+      "line": 25
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Services/LauncherService.cs",
+      "description": "The `LauncherService` gets injected the same `_hosts` dictionary as the `ProcessHostMonarchStartup` class and uses it to call the `Started` method of the `ProcessHostMonarch`...",
+      "line": 27
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarch.cs",
+      "description": "...which completes the `_started` `TaskCompletionSource`...",
+      "line": 135
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "...which continues with the `StartProcessHostMonarch` method...",
+      "line": 129
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "...and after the `StartProcessHostMonarch` method finishes the next package is started. phew ^^",
+      "line": 45
+    },
+    {
+      "title": "Outro",
+      "description": "And that is basically how the Monarch works. Congrats on making it through the tour 🎊\r\n\r\nIf you have not already I suggest checking out the [Plebian Tour](command:codetour.startTour?[\"Plebian\"]) to see the other side of the equation."
     }
   ]
 }
