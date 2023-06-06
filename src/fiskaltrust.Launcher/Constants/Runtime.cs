@@ -35,5 +35,19 @@ namespace fiskaltrust.Launcher.Constants
                 }
             }
         }
+
+        public static bool? IsAdministrator
+        {
+            get
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+                    var principal = new System.Security.Principal.WindowsPrincipal(identity);
+                    return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+                }
+                return null;
+            }
+        }
     }
 }

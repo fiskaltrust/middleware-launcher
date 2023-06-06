@@ -90,7 +90,7 @@ namespace fiskaltrust.Launcher.Commands
                     Directory.CreateDirectory(configFileDirectory);
                 }
 
-                await File.WriteAllTextAsync(LauncherConfigurationFile, legacyConfig.Serialize(ignoreNullValues: true));
+                await File.WriteAllTextAsync(LauncherConfigurationFile, legacyConfig.Serialize());
 
                 var fi = new FileInfo(LegacyConfigurationFile);
                 fi.CopyTo(LegacyConfigurationFile + ".legacy");

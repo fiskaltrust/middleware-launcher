@@ -86,11 +86,11 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private bool? _sandbox;
         [JsonPropertyName("sandbox")]
-        public bool? Sandbox { get => WithDefault<bool?>(_sandbox.GetValueOrDefault(false) ? true : null, false); set => _sandbox = value; }
+        public bool? Sandbox { get => WithDefault(_sandbox, false); set => _sandbox = value; }
 
         private bool? _useOffline;
         [JsonPropertyName("useOffline")]
-        public bool? UseOffline { get => WithDefault<bool?>(_useOffline.GetValueOrDefault(false) ? true : null, false); set => _useOffline = value; }
+        public bool? UseOffline { get => WithDefault(_useOffline, false); set => _useOffline = value; }
 
         private string? _logFolder;
         [JsonPropertyName("logFolder")]
@@ -99,7 +99,6 @@ namespace fiskaltrust.Launcher.Common.Configuration
         private string? _packageCache;
         [JsonPropertyName("packageCache")]
         public string? PackageCache { get => MakeAbsolutePath(WithDefault(_packageCache, () => Path.Combine(ServiceFolder!, "cache"))); set => _packageCache = value; }
-
 
         private LogLevel? _logLevel;
         [JsonPropertyName("logLevel")]
@@ -154,6 +153,10 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("cashboxConfigurationFile")]
         public string? CashboxConfigurationFile { get => MakeAbsolutePath(WithDefault(_cashboxConfiguration, () => Path.Join(ServiceFolder, "service", $"Configuration-{CashboxId}.json"))); set => _cashboxConfiguration = value; }
 
+        private bool? _useHttpSysBinding;
+        [JsonPropertyName("useHttpSysBinding")]
+        public bool? UseHttpSysBinding { get => WithDefault(_useHttpSysBinding, false); set => _useHttpSysBinding = value; }
+
         private SemanticVersioning.Range? _launcherVersion = null;
         [JsonPropertyName("launcherVersion")]
         [JsonConverter(typeof(SemVersionConverter))]
@@ -193,27 +196,27 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 {
                     Converters = {
                         new JsonStringEnumConverter()
-                    }
+                    },
                 })
             ) as LauncherConfiguration ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
             configuration.SetAlternateNames(text);
             return configuration;
         }
 
-        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false, bool ignoreNullValues = false)
-            => JsonSerializer.Serialize(
-                this,
+        public string Serialize(bool writeIndented = false, bool useUnsafeEncoding = false)
+            => Raw(raw => JsonSerializer.Serialize(
+                raw,
                 typeof(LauncherConfiguration),
                 new SerializerContext(new JsonSerializerOptions
                 {
                     WriteIndented = writeIndented,
                     Encoder = useUnsafeEncoding ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default,
-                    DefaultIgnoreCondition = ignoreNullValues ? JsonIgnoreCondition.WhenWritingNull : JsonIgnoreCondition.Never,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
                     Converters = {
                         new JsonStringEnumConverter()
                     }
                 })
-            );
+            ));
 
         internal void SetAlternateNames(string text)
         {
@@ -309,6 +312,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 return dataProtector.Unprotect((string)value);
             });
         }
+
         private static string? MakeAbsolutePath(string? path)
         {
             if (path is not null)

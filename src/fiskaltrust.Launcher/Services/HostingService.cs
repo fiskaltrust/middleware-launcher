@@ -1,4 +1,4 @@
-﻿using fiskaltrust.Launcher.Constants;
+using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
@@ -16,6 +16,8 @@ using CoreWCF;
 using CoreWCF.Channels;
 using CoreWCF.Description;
 using System.Security.Cryptography.X509Certificates;
+using System.Runtime.Versioning;
+using Microsoft.AspNetCore.Server.HttpSys;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -56,7 +58,7 @@ namespace fiskaltrust.Launcher.Services
                     .AddLoggingConfiguration(_launcherConfiguration, aspLogging: true)
                     .WriteTo.GrpcSink(_packageConfiguration, _processHostService));
 
-            if (_launcherConfiguration.LogLevel == LogLevel.Debug)
+            if (_launcherConfiguration.LogLevel <= LogLevel.Debug)
             {
                 builder.Services.AddHttpLogging(options =>
                 options.LoggingFields =
@@ -69,6 +71,31 @@ namespace fiskaltrust.Launcher.Services
                     HttpLoggingFields.ResponseBody);
             }
             WebApplication app;
+
+
+            if (_launcherConfiguration.UseHttpSysBinding!.Value)
+            {
+                const string message = $"The configuration parameter {{parametername}} will be ignored because {nameof(_launcherConfiguration.UseHttpSysBinding)} is enabled.";
+                if (_launcherConfiguration.TlsCertificateBase64 is not null)
+                {
+                    _logger.LogWarning(message, nameof(_launcherConfiguration.TlsCertificateBase64));
+                }
+
+                if (_launcherConfiguration.TlsCertificatePath is not null)
+                {
+                    _logger.LogWarning(message, nameof(_launcherConfiguration.TlsCertificatePath));
+                }
+
+                if (OperatingSystem.IsWindows() && !Runtime.IsAdministrator!.Value)
+                {
+                    _logger.LogWarning($"{nameof(_launcherConfiguration.UseHttpSysBinding)} is enabled but the fiskaltrust.Launcher was not started as an Administrator. Url binding may fail.");
+                }
+
+                if (!OperatingSystem.IsWindows())
+                {
+                    _logger.LogWarning($"{nameof(_launcherConfiguration.UseHttpSysBinding)} is only supported on Windows.");
+                }
+            }
 
             switch (hostingType)
             {
@@ -89,7 +116,7 @@ namespace fiskaltrust.Launcher.Services
                     throw new NotImplementedException();
             }
 
-            if (_launcherConfiguration.LogLevel == LogLevel.Debug)
+            if (_launcherConfiguration.LogLevel <= LogLevel.Debug)
             {
                 app.UseHttpLogging();
             }
@@ -108,14 +135,10 @@ namespace fiskaltrust.Launcher.Services
                 options.SerializerOptions.Converters.Add(new NumberToStringConverter());
             });
 
-            builder.WebHost.ConfigureKestrel(options =>
-            {
-                ConfigureKestrel(options, new Uri(GetRestUri(uri)), listenOptions => ConfigureTls(listenOptions));
-                options.AllowSynchronousIO = true;
-            });
+            builder.WebHost.ConfigureBinding(uri, listenOptions => ConfigureTls(listenOptions), isHttps: !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64), allowSynchronousIO: true, useHttpSys: _launcherConfiguration.UseHttpSysBinding!.Value);
 
             var app = builder.Build();
-            app.UsePathBase(uri.AbsolutePath);
+            if (!OperatingSystem.IsWindows() || _launcherConfiguration.UseHttpSysBinding!.Value == false) { app.UsePathBase(uri.AbsolutePath); }
 
             app.UseRouting();
             addEndpoints(app);
@@ -131,11 +154,7 @@ namespace fiskaltrust.Launcher.Services
 
         private WebApplication CreateSoapHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
-            builder.WebHost.ConfigureKestrel(options =>
-            {
-                ConfigureKestrel(options, uri, listenOptions => ConfigureTls(listenOptions));
-                options.AllowSynchronousIO = true;
-            });
+            builder.WebHost.ConfigureBinding(uri, listenOptions => ConfigureTls(listenOptions), isHttps: !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64), allowSynchronousIO: true, useHttpSys: _launcherConfiguration.UseHttpSysBinding!.Value);
 
             // Add WSDL support
             builder.Services.AddServiceModelServices().AddServiceModelMetadata();
@@ -145,6 +164,7 @@ namespace fiskaltrust.Launcher.Services
             builder.Services.AddSingleton(instance.GetType(), _ => instance);
 
             var app = builder.Build();
+            if (!OperatingSystem.IsWindows() || _launcherConfiguration.UseHttpSysBinding!.Value == false) { app.UsePathBase(uri.AbsolutePath); }
 
             app.UseServiceModel(builder =>
             {
@@ -209,11 +229,17 @@ namespace fiskaltrust.Launcher.Services
 
         private WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
-            builder.WebHost.ConfigureKestrel(options => ConfigureKestrelForGrpc(options, uri, listenOptions => ConfigureTls(listenOptions)));
+            if (OperatingSystem.IsWindows() && _launcherConfiguration.UseHttpSysBinding!.Value)
+            {
+                _logger.LogWarning($"{nameof(_launcherConfiguration.UseHttpSysBinding)} is not supported for grpc.");
+            }
+
+            builder.WebHost.BindKestrel(uri, listenOptions => ConfigureTls(listenOptions), false, HttpProtocols.Http2);
             builder.Services.AddCodeFirstGrpc(options => options.EnableDetailedErrors = true);
             builder.Services.AddSingleton(instance);
 
             var app = builder.Build();
+            if (!OperatingSystem.IsWindows() || _launcherConfiguration.UseHttpSysBinding!.Value == false) { app.UsePathBase(uri.AbsolutePath); }
 
             app.UseRouting();
 #pragma warning disable ASP0014
@@ -250,27 +276,62 @@ namespace fiskaltrust.Launcher.Services
                 }
             }
         }
+    }
 
-        private static void ConfigureKestrel(KestrelServerOptions options, Uri uri, Action<ListenOptions> configureListeners)
+    public static class BindingExtensions
+    {
+        public static ConfigureWebHostBuilder ConfigureBinding(this ConfigureWebHostBuilder builder, Uri uri, Action<ListenOptions>? configureListeners = null, bool isHttps = false, bool? allowSynchronousIO = null, HttpProtocols? protocols = null, bool useHttpSys = false)
         {
-            if (uri.IsLoopback && uri.Port != 0)
+            if (OperatingSystem.IsWindows())
             {
-                options.ListenLocalhost(uri.Port, configureListeners);
+                if (useHttpSys)
+                {
+                    return builder.BindHttpSys(uri, isHttps, allowSynchronousIO);
+                }
             }
-            else if (IPAddress.TryParse(uri.Host, out var ip))
-            {
-                options.Listen(new IPEndPoint(ip, uri.Port), configureListeners);
-            }
-            else
-            {
-                options.ListenAnyIP(uri.Port, configureListeners);
-            }
+            return builder.BindKestrel(uri, configureListeners, allowSynchronousIO, protocols);
         }
 
-        public static void ConfigureKestrelForGrpc(KestrelServerOptions options, Uri uri, Action<ListenOptions>? configureListeners = null) => ConfigureKestrel(options, uri, listenOptions =>
+        public static ConfigureWebHostBuilder BindKestrel(this ConfigureWebHostBuilder builder, Uri uri, Action<ListenOptions>? configureListeners, bool? allowSynchronousIO, HttpProtocols? protocols)
         {
-            listenOptions.Protocols = HttpProtocols.Http2;
-            configureListeners?.Invoke(listenOptions);
-        });
+            void configureListenersInner(ListenOptions options)
+            {
+                if (protocols is not null)
+                {
+                    options.Protocols = protocols.Value;
+                }
+
+                configureListeners?.Invoke(options);
+            }
+
+            builder.ConfigureKestrel(options =>
+            {
+                if (allowSynchronousIO is not null)
+                {
+                    options.AllowSynchronousIO = allowSynchronousIO.Value;
+                }
+
+                options.ListenAnyIP(uri.Port, configureListenersInner);
+            });
+
+            return builder;
+        }
+
+
+        [SupportedOSPlatform("windows")]
+        private static ConfigureWebHostBuilder BindHttpSys(this ConfigureWebHostBuilder builder, Uri uri, bool isHttps, bool? allowSynchronousIO)
+        {
+            builder.UseHttpSys(options =>
+            {
+                if (allowSynchronousIO is not null)
+                {
+                    options.AllowSynchronousIO = allowSynchronousIO.Value;
+                }
+
+                options.UrlPrefixes.Add(UrlPrefix.Create(isHttps ? "https" : "http", "*", uri.Port, uri.AbsolutePath));
+            });
+
+            return builder;
+        }
     }
 }

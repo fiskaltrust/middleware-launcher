@@ -7,6 +7,7 @@ using ProtoBuf.Grpc.Server;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -30,6 +31,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--tls-certificate-path"));
             AddOption(new Option<string?>("--tls-certificate-base64"));
             AddOption(new Option<string?>("--tls-certificate-password"));
+            AddOption(new Option<string?>("--use-http-sys-binding"));
         }
     }
 
@@ -69,7 +71,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => _launcherExecutablePath);
                 });
 
-            builder.WebHost.ConfigureKestrel(options => HostingService.ConfigureKestrelForGrpc(options, new Uri($"http://[::1]:{_launcherConfiguration.LauncherPort}")));
+            builder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{_launcherConfiguration.LauncherPort}"), protocols: HttpProtocols.Http2);
 
             builder.Services.AddCodeFirstGrpc();
 

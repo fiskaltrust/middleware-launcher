@@ -16,15 +16,16 @@ namespace fiskaltrust.Launcher.Common.Extensions
                 loggerConfiguration = loggerConfiguration.MinimumLevel.Is(Serilog.Extensions.Logging.LevelConvert.ToSerilogLevel(launcherConfiguration.LogLevel!.Value));
             }
 
-            loggerConfiguration = loggerConfiguration.WriteTo.Console(
-                outputTemplate: OutputTemplate("Timestamp:HH:mm:ss"),
-                standardErrorFromLevel: LogEventLevel.Error
-            )
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware", aspLogging ? LogEventLevel.Information : LogEventLevel.Warning)
-            .MinimumLevel.Override("System", LogEventLevel.Warning)
-            .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
-            .MinimumLevel.Override("ProtoBuf", LogEventLevel.Warning);
+            loggerConfiguration = loggerConfiguration
+                .WriteTo.Console(
+                    outputTemplate: OutputTemplate("Timestamp:HH:mm:ss"),
+                    standardErrorFromLevel: LogEventLevel.Error
+                )
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware", aspLogging ? LogEventLevel.Information : LogEventLevel.Warning)
+                .MinimumLevel.Override("System", LogEventLevel.Warning)
+                .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
+                .MinimumLevel.Override("ProtoBuf", LogEventLevel.Warning);
 
             return loggerConfiguration;
         }

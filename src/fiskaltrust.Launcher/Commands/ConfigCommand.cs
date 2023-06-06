@@ -90,7 +90,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 try
                 {
-                    rawLauncherConfigurationOld = launcherConfiguration!.Serialize(true, true, true);
+                    rawLauncherConfigurationOld = launcherConfiguration!.Serialize(true, true);
                 }
                 catch (Exception e)
                 {
@@ -102,7 +102,7 @@ namespace fiskaltrust.Launcher.Commands
             launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
 
             string rawLauncherConfigurationNew;
-            rawLauncherConfigurationNew = launcherConfiguration.Raw(l => l.Serialize(true, true, true));
+            rawLauncherConfigurationNew = launcherConfiguration.Serialize(true, true);
 
             try
             {
@@ -115,7 +115,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                await File.WriteAllTextAsync(LauncherConfigurationFile, launcherConfiguration.Raw(l => l.Serialize(true, false, true)));
+                await File.WriteAllTextAsync(LauncherConfigurationFile, launcherConfiguration.Serialize(true, false));
             }
             catch (Exception e)
             {
@@ -183,7 +183,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (localConfiguration is not null)
                 {
-                    Log.Information($"Local configuration {{LauncherConfigurationFile}}\n{localConfiguration.Raw(l => l.Serialize(true, true, true))}", LauncherConfigurationFile);
+                    Log.Information($"Local configuration {{LauncherConfigurationFile}}\n{localConfiguration.Serialize(true, true)}", LauncherConfigurationFile);
                 }
             }
 
@@ -193,7 +193,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (legacyConfiguration is not null)
                 {
-                    Log.Information($"Legacy configuration {{LegacyConfigFile}}\n{legacyConfiguration.Raw(l => l.Serialize(true, true, true))}", LegacyConfigFile);
+                    Log.Information($"Legacy configuration {{LegacyConfigFile}}\n{legacyConfiguration.Serialize(true, true)}", LegacyConfigFile);
                 }
             }
 
@@ -204,7 +204,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (remoteConfiguration is not null)
                 {
-                    Log.Information($"Remote configuration from {{CashBoxConfigurationFile}}\n{remoteConfiguration.Raw(l => l.Serialize(true, true, true))}", CashBoxConfigurationFile);
+                    Log.Information($"Remote configuration from {{CashBoxConfigurationFile}}\n{remoteConfiguration.Serialize(true, true)}", CashBoxConfigurationFile);
                 }
             }
 
