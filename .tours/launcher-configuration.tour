@@ -13,12 +13,12 @@
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/Common.cs",
-      "description": "The configuration values loaded from the `.json` file are overwritten by the values set in the commandline. Theese are loaded into the `ArgsLauncherConfiguration` property by the `System.CommandLine` libray.",
+      "description": "The configuration values loaded from the `.json` file are overwritten by the values set in the commandline. These are loaded into the `ArgsLauncherConfiguration` property by the `System.CommandLine` libray.",
       "line": 100
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
-      "description": "For the `System.CommandLine` libaray to recognize theese parameters you also have to add them to the respective commands.",
+      "description": "For the `System.CommandLine` libaray to recognize these parameters you also have to add them to the respective commands.",
       "line": 18
     },
     {
