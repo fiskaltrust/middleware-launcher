@@ -1,5 +1,59 @@
 {
   "$schema": "https://aka.ms/codetour-schema",
   "title": "Launcher Configuration",
-  "steps": []
+  "steps": [
+    {
+      "title": "Introduction",
+      "description": "In this tour we'll go over the `LauncherConfiguration`.\r\n\r\nThe `LauncherConfiguration` is used to configure the Launcher. E.g. Set the `cashboxId` and `accessToken` or set the `logLevel` or `serviceFolder` to name a few.\r\n\r\nThe `LauncherConfiguration` is different from the cashbox configuration. The cashbox configuration configures the cashbox that the Launcher is starting and contains the content of a cashbox you configured in the fiskaltrust.Portal."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/Common.cs",
+      "description": "The `LauncherConfiguration` is loaded from a json file (Set by the `--launcher-configuration-file` commandline argument or per default the file `launcher.configuration.json` next to the launcher executable.).",
+      "line": 64
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/Common.cs",
+      "description": "The configuration values loaded from the `.json` file are overwritten by the values set in the commandline. Theese are loaded into the `ArgsLauncherConfiguration` property by the `System.CommandLine` libray.",
+      "line": 100
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "For the `System.CommandLine` libaray to recognize theese parameters you also have to add them to the respective commands.",
+      "line": 18
+    },
+    {
+      "file": "src/fiskaltrust.Launcher.Common/Configuration/Configuration.cs",
+      "description": "If a configuration parameter has no default value you need to create it like this. The `JsonPropertyName` attribute  defines the name it should be de/serialized as ...",
+      "line": 75
+    },
+    {
+      "file": "src/fiskaltrust.Launcher.Common/Configuration/Configuration.cs",
+      "description": "... and an alternate name can be set using the `AlternateName` attribute. E.g. The `CashboxId` parameter can be set in the `.json` file either using `\"cashboxId\": \"<guid>\",` or `\"ftCashBoxId\": \"<guid>\",`",
+      "line": 72
+    },
+    {
+      "file": "src/fiskaltrust.Launcher.Common/Configuration/Configuration.cs",
+      "description": "If the parameter should have a default value you can define that via the `WithDefault` helper method like that.",
+      "line": 81
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
+      "description": "A value can be accessed like that and if no value was set for the `LauncherPort` property the default value will be used.\r\n\r\n> If you want to get the raw value without the default (For example to check if a value was set) you can use the `Raw` helper method like this:\r\n> \r\n> ```cs\r\n> var launcherConfiguration = new LauncherConfiguratio();\r\n> Console.WriteLine(launcherConfiguration.LauncherPort); // Will print \"5050\"\r\n> \r\n> Console.WriteLine(launcherConfiguration.Raw(l => l.LauncherPort)?.ToString() ?? \"none\"); // Will print \"none\"\r\n> ```",
+      "line": 74
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/ConfigCommand.cs",
+      "description": "To deserialize the `LauncherConfiguration` from a json string you can use the `LauncherConfiguration.Deserialize` helper method ...",
+      "line": 66
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/ConfigCommand.cs",
+      "description": "... and to serialize it to json you can use the `Serialize` helper method.",
+      "line": 118
+    },
+    {
+      "title": "Outro",
+      "description": "To learn more about encryption of sensitive values in the `LauncherConfiguration` you can checkout the [Configuration Encryption Tour](command:codetour.startTourByTitle?[\"tourTitleConfiguration Encryption\"])."
+    }
+  ]
 }
