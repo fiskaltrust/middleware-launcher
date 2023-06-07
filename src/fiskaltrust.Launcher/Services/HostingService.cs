@@ -1,4 +1,4 @@
-using fiskaltrust.Launcher.Constants;
+﻿using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Logging;
 using fiskaltrust.storage.serialization.V0;
@@ -17,6 +17,7 @@ using CoreWCF.Channels;
 using CoreWCF.Description;
 using System.Security.Cryptography.X509Certificates;
 using System.Runtime.Versioning;
+using Microsoft.AspNetCore.Server.HttpSys;
 
 namespace fiskaltrust.Launcher.Services
 {

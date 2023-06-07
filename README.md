@@ -127,7 +127,9 @@ When using VS Code, please ensure that the following command line parameters are
 
 ### Code Tours
 
-We've created some code tours. You can run them using Visual Studio Code and the [CodeTour](https://marketplace.visualstudio.com/items?itemName=vsls-contrib.codetour) extension.
+We've created some code tours which guide you through the code. They provide an easy way to familiarize yourself with the codebase. 
+
+You can run them using Visual Studio Code and the [CodeTour](https://marketplace.visualstudio.com/items?itemName=vsls-contrib.codetour) extension.
 
 When viewing this [repository on GitHub](https://github.com/fiskaltrust/middleware-launcher) you can simply press the dot key <kbd>.</kbd> to open a codespace with this extension installed.
 

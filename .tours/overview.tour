@@ -273,11 +273,11 @@
       "description": "# HostingService\r\n\r\nThe `HostingService` starts up an `AspNetCore` `WebApplication` and adds the relevant endpoints.\r\n\r\nThis starts the `rest`, `gRPC` or `SOAP` hosting of the packages.",
       "selection": {
         "start": {
-          "line": 23,
+          "line": 24,
           "character": 1
         },
         "end": {
-          "line": 23,
+          "line": 24,
           "character": 32
         }
       }
