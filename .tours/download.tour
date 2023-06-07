@@ -1,5 +1,131 @@
 {
   "$schema": "https://aka.ms/codetour-schema",
-  "title": "Package and Configuration Download",
-  "steps": []
+  "title": "Configuration and Package Download",
+  "steps": [
+    {
+      "title": "Introduction",
+      "description": "This tour will go over the configuration and package download in offline and online mode."
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/ConfigurationDownloader.cs",
+      "description": "# ConfigurationDownloader\r\n\r\nFirst we will go over the cashbox configuration download. The `ConfigurationDownloader` class is resoponsible for that.",
+      "line": 7
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Commands/Common.cs",
+      "description": "The `DownloadConfigurationAsync` method is called from the `Common` command. This means the cashbox configuration is downloaded from the portal when the `Run`, `Install` or `Uninstall` commands are run.",
+      "line": 124
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/ConfigurationDownloader.cs",
+      "description": "If the launcher is in offline mode we just return if the cashbox configuration exists or not.",
+      "line": 51
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/ConfigurationDownloader.cs",
+      "description": "Otherwise we call `GetConfigurationAsync` and write the result to the configured file location overwriting the file if it already exists.",
+      "selection": {
+        "start": {
+          "line": 56,
+          "character": 1
+        },
+        "end": {
+          "line": 65,
+          "character": 106
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/ConfigurationDownloader.cs",
+      "description": "The `GetConfigurationAsync` method downloads the cashbox configuration from the portal.",
+      "selection": {
+        "start": {
+          "line": 35,
+          "character": 1
+        },
+        "end": {
+          "line": 44,
+          "character": 63
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "# PackageDownloader\r\n\r\nNow lets look at the `PackageDownloader` class.\r\n\r\nThe `PacakageDownloader` is responsible for downloading the Middleware packages (Queues, SCUs and Helpers) and new Launcher versions.",
+      "line": 8
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/ProcessHost/ProcessHostMonarchStartup.cs",
+      "description": "The package download is triggered by the Monarch before the Plebian is started.",
+      "line": 104
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Helpers/SelfUpdater.cs",
+      "description": "And the Launcher download is triggered by the `SelfUpdater` (See the [Self Update Tour](command:codetour.startTourByTitle?[\"Self Update\"]) for more details)",
+      "line": 76
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "Both Package and Launcher download are done through the `DownloadAsync` method.\r\n\r\nPackages are `.zip` files which are downloaded from the packages server and then extracted to the service folder.\r\n\r\nThis method takes the package `name` (e.g. \"fiskaltrust.Middleware.Queue.SQLite\") and package `version` aswell as the `targetPath` (where to store the dlls from the downloaded packages) and some `targetNames` (These are files that the `targetPath` folder should contain after the package extractions).",
+      "line": 94
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "If the package is already present in the service folder the download is skipped.",
+      "line": 102
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "If the package is not found in the package cache. We Download it from the packages server.",
+      "selection": {
+        "start": {
+          "line": 114,
+          "character": 1
+        },
+        "end": {
+          "line": 150,
+          "character": 18
+        }
+      }
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "We download the package `.zip` file ...",
+      "line": 126
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "... and a `.hash` file containing the file hash of the zipfile.",
+      "line": 140
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "Next the hashfile is used to verify integrity of the `.zip` file that we've just downloaded or that was found in the pckage cache.\r\n\r\nIf the check fails we delete the zip file and `continue` the for loop. This means on the secont loop run we'll redownload the package and if the check fails again the `\"Downloaded package is invalid\"` Exception after the loop is thrown.",
+      "line": 156
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "If the integrity check passed we extract the zip file ...",
+      "line": 166
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "... and check if the required files are present.",
+      "line": 168
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "If the required files are not present we delete the `.zip` file and `continue` the loop to try again download.",
+      "line": 170
+    },
+    {
+      "file": "src/fiskaltrust.Launcher/Download/PackageDownloader.cs",
+      "description": "If all of the checks passed we return successfully.",
+      "line": 180
+    },
+    {
+      "title": "Outro",
+      "description": "That covers the basics of package and configuration download.\r\n\r\nNext you can check out the [Plebian Tour](command:codetour.startTourByTitle?[\"Plebian\"]) to see how the packages are started or the [Configuration Encryption Tour](command:codetour.startTourByTitle?[\"Configuration Encryption\"]) to see how cashbox and launcher configuration values are encrypted at rest."
+    }
+  ]
 }

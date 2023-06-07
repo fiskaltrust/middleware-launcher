@@ -42,7 +42,7 @@
           "character": 1
         }
       },
-      "description": "# Run Command\r\n\r\nThe `RunCommand` command is the most used command of the Launcher. Using this command a Casbox that is configured in the Portal is started.\r\n\r\nWhen the Launcher is started using the `RunCommand` it acts as the Monarch.\r\n\r\nIt deserializes the Launcher config files and downloads and deserializes the Cashbox config from the Portal.\r\n\r\nIt then starts a new instance of the Launcher using the `HostCommand` for each Queue, SCU and Helper configured in the cashbox.\r\n\r\nThese other Launcher instances act as Plebians. They actually start the Middleware package (e.g. a Queue) they are instructed to host.\r\n\r\nThe Plebian processes communicate their state to the Monarch process and the Monarch handles shutdown and restart (in case of a crash) of the Plegian processes."
+      "description": "# Run Command\r\n\r\nThe `RunCommand` command is the most used command of the Launcher. Using this command a Casbox that is configured in the Portal is started.\r\n\r\nWhen the Launcher is started using the `RunCommand` it acts as the Monarch.\r\n\r\nIt deserializes the Launcher config files, downloads and deserializes the Cashbox config from the Portal and downloads the Middleware packages.\r\n\r\nIt then starts a new instance of the Launcher using the `HostCommand` for each Queue, SCU and Helper configured in the cashbox.\r\n\r\nThese other Launcher instances act as Plebians. They actually start the Middleware package (e.g. a Queue) they are instructed to host.\r\n\r\nThe Plebian processes communicate their state to the Monarch process and the Monarch handles shutdown and restart (in case of a crash) of the Plegian processes."
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/RunCommand.cs",
@@ -176,7 +176,7 @@
           "character": 6
         }
       },
-      "description": "# Host Command\r\n\r\nThe `HostCommand` is used to start a Launcher instance as a Plebian.\r\n\r\nThe Plebian is responsible for downloading the package and starting the web hosting and package itself."
+      "description": "# Host Command\r\n\r\nThe `HostCommand` is used to start a Launcher instance as a Plebian.\r\n\r\nThe Plebian is responsible for the web hosting (`rest`, `gRPC` and `SOAP`) and starting package itself."
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
@@ -284,7 +284,7 @@
     },
     {
       "title": "Outro",
-      "description": "Congratulations 🎉 you've made it through the Overview Code Tour. You can jump right into coding or go more indepth in one of the Advanced Tours.\r\n\r\n* [Monarch](command:codetour.startTour?[\"Monarch\"])\r\n* [Plebian](command:codetour.startTour?[\"Plebian\"])\r\n* [Debugging](command:codetour.startTour?[\"Debugging\"])\r\n* [Logging](command:codetour.startTour?[\"Logging\"])\r\n* [Self Update](command:codetour.startTour?[\"Self Update\"])\r\n* [Launcher Configuration](command:codetour.startTour?[\"Launcher Configuration\"])\r\n* [Un/install Commands](command:codetour.startTour?[\"Un/install Commands\"])\r\n* [Config Command](command:codetour.startTour?[\"Config Command\"])\r\n* [Package and Configuration Download](command:codetour.startTour?[\"Package and Configuration Download\"])"
+      "description": "Congratulations 🎉 you've made it through the Overview Code Tour. You can jump right into coding or go more indepth in one of the Advanced Tours.\r\n\r\n* [Monarch](command:codetour.startTour?[\"Monarch\"])\r\n* [Plebian](command:codetour.startTour?[\"Plebian\"])\r\n* [Debugging](command:codetour.startTour?[\"Debugging\"])\r\n* [Logging](command:codetour.startTour?[\"Logging\"])\r\n* [Self Update](command:codetour.startTour?[\"Self Update\"])\r\n* [Launcher Configuration](command:codetour.startTour?[\"Launcher Configuration\"])\r\n* [Un/install Commands](command:codetour.startTour?[\"Un/install Commands\"])\r\n* [Config Command](command:codetour.startTour?[\"Config Command\"])\r\n* [Configuration and Package Download](command:codetour.startTour?[\"Configuration and Package Download\"])\r\n* [Configuration Encryption](command:codetour.startTour?[\"Configuration Encryption\"])"
     }
   ]
 }
