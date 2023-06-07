@@ -176,7 +176,7 @@
           "character": 6
         }
       },
-      "description": "# Host Command\r\n\r\nThe `HostCommand` is used to start a Launcher instance as a Plebian. "
+      "description": "# Host Command\r\n\r\nThe `HostCommand` is used to start a Launcher instance as a Plebian.\r\n\r\nThe Plebian is responsible for downloading the package and starting the web hosting and package itself."
     },
     {
       "file": "src/fiskaltrust.Launcher/Commands/HostCommand.cs",
