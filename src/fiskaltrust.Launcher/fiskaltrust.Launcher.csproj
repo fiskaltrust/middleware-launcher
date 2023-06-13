@@ -17,12 +17,12 @@
   <ItemGroup>
     <PackageReference Include="CoreWCF.Http" Version="1.3.2" />
     <PackageReference Include="CoreWCF.NetTcp" Version="1.3.2" />
-    <PackageReference Include="fiskaltrust.interface" Version="1.3.46-rc1" />
+    <PackageReference Include="fiskaltrust.interface" Version="1.3.46-rc1-23163-63808" />
     <PackageReference Include="fiskaltrust.Middleware.Abstractions" Version="1.3.3" />
-    <PackageReference Include="fiskaltrust.Middleware.Interface.Client.Soap" Version="1.3.46-rc1" />
+    <PackageReference Include="fiskaltrust.Middleware.Interface.Client.Soap" Version="1.3.46-rc1-23163-63804" />
     <PackageReference Include="fiskaltrust.storage.serialization" Version="2.0.0-alpha1-22020-50210" />
-    <PackageReference Include="fiskaltrust.Middleware.Interface.Client.Grpc" Version="1.3.46-rc1" />
-    <PackageReference Include="fiskaltrust.Middleware.Interface.Client.Http" Version="1.3.46-rc1" />
+    <PackageReference Include="fiskaltrust.Middleware.Interface.Client.Grpc" Version="1.3.46-rc1-23163-63804" />
+    <PackageReference Include="fiskaltrust.Middleware.Interface.Client.Http" Version="1.3.46-rc1-23163-63804" />
     <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="7.0.0" />
     <PackageReference Include="Serilog.Formatting.Compact.Reader" Version="2.0.0" />
