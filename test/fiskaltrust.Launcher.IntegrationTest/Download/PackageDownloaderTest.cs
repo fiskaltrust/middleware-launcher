@@ -16,7 +16,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
         public async Task DownloadPackageAsync_ValidDownload_DownloadedFiles()
         {
             var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig();
-            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration);
+            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration, new Launcher.Helpers.LauncherExecutablePath { Path = "" });
 
             var httpClient = new HttpClient();
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri("https://packages-2-0-sandbox.fiskaltrust.cloud/api/packages"));
@@ -53,7 +53,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
         public async Task DownloadLauncherAsync_ActualLauncherVersion_DownloadedFiles()
         {
             var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig();
-            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration);
+            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration, new Launcher.Helpers.LauncherExecutablePath { Path = "" });
             var platforms = new string[] {
                 "win-x86",
                 "win-x64",
@@ -105,7 +105,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
         {
             var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig();
             launcherConfiguration.LauncherVersion = new SemanticVersioning.Range(">= 2.0.0-preview3");
-            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration);
+            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration, new Launcher.Helpers.LauncherExecutablePath { Path = "" });
 
             var launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, launcherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
 

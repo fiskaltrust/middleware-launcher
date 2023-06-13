@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.storage.serialization.V0;
 
 namespace fiskaltrust.Launcher.Download
@@ -10,11 +11,13 @@ namespace fiskaltrust.Launcher.Download
         private readonly LauncherConfiguration _configuration;
         private readonly ILogger<PackageDownloader>? _logger;
         private readonly HttpClient? _httpClient;
+        private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public PackageDownloader(ILogger<PackageDownloader>? logger, LauncherConfiguration configuration)
+        public PackageDownloader(ILogger<PackageDownloader>? logger, LauncherConfiguration configuration, LauncherExecutablePath launcherExecutablePath)
         {
             _logger = logger;
             _configuration = configuration;
+            _launcherExecutablePath = launcherExecutablePath;
 
             if (!configuration.UseOffline!.Value)
             {
@@ -183,6 +186,31 @@ namespace fiskaltrust.Launcher.Download
             {
                 throw new Exception("Downloaded package is invalid");
             }
+        }
+
+        public void CopyPackagesToCache()
+        {
+            var sourcePath = Path.Combine(_launcherExecutablePath.Path, "packages");
+            var destinationPath = Path.Combine(_configuration.PackageCache!, "packages");
+
+            Directory.CreateDirectory(destinationPath);
+
+            foreach (var filePath in Directory.GetFiles(sourcePath, "*.zip"))
+            {
+                var fileName = Path.GetFileName(filePath);
+                var destinationFilePath = Path.Combine(destinationPath, fileName);
+
+                if (File.Exists(destinationFilePath))
+                {
+                    _logger?.LogDebug("Package {fileName} already exists in cache.");
+                    continue;
+                }
+                File.Copy(filePath, destinationFilePath, true);
+
+                _logger?.LogInformation("Copied package {fileName to cache}");
+
+            }
+
         }
 
         public async Task<bool> CheckHashAsync(string sourcePath)

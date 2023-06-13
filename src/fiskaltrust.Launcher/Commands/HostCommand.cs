@@ -20,6 +20,7 @@ using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Services.Interfaces;
 using fiskaltrust.ifPOS.v1.it;
+using fiskaltrust.Launcher.Helpers;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -42,10 +43,12 @@ namespace fiskaltrust.Launcher.Commands
         public bool Debugging { get; set; }
 
         private readonly CancellationToken _cancellationToken;
+        private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public HostCommandHandler(IHostApplicationLifetime lifetime)
+        public HostCommandHandler(IHostApplicationLifetime lifetime, LauncherExecutablePath launcherExecutablePath)
         {
             _cancellationToken = lifetime.ApplicationStopping;
+            _launcherExecutablePath = launcherExecutablePath;
         }
 
         public async Task<int> InvokeAsync(InvocationContext context)
@@ -111,7 +114,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton<IClientFactory<IITSSCD>, ITSSCDClientFactory>();
                     services.AddSingleton<IClientFactory<IPOS>, POSClientFactory>();
 
-                    using var downloader = new PackageDownloader(services.BuildServiceProvider().GetRequiredService<ILogger<PackageDownloader>>(), launcherConfiguration);
+                    using var downloader = new PackageDownloader(services.BuildServiceProvider().GetRequiredService<ILogger<PackageDownloader>>(), launcherConfiguration, _launcherExecutablePath);
 
                     try
                     {
