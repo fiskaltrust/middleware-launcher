@@ -123,7 +123,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
     
             var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(serviceFolder: tempServiceFolder, packageCache: tempPackageCache);
             var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(),
-                launcherConfiguration, new Launcher.Helpers.LauncherExecutablePath { Path = tempServiceFolder });
+                launcherConfiguration, new Launcher.Helpers.LauncherExecutablePath { Path = Path.Combine(tempServiceFolder, "fiskaltrust.Launcher.exe") });
 
             var sourcePath = Path.Combine(tempServiceFolder, "packages");
             Directory.CreateDirectory(sourcePath);
