@@ -190,12 +190,20 @@ namespace fiskaltrust.Launcher.Download
 
         public void CopyPackagesToCache()
         {
-            var sourcePath = Path.Combine(_launcherExecutablePath.Path, "packages");
+            var sourcePath = Path.Combine(Path.GetDirectoryName(_launcherExecutablePath.Path)!, "packages");
             var destinationPath = Path.Combine(_configuration.PackageCache!, "packages");
 
+            if (!Directory.Exists(sourcePath))
+            {
+                _logger?.LogDebug("No offline packages found");
+                return;
+            }
+            
             Directory.CreateDirectory(destinationPath);
+            
 
-            foreach (var filePath in Directory.GetFiles(sourcePath, "*.zip"))
+            foreach (var filePath in Directory.GetFiles(sourcePath, "*.zip")
+                         .Concat(Directory.GetFiles(sourcePath, "*.hash")))
             {
                 var fileName = Path.GetFileName(filePath);
                 var destinationFilePath = Path.Combine(destinationPath, fileName);
