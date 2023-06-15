@@ -12,7 +12,7 @@ namespace fiskaltrust.Launcher.Helpers
         private string _path = null!;
         public string Path { get => System.IO.Path.GetFullPath(_path); init => _path = value; }
 
-        public override string ToString() => Path.ToString();
+        public override string ToString() => Path;
     };
 
     public class SelfUpdater

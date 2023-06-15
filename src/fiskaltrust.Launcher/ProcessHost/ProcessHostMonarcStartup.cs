@@ -37,7 +37,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             StartupLogging();
-
+            _downloader.CopyPackagesToCache();
             try
             {
                 foreach (var scu in _cashBoxConfiguration.ftSignaturCreationDevices)

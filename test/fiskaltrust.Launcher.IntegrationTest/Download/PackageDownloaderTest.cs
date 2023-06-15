@@ -16,7 +16,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
         public async Task DownloadPackageAsync_ValidDownload_DownloadedFiles()
         {
             var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig();
-            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration);
+            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration, new Launcher.Helpers.LauncherExecutablePath { Path = "" });
 
             var httpClient = new HttpClient();
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri("https://packages-2-0-sandbox.fiskaltrust.cloud/api/packages"));
@@ -53,7 +53,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
         public async Task DownloadLauncherAsync_ActualLauncherVersion_DownloadedFiles()
         {
             var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig();
-            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration);
+            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration, new Launcher.Helpers.LauncherExecutablePath { Path = "" });
             var platforms = new string[] {
                 "win-x86",
                 "win-x64",
@@ -105,14 +105,55 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
         {
             var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig();
             launcherConfiguration.LauncherVersion = new SemanticVersioning.Range(">= 2.0.0-preview3");
-            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration);
+            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(), launcherConfiguration, new Launcher.Helpers.LauncherExecutablePath { Path = "" });
 
             var launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, launcherConfiguration.LauncherVersion, Constants.Runtime.Identifier);
 
             //ToDo comparison - Version nameing
         }
 
+        [Fact]
+        public void CopyPackagesToCache_DummyPackages_CopiedToCache()
+        {
+   
+            var tempServiceFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var tempPackageCache = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tempServiceFolder);
+            Directory.CreateDirectory(tempPackageCache);
+    
+            var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(serviceFolder: tempServiceFolder, packageCache: tempPackageCache);
+            var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(),
+                launcherConfiguration, new Launcher.Helpers.LauncherExecutablePath { Path = Path.Combine(tempServiceFolder, "fiskaltrust.Launcher.exe") });
 
+            var sourcePath = Path.Combine(tempServiceFolder, "packages");
+            Directory.CreateDirectory(sourcePath);
+
+            var packageFiles = Enumerable.Range(0, 5)
+                .Select(i => $"package{i}_{DateTime.Now.Ticks}.zip")
+                .ToList();
+
+            packageFiles.ForEach(fileName =>
+            {
+                var filePath = Path.Combine(sourcePath, fileName);
+                using var zipFile = File.Create(filePath);
+            });
+
+            try
+            {
+                packageDownloader.CopyPackagesToCache();
+                
+                packageFiles.ForEach(fileName =>
+                {
+                    var destinationFilePath = Path.Combine(tempPackageCache, "packages", fileName);
+                    File.Exists(destinationFilePath).Should().BeTrue();
+                });
+            }
+            finally
+            {
+                Directory.Delete(tempServiceFolder, true);
+                Directory.Delete(tempPackageCache, true);
+            }
+        }
 
     }
 }
