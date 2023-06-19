@@ -1,22 +1,34 @@
 using System.Security.Cryptography;
 using System.Text;
 using fiskaltrust.Launcher.Common.Configuration;
+using Microsoft.Extensions.Http;
+using Polly;
+using Polly.Extensions.Http;
 
 namespace fiskaltrust.Launcher.Download
 {
     public sealed class ConfigurationDownloader : IDisposable
     {
+        private readonly HttpClient _httpClient;
+        private readonly IAsyncPolicy<HttpResponseMessage> _policy;
         private readonly LauncherConfiguration _configuration;
-        private readonly HttpClient? _httpClient;
 
         public ConfigurationDownloader(LauncherConfiguration configuration)
         {
             _configuration = configuration;
-            if (!configuration.UseOffline!.Value)
-            {
-                _httpClient = new HttpClient(new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) });
-            }
+
+            var retryPolicy = HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .WaitAndRetryAsync(configuration.DownloadRetry!.Value, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+            
+            var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(configuration.DownloadTimeoutSec!.Value);
+
+            _policy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
+
+            var httpClientHandler = new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) };
+            _httpClient = new HttpClient(httpClientHandler);
         }
+
 
         public async Task<string> GetConfigurationAsync(ECDiffieHellman clientCurve)
         {
@@ -37,8 +49,8 @@ namespace fiskaltrust.Launcher.Download
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.ConfigurationUrl}api/configuration/{_configuration.CashboxId}"));
             request.Headers.Add("accesstoken", _configuration.AccessToken);
             request.Content = new StringContent($"{{ \"publicKeyX509\": \"{clientPublicKey}\" }}", Encoding.UTF8, "application/json");
-
-            var response = await _httpClient!.SendAsync(request);
+            
+            var response = await _policy.ExecuteAsync(ct => _httpClient!.SendAsync(request, ct), CancellationToken.None);
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadAsStringAsync();
