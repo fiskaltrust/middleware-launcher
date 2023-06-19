@@ -28,7 +28,21 @@ namespace fiskaltrust.Launcher.Download
             var httpClientHandler = new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) };
             _httpClient = new HttpClient(httpClientHandler);
         }
+        
+        // New constructor for testing
+        public ConfigurationDownloader(LauncherConfiguration configuration, HttpClient httpClient)
+        {
+            _configuration = configuration;
+            _httpClient = httpClient;
 
+            var retryPolicy = HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .WaitAndRetryAsync(configuration.DownloadRetry!.Value, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+
+            var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(configuration.DownloadTimeoutSec!.Value);
+
+            _policy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
+        }
 
         public async Task<string> GetConfigurationAsync(ECDiffieHellman clientCurve)
         {
@@ -46,11 +60,15 @@ namespace fiskaltrust.Launcher.Download
 
             var clientPublicKey = Convert.ToBase64String(clientCurve.PublicKey.ExportSubjectPublicKeyInfo());
 
-            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.ConfigurationUrl}api/configuration/{_configuration.CashboxId}"));
-            request.Headers.Add("accesstoken", _configuration.AccessToken);
-            request.Content = new StringContent($"{{ \"publicKeyX509\": \"{clientPublicKey}\" }}", Encoding.UTF8, "application/json");
-            
-            var response = await _policy.ExecuteAsync(ct => _httpClient!.SendAsync(request, ct), CancellationToken.None);
+            var response = await _policy.ExecuteAsync(async ct => 
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.ConfigurationUrl}api/configuration/{_configuration.CashboxId}"));
+                request.Headers.Add("accesstoken", _configuration.AccessToken);
+                request.Content = new StringContent($"{{ \"publicKeyX509\": \"{clientPublicKey}\" }}", Encoding.UTF8, "application/json");
+
+                return await _httpClient!.SendAsync(request, ct);
+            }, CancellationToken.None);
+    
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadAsStringAsync();
