@@ -3,14 +3,17 @@ using System.Security.Cryptography;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.storage.serialization.V0;
+using Polly;
+using Polly.Extensions.Http;
 
 namespace fiskaltrust.Launcher.Download
 {
     public sealed class PackageDownloader : IDisposable
     {
+        private readonly HttpClient _httpClient;
+        private readonly IAsyncPolicy<HttpResponseMessage> _policy;
         private readonly LauncherConfiguration _configuration;
         private readonly ILogger<PackageDownloader>? _logger;
-        private readonly HttpClient? _httpClient;
         private readonly LauncherExecutablePath _launcherExecutablePath;
 
         public PackageDownloader(ILogger<PackageDownloader>? logger, LauncherConfiguration configuration, LauncherExecutablePath launcherExecutablePath)
@@ -19,10 +22,16 @@ namespace fiskaltrust.Launcher.Download
             _configuration = configuration;
             _launcherExecutablePath = launcherExecutablePath;
 
-            if (!configuration.UseOffline!.Value)
-            {
-                _httpClient = new HttpClient(new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) });
-            }
+            var retryPolicy = HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .WaitAndRetryAsync(_configuration.DownloadRetry.Value, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+        
+            var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(_configuration.DownloadTimeoutSec.Value);
+
+            _policy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
+
+            var httpClientHandler = new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(_configuration.Proxy) };
+            _httpClient = new HttpClient(httpClientHandler);
         }
 
         public string GetPackagePath(PackageConfiguration configuration)
@@ -131,12 +140,13 @@ namespace fiskaltrust.Launcher.Download
                         request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
                         request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-                        var response = await _httpClient!.SendAsync(request);
-
+                        var response = await _policy.ExecuteAsync(ct => _httpClient.SendAsync(request, ct), CancellationToken.None);
                         response.EnsureSuccessStatusCode();
 
-                        using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                        await using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
                         await response.Content.CopyToAsync(fileStream);
+
+
                     }
 
                     {
@@ -145,11 +155,12 @@ namespace fiskaltrust.Launcher.Download
                         request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
                         request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-                        var response = await _httpClient.SendAsync(request);
+                        var response = await _policy.ExecuteAsync(ct => _httpClient.SendAsync(request, ct), CancellationToken.None);
 
                         response.EnsureSuccessStatusCode();
                         await File.WriteAllTextAsync($"{sourcePath}.hash", await response.Content.ReadAsStringAsync());
                     }
+
                 }
                 else
                 {
