@@ -16,7 +16,8 @@ namespace fiskaltrust.Launcher.Download
         private readonly ILogger<PackageDownloader>? _logger;
         private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public PackageDownloader(ILogger<PackageDownloader>? logger, LauncherConfiguration configuration, LauncherExecutablePath launcherExecutablePath)
+        public PackageDownloader(ILogger<PackageDownloader>? logger, LauncherConfiguration configuration,
+            LauncherExecutablePath launcherExecutablePath, HttpClient httpClient)
         {
             _logger = logger;
             _configuration = configuration;
@@ -24,9 +25,9 @@ namespace fiskaltrust.Launcher.Download
 
             var retryPolicy = HttpPolicyExtensions
                 .HandleTransientHttpError()
-                .WaitAndRetryAsync(_configuration.DownloadRetry.Value, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+                .WaitAndRetryAsync(_configuration.DownloadRetry!.Value, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
         
-            var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(_configuration.DownloadTimeoutSec.Value);
+            var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(_configuration.DownloadTimeoutSec!.Value);
 
             _policy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
 
@@ -83,12 +84,15 @@ namespace fiskaltrust.Launcher.Download
 
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/packages/{name}?platform={platform}"));
+                var response = await _policy.ExecuteAsync(async ct =>
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/packages/{name}?platform={platform}"));
 
-                request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
-                request.Headers.Add("accesstoken", _configuration.AccessToken);
+                    request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                    request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-                var response = await _httpClient!.SendAsync(request);
+                    return await _httpClient!.SendAsync(request, ct);
+                }, CancellationToken.None);
 
                 response.EnsureSuccessStatusCode();
 
@@ -103,101 +107,107 @@ namespace fiskaltrust.Launcher.Download
             }
         }
 
-        public async Task DownloadAsync(string name, string version, string platform, string targetPath, IEnumerable<string> targetNames)
+ public async Task DownloadAsync(string name, string version, string platform, string targetPath, IEnumerable<string> targetNames)
+{
+    var combinedName = $"{name}-{version}";
+
+    var sourcePath = Path.Combine(_configuration.PackageCache!, "packages", $"{combinedName}.zip");
+
+    var versionFile = Path.Combine(targetPath, "version.txt");
+
+    if (File.Exists(versionFile) && await File.ReadAllTextAsync(versionFile) == version && targetNames.Select(t => File.Exists(Path.Combine(targetPath, t))).All(t => t))
+    {
+        return;
+    }
+
+    if (Directory.Exists(targetPath)) { Directory.Delete(targetPath, true); }
+
+    Directory.CreateDirectory(targetPath);
+    await File.WriteAllTextAsync(versionFile, version);
+
+    for (var i = 0; i <= 1; i++)
+    {
+        if (!File.Exists(sourcePath))
         {
-            var combinedName = $"{name}-{version}";
-
-            var sourcePath = Path.Combine(_configuration.PackageCache!, "packages", $"{combinedName}.zip");
-
-            var versionFile = Path.Combine(targetPath, "version.txt");
-
-            if (File.Exists(versionFile) && await File.ReadAllTextAsync(versionFile) == version && targetNames.Select(t => File.Exists(Path.Combine(targetPath, t))).All(t => t))
+            if (_configuration.UseOffline!.Value)
             {
-                return;
+                _logger?.LogWarning("Package {name} not found in download cache.", combinedName);
+                break;
             }
 
-            if (Directory.Exists(targetPath)) { Directory.Delete(targetPath, true); }
+            _logger?.LogInformation("Downloading package {name}.", combinedName);
+            Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
 
-            Directory.CreateDirectory(targetPath);
-            await File.WriteAllTextAsync(versionFile, version);
-
-            for (var i = 0; i <= 1; i++)
             {
-                if (!File.Exists(sourcePath))
+                var response = await _policy.ExecuteAsync(async ct => 
                 {
-                    if (_configuration.UseOffline!.Value)
-                    {
-                        _logger?.LogWarning("Package {name} not found in download cache.", combinedName);
-                        break;
-                    }
+                    var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}?version={version}&platform={platform}"));
 
-                    _logger?.LogInformation("Downloading package {name}.", combinedName);
-                    Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
+                    request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                    request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-                    {
-                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}?version={version}&platform={platform}"));
+                    return await _httpClient.SendAsync(request, ct);
+                }, CancellationToken.None);
+                
+                response.EnsureSuccessStatusCode();
 
-                        request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
-                        request.Headers.Add("accesstoken", _configuration.AccessToken);
-
-                        var response = await _policy.ExecuteAsync(ct => _httpClient.SendAsync(request, ct), CancellationToken.None);
-                        response.EnsureSuccessStatusCode();
-
-                        await using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                        await response.Content.CopyToAsync(fileStream);
-
-
-                    }
-
-                    {
-                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}/hash?version={version}&platform={platform}"));
-
-                        request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
-                        request.Headers.Add("accesstoken", _configuration.AccessToken);
-
-                        var response = await _policy.ExecuteAsync(ct => _httpClient.SendAsync(request, ct), CancellationToken.None);
-
-                        response.EnsureSuccessStatusCode();
-                        await File.WriteAllTextAsync($"{sourcePath}.hash", await response.Content.ReadAsStringAsync());
-                    }
-
-                }
-                else
-                {
-                    _logger?.LogDebug("Found package in download cache.");
-                }
-
-                if (!await CheckHashAsync(sourcePath))
-                {
-                    _logger?.LogWarning("File hash for {name} incorrect.", combinedName);
-                    if (!_configuration.UseOffline!.Value)
-                    {
-                        File.Delete(sourcePath);
-                        continue;
-                    }
-                }
-
-                ZipFile.ExtractToDirectory(sourcePath, targetPath);
-
-                if (targetNames.Any(t => !File.Exists(Path.Combine(targetPath, t))))
-                {
-                    _logger?.LogWarning("Package {name} did not contain the needed files.", combinedName);
-                    if (_configuration.UseOffline!.Value)
-                    {
-                        break;
-                    }
-
-                    if (i == 0) { File.Delete(sourcePath); }
-                    continue;
-                }
-
-                return;
+                await using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                await response.Content.CopyToAsync(fileStream);
             }
+
+            {
+                var response = await _policy.ExecuteAsync(async ct => 
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}/hash?version={version}&platform={platform}"));
+
+                    request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                    request.Headers.Add("accesstoken", _configuration.AccessToken);
+
+                    return await _httpClient.SendAsync(request, ct);
+                }, CancellationToken.None);
+
+                response.EnsureSuccessStatusCode();
+                await File.WriteAllTextAsync($"{sourcePath}.hash", await response.Content.ReadAsStringAsync());
+            }
+
+        }
+        else
+        {
+            _logger?.LogDebug("Found package in download cache.");
+        }
+
+        if (!await CheckHashAsync(sourcePath))
+        {
+            _logger?.LogWarning("File hash for {name} incorrect.", combinedName);
             if (!_configuration.UseOffline!.Value)
             {
-                throw new Exception("Downloaded package is invalid");
+                File.Delete(sourcePath);
+                continue;
             }
         }
+
+        ZipFile.ExtractToDirectory(sourcePath, targetPath);
+
+        if (targetNames.Any(t => !File.Exists(Path.Combine(targetPath, t))))
+        {
+            _logger?.LogWarning("Package {name} did not contain the needed files.", combinedName);
+            if (_configuration.UseOffline!.Value)
+            {
+                break;
+            }
+
+            if (i == 0) { File.Delete(sourcePath); }
+            continue;
+        }
+
+        return;
+    }
+    if (!_configuration.UseOffline!.Value)
+    {
+        throw new Exception("Downloaded package is invalid");
+    }
+}
+
 
         public void CopyPackagesToCache()
         {

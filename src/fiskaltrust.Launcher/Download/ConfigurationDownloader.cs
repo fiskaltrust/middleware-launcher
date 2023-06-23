@@ -13,23 +13,11 @@ namespace fiskaltrust.Launcher.Download
         private readonly IAsyncPolicy<HttpResponseMessage> _policy;
         private readonly LauncherConfiguration _configuration;
 
-        public ConfigurationDownloader(LauncherConfiguration configuration)
-        {
-            _configuration = configuration;
-
-            var retryPolicy = HttpPolicyExtensions
-                .HandleTransientHttpError()
-                .WaitAndRetryAsync(configuration.DownloadRetry!.Value, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
-            
-            var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(configuration.DownloadTimeoutSec!.Value);
-
-            _policy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
-
-            var httpClientHandler = new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) };
-            _httpClient = new HttpClient(httpClientHandler);
+        public ConfigurationDownloader(LauncherConfiguration configuration) 
+            : this(configuration, new HttpClient(new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) })) 
+        { 
         }
-        
-        // New constructor for testing
+
         public ConfigurationDownloader(LauncherConfiguration configuration, HttpClient httpClient)
         {
             _configuration = configuration;
@@ -43,7 +31,7 @@ namespace fiskaltrust.Launcher.Download
 
             _policy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
         }
-
+        
         public async Task<string> GetConfigurationAsync(ECDiffieHellman clientCurve)
         {
             if (_configuration.UseOffline!.Value)
@@ -59,20 +47,22 @@ namespace fiskaltrust.Launcher.Download
             }
 
             var clientPublicKey = Convert.ToBase64String(clientCurve.PublicKey.ExportSubjectPublicKeyInfo());
+            var overallTimeoutPolicy = Policy.TimeoutAsync(_configuration.DownloadTimeoutSec!.Value); // overall timeout policy
 
-            var response = await _policy.ExecuteAsync(async ct => 
+            var response = await overallTimeoutPolicy.ExecuteAsync(async () => await _policy.ExecuteAsync(async ct => 
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.ConfigurationUrl}api/configuration/{_configuration.CashboxId}"));
                 request.Headers.Add("accesstoken", _configuration.AccessToken);
                 request.Content = new StringContent($"{{ \"publicKeyX509\": \"{clientPublicKey}\" }}", Encoding.UTF8, "application/json");
 
                 return await _httpClient!.SendAsync(request, ct);
-            }, CancellationToken.None);
-    
+            }, CancellationToken.None));
+
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadAsStringAsync();
         }
+
 
         public async Task<bool> DownloadConfigurationAsync(ECDiffieHellman clientCurve)
         {

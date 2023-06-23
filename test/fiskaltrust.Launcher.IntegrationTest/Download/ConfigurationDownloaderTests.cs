@@ -7,6 +7,7 @@ using fiskaltrust.Launcher.Download;
 using FluentAssertions;
 using Moq;
 using Moq.Protected;
+using Polly.Timeout;
 using Xunit;
 
 namespace fiskaltrust.Launcher.IntegrationTest.Download;
@@ -52,5 +53,39 @@ public class ConfigurationDownloaderTests
 
         result.Should().BeTrue();  
         callCount.Should().Be(3); 
+    }
+    
+    [Fact]
+    public async Task DownloadConfigurationAsync_ShouldTimeout()
+    {
+        var config = new LauncherConfiguration 
+        { 
+            UseOffline = false,
+            DownloadRetry = 3,
+            DownloadTimeoutSec = 1,
+            CashboxConfigurationFile = "config.json",
+            ConfigurationUrl = new Uri("http://localhost:5000/"),
+            CashboxId = Guid.NewGuid(),
+            AccessToken = "test_token",
+        };
+
+        var messageHandlerMock = new Mock<HttpMessageHandler>();
+        messageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns(() =>
+            {
+                return Task.Delay(TimeSpan.FromSeconds(2)) 
+                    .ContinueWith(_ => new HttpResponseMessage(HttpStatusCode.OK));
+            });
+
+        var httpClient = new HttpClient(messageHandlerMock.Object);
+
+        var clientCurve = ECDiffieHellman.Create();
+        var downloader = new ConfigurationDownloader(config, httpClient);
+
+        await Assert.ThrowsAsync<TimeoutRejectedException>(() => downloader.DownloadConfigurationAsync(clientCurve));
     }
 }
