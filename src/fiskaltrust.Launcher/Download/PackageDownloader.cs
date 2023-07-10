@@ -17,7 +17,7 @@ namespace fiskaltrust.Launcher.Download
         private readonly LauncherExecutablePath _launcherExecutablePath;
 
         public PackageDownloader(ILogger<PackageDownloader>? logger, LauncherConfiguration configuration,
-            LauncherExecutablePath launcherExecutablePath, HttpClient httpClient)
+            LauncherExecutablePath launcherExecutablePath)
         {
             _logger = logger;
             _configuration = configuration;
@@ -31,7 +31,6 @@ namespace fiskaltrust.Launcher.Download
             var httpClientHandler = new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(_configuration.Proxy) };
             _httpClient = new HttpClient(httpClientHandler);
         }
-
 
         public string GetPackagePath(PackageConfiguration configuration)
         {
