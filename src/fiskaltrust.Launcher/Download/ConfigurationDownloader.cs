@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Helpers;
 using Microsoft.Extensions.Http;
 using Polly;
 using Polly.Extensions.Http;
@@ -23,14 +24,12 @@ namespace fiskaltrust.Launcher.Download
             _configuration = configuration;
             _httpClient = httpClient;
 
-            var retryPolicy = HttpPolicyExtensions
-                .HandleTransientHttpError()
-                .WaitAndRetryAsync(configuration.DownloadRetry!.Value, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
-
-            var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(configuration.DownloadTimeoutSec!.Value);
+            var retryPolicy = PolicyHelper.GetRetryPolicy(configuration);
+            var timeoutPolicy = PolicyHelper.GetTimeoutPolicy(configuration);
 
             _policy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
         }
+
         
         public async Task<string> GetConfigurationAsync(ECDiffieHellman clientCurve)
         {

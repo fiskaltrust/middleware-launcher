@@ -23,17 +23,15 @@ namespace fiskaltrust.Launcher.Download
             _configuration = configuration;
             _launcherExecutablePath = launcherExecutablePath;
 
-            var retryPolicy = HttpPolicyExtensions
-                .HandleTransientHttpError()
-                .WaitAndRetryAsync(_configuration.DownloadRetry!.Value, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
-        
-            var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(_configuration.DownloadTimeoutSec!.Value);
+            var retryPolicy = PolicyHelper.GetRetryPolicy(configuration);
+            var timeoutPolicy = PolicyHelper.GetTimeoutPolicy(configuration);
 
             _policy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
 
             var httpClientHandler = new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(_configuration.Proxy) };
             _httpClient = new HttpClient(httpClientHandler);
         }
+
 
         public string GetPackagePath(PackageConfiguration configuration)
         {
