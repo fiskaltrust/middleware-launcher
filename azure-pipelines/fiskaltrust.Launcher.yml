@@ -12,9 +12,9 @@ stages:
   - template: templates/stages/test.yml
     parameters:
       ${{ if startsWith(variables.branch, 'refs/tags/v')}}:
-        config: release
+        config: Release
       ${{ else }}:
-        config: debug
+        config: Debug
 
   - template: templates/stages/build.yml
     parameters:
@@ -22,8 +22,8 @@ stages:
         - fiskaltrust.Launcher
         - fiskaltrust.LauncherUpdater
       ${{ if startsWith(variables.branch, 'refs/tags/v')}}:
-        config: release
+        config: Release
       ${{ else }}:
-        config: debug
+        config: Debug
 
   - template: templates/deb/build.yml

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using fiskaltrust.Launcher.Common.Configuration;
+using Serilog;
 
 namespace fiskaltrust.Launcher.Download
 {
@@ -46,6 +47,8 @@ namespace fiskaltrust.Launcher.Download
 
         public async Task<bool> DownloadConfigurationAsync(ECDiffieHellman clientCurve)
         {
+            Log.Verbose("Downloading Cashbox configuration.");
+
             if (_configuration.UseOffline!.Value)
             {
                 return File.Exists(_configuration.CashboxConfigurationFile!);

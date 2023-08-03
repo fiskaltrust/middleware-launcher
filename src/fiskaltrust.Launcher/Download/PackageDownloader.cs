@@ -198,9 +198,9 @@ namespace fiskaltrust.Launcher.Download
                 _logger?.LogDebug("No offline packages found");
                 return;
             }
-            
+
             Directory.CreateDirectory(destinationPath);
-            
+
 
             foreach (var filePath in Directory.GetFiles(sourcePath, "*.zip")
                          .Concat(Directory.GetFiles(sourcePath, "*.hash")))
@@ -210,12 +210,12 @@ namespace fiskaltrust.Launcher.Download
 
                 if (File.Exists(destinationFilePath))
                 {
-                    _logger?.LogDebug("Package {fileName} already exists in cache.");
+                    _logger?.LogDebug("Package {fileName} already exists in cache.", fileName);
                     continue;
                 }
                 File.Copy(filePath, destinationFilePath, true);
 
-                _logger?.LogInformation("Copied package {fileName to cache}");
+                _logger?.LogInformation("Copied package {fileName to cache}", fileName);
 
             }
 

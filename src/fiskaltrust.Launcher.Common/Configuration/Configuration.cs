@@ -6,6 +6,7 @@ using fiskaltrust.Launcher.Common.Constants;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.DataProtection;
+using Serilog;
 
 namespace fiskaltrust.Launcher.Common.Configuration
 {
@@ -156,6 +157,10 @@ namespace fiskaltrust.Launcher.Common.Configuration
         private bool? _useHttpSysBinding;
         [JsonPropertyName("useHttpSysBinding")]
         public bool? UseHttpSysBinding { get => WithDefault(_useHttpSysBinding, false); set => _useHttpSysBinding = value; }
+
+        private bool? _useLegacyDataProtection;
+        [JsonPropertyName("useLegacyDataProtection")]
+        public bool? UseLegacyDataProtection { get => WithDefault(_useLegacyDataProtection, false); set => _useLegacyDataProtection = value; }
 
         private SemanticVersioning.Range? _launcherVersion = null;
         [JsonPropertyName("launcherVersion")]

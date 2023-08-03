@@ -9,7 +9,6 @@ using Serilog;
 
 namespace fiskaltrust.Launcher.Extensions
 {
-
     unsafe static partial class KeyUtils
     {
         private const Int64 KEYCTL = 250;
@@ -117,13 +116,15 @@ namespace fiskaltrust.Launcher.Extensions
 
         public LegacyXmlEncryptor(IServiceCollection services)
         {
+            Log.Verbose("Called LegacyXmlEncryptor constructor");
             accessToken = services.BuildServiceProvider().GetRequiredService<AccessTokenForEncryption>();
         }
 
         public EncryptedXmlInfo Encrypt(XElement plaintextElement)
         {
-            var plaintextElementString = plaintextElement.ToString();
+            Log.Verbose("Called Encrypt");
 
+            var plaintextElementString = plaintextElement.ToString();
             var encryptedElement = new XElement("encrypted", Convert.ToBase64String(AesHelper.Encrypt(plaintextElementString, Convert.FromBase64String(accessToken.AccessToken))));
 
             return new EncryptedXmlInfo(encryptedElement, typeof(LegacyXmlDecryptor));
@@ -136,6 +137,7 @@ namespace fiskaltrust.Launcher.Extensions
 
         public LegacyXmlDecryptor(IServiceCollection? services)
         {
+            Log.Verbose("Called LegacyXmlDecryptor constructor");
             accessToken = services?.BuildServiceProvider()?.GetService<AccessTokenForEncryption>() ?? DataProtectionExtensions.AccessTokenForEncryption!;
         }
 
@@ -157,8 +159,11 @@ namespace fiskaltrust.Launcher.Extensions
         private const string DATA_PROTECTION_APPLICATION_NAME = "fiskaltrust.Launcher";
         internal static AccessTokenForEncryption? AccessTokenForEncryption = null; // This godawful workaround exists becaues of this allegedly fixed bug https://github.com/dotnet/aspnetcore/issues/2523
 
-        public static IDataProtectionProvider Create(string? accessToken = null, string? path = null, bool useFallback = false) =>
-            DataProtectionProvider
+        public static IDataProtectionProvider Create(string? accessToken = null, string? path = null, bool useFallback = false)
+        {
+            Log.Verbose("Called IDataProtectionProvider.Create");
+
+            return DataProtectionProvider
             .Create(
                 new DirectoryInfo(path ?? Path.Combine(Common.Constants.Paths.CommonFolder, DATA_PROTECTION_APPLICATION_NAME, "keys")),
                 configuration =>
@@ -166,9 +171,12 @@ namespace fiskaltrust.Launcher.Extensions
                     configuration.SetApplicationName(DATA_PROTECTION_APPLICATION_NAME);
                     configuration.ProtectKeysCustom(accessToken, useFallback);
                 });
+        }
 
         public static IDataProtectionBuilder ProtectKeysCustom(this IDataProtectionBuilder builder, string? accessToken = null, bool useFallback = false)
         {
+            Log.Verbose("Called IDataProtectionProvider.ProtectKeysCustom");
+
             if (accessToken is not null)
             {
                 builder.Services.AddSingleton(new AccessTokenForEncryption(accessToken));
@@ -208,8 +216,9 @@ namespace fiskaltrust.Launcher.Extensions
                     Log.Warning("Fallback config encryption mechanism is used on macos.");
                 }
             }
-            builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new LegacyXmlEncryptor(builder.Services));
 
+            Log.Debug("Fallback config encryption mechanism used.");
+            builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new LegacyXmlEncryptor(builder.Services));
             return builder;
         }
     }

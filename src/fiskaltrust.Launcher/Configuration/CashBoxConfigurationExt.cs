@@ -3,6 +3,7 @@ using fiskaltrust.storage.serialization.V0;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Helpers;
 using System.Text.Json;
+using Serilog;
 
 namespace fiskaltrust.Launcher.Configuration
 {
@@ -15,6 +16,7 @@ namespace fiskaltrust.Launcher.Configuration
 
         public static void Decrypt(this ftCashBoxConfiguration cashboxConfiguration, LauncherConfiguration launcherConfiguration, ECDiffieHellman curve)
         {
+            Log.Verbose("Decrypting cashbox configuration");
             var encryptionHelper = new CashboxConfigEncryption(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, curve);
 
             foreach (var queue in cashboxConfiguration.ftQueues)
