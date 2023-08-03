@@ -3,6 +3,7 @@ steps:
   inputs:
     pathToVersionJson: version.json
     addCiLabel: true
+    failOnTagVersionMismatch : true
 
 - task: UseDotNet@2
   inputs:
