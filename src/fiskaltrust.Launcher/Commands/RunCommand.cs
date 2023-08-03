@@ -32,6 +32,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--tls-certificate-base64"));
             AddOption(new Option<string?>("--tls-certificate-password"));
             AddOption(new Option<string?>("--use-http-sys-binding"));
+            AddOption(new Option<string?>("--use-legacy-data-protection"));
         }
     }
 
@@ -54,8 +55,8 @@ namespace fiskaltrust.Launcher.Commands
             {
                 return 1;
             }
-
             var builder = WebApplication.CreateBuilder();
+
             builder.Host
                 .UseSerilog()
                 .ConfigureServices((_, services) =>
