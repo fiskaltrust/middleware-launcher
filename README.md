@@ -155,6 +155,11 @@ HttpSysBinding has some limitations:
 * The launcher may need to be run as an administrator
 * No Tls certificates can be set
 
+---
+
+**Q:** The Launcher fails with the messages `Host ... has shutdown.` and `Restarting ...`.
+
+**A:** The Launcher could probably not bind to the configured `launcherPort`. Try setting another port in the configuration. This is a [known issue](https://github.com/fiskaltrust/middleware-launcher/issues/98) that will be fixed in a future version.
 
 ## Contributing
 We welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!
