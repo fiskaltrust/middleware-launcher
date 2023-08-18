@@ -163,8 +163,8 @@ HttpSysBinding has some limitations:
 
 ## Known Issues
 
-* For multiple launcher installations on the same maching the `launcherPort` configuration parameter needs to be set to a different port for each running launcher. ([#98](https://github.com/fiskaltrust/middleware-launcher/issues/98))
-
+* For multiple Launcher installations on the same maching the `launcherPort` configuration parameter needs to be set to a different port for each running launcher. ([#98](https://github.com/fiskaltrust/middleware-launcher/issues/98))
+* The Launcher has access problems when writing to the keyring on linux if run as a service. The launcher configuration parameter `useLegacyDataProtection` needs to be set to `true` as a workaround. ([#100](https://github.com/fiskaltrust/middleware-launcher/issues/100)
 
 ## Contributing
 We welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!
