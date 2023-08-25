@@ -21,12 +21,12 @@ stages:
             storage: stdevwesteuropepackages
             serviceConnection: rg-dev-westeurope-packages
 
-        # - stage: Release_Production
-        #   dependsOn: Release-Sandbox
-        #   templateContext:
-        #     environment: production
-        #     storage: stwesteuropepackages
-        #     serviceConnection: rg-westeurope-packages
+        - stage: Release_Production
+          dependsOn: Release-Sandbox
+          templateContext:
+            environment: production
+            storage: stprodwesteuropepackages
+            serviceConnection: rg-prod-westeurope-packages
 
   - template: templates/deb/release.yml
     parameters:
