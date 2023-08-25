@@ -22,7 +22,7 @@ stages:
             serviceConnection: rg-dev-westeurope-packages
 
         - stage: Release_Production
-          dependsOn: Release-Sandbox
+          dependsOn: Release_Sandbox
           templateContext:
             environment: production
             storage: stprodwesteuropepackages
