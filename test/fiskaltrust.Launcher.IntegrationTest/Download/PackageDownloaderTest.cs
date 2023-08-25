@@ -25,6 +25,12 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
 
             foreach (var package in packages!)
             {
+                var path = Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId.ToString()!, packageConfiguration.Id.ToString());
+                Directory.Delete(path, true);
+
+            }
+            foreach (var package in packages!)
+            {
                 request = new HttpRequestMessage(HttpMethod.Get, new Uri($"https://packages-2-0-sandbox.fiskaltrust.cloud/api/packages/{package}"));
                 response = await httpClient!.SendAsync(request);
                 var versions = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
@@ -39,6 +45,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                 {
                     Directory.Delete(Path.GetDirectoryName(path)!, true);
                 }
+
                 try
                 {
                     await packageDownloader.DownloadPackageAsync(packageConfiguration);
