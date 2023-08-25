@@ -58,7 +58,6 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                 new FileInfo(path).Length.Should().BeGreaterThan(0);
                 Directory.Delete(Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId.ToString()!, packageConfiguration.Id.ToString()), true);
             }
-            throw new Exception(textWriter.ToString());
         }
 
         [Fact]
