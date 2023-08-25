@@ -34,6 +34,11 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                     Package = package,
                     Version = versions!.Last()
                 };
+                var path = Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId.ToString()!, packageConfiguration.Id.ToString(), $"{package}.dll");
+                if (Directory.Exists(Path.GetDirectoryName(path)!))
+                {
+                    Directory.Delete(Path.GetDirectoryName(path)!, true);
+                }
                 try
                 {
                     await packageDownloader.DownloadPackageAsync(packageConfiguration);
@@ -42,7 +47,6 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                 {
                     throw new HttpRequestException($"Download of {package} version : {versions!.Last()} failed!", e);
                 }
-                var path = Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId.ToString()!, packageConfiguration.Id.ToString(), $"{package}.dll");
                 _ = File.Exists(path).Should().BeTrue();
                 new FileInfo(path).Length.Should().BeGreaterThan(0);
                 Directory.Delete(Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId.ToString()!, packageConfiguration.Id.ToString()), true);
@@ -115,12 +119,12 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
         [Fact]
         public void CopyPackagesToCache_DummyPackages_CopiedToCache()
         {
-   
+
             var tempServiceFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             var tempPackageCache = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempServiceFolder);
             Directory.CreateDirectory(tempPackageCache);
-    
+
             var launcherConfiguration = TestLauncherConfig.GetTestLauncherConfig(serviceFolder: tempServiceFolder, packageCache: tempPackageCache);
             var packageDownloader = new PackageDownloader(Mock.Of<ILogger<PackageDownloader>>(),
                 launcherConfiguration, new Launcher.Helpers.LauncherExecutablePath { Path = Path.Combine(tempServiceFolder, "fiskaltrust.Launcher.exe") });
@@ -141,7 +145,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
             try
             {
                 packageDownloader.CopyPackagesToCache();
-                
+
                 packageFiles.ForEach(fileName =>
                 {
                     var destinationFilePath = Path.Combine(tempPackageCache, "packages", fileName);
