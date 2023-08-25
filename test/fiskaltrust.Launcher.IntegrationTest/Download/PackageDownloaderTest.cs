@@ -43,10 +43,11 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                 {
                     await packageDownloader.DownloadPackageAsync(packageConfiguration);
                 }
-                catch (HttpRequestException e)
+                catch (Exception e)
                 {
-                    throw new HttpRequestException($"Download of {package} version : {versions!.Last()} failed!", e);
+                    throw new Exception($"Download of {package} version : {versions!.Last()} failed!", e);
                 }
+
                 _ = File.Exists(path).Should().BeTrue();
                 new FileInfo(path).Length.Should().BeGreaterThan(0);
                 Directory.Delete(Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId.ToString()!, packageConfiguration.Id.ToString()), true);
