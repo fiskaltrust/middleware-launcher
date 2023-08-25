@@ -35,10 +35,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                     Version = versions!.Last()
                 };
                 var path = Path.Combine(launcherConfiguration.ServiceFolder!, "service", launcherConfiguration.CashboxId.ToString()!, packageConfiguration.Id.ToString(), $"{package}.dll");
-                if (File.Exists(launcherConfiguration.ServiceFolder!))
-                {
-                    Directory.Delete(launcherConfiguration.ServiceFolder!, true);
-                }
+
                 try
                 {
                     await packageDownloader.DownloadPackageAsync(packageConfiguration);
