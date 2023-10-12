@@ -15,8 +15,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreWCF.Http" Version="1.3.2" />
-    <PackageReference Include="CoreWCF.NetTcp" Version="1.3.2" />
+    <PackageReference Include="CoreWCF.Http" Version="1.4.1" />
+    <PackageReference Include="CoreWCF.NetTcp" Version="1.4.1" />
     <PackageReference Include="fiskaltrust.interface" Version="1.3.50-rc1" />
     <PackageReference Include="fiskaltrust.Middleware.Abstractions" Version="1.3.3" />
     <PackageReference Include="fiskaltrust.Middleware.Interface.Client.Soap" Version="1.3.50-rc2" />
@@ -33,6 +33,7 @@
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="SemanticVersioning" Version="2.0.2" />
     <PackageReference Include="DiffPlex" Version="1.7.1" />
+    <PackageReference Include="MQTTnet" Version="4.3.1.873" />
   </ItemGroup>
 
   <ItemGroup>
