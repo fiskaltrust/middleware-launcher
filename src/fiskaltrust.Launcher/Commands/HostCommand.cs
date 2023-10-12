@@ -90,6 +90,8 @@ namespace fiskaltrust.Launcher.Commands
                 .WriteTo.GrpcSink(packageConfiguration, processHostService)
                 .CreateLogger();
 
+            System.Text.Encoding.RegisterProvider(new LauncherEncodingProvider());
+
             var builder = Host.CreateDefaultBuilder()
                 .UseSerilog()
                 .ConfigureServices(services =>
