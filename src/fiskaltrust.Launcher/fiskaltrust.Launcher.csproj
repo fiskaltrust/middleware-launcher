@@ -33,7 +33,6 @@
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="SemanticVersioning" Version="2.0.2" />
     <PackageReference Include="DiffPlex" Version="1.7.1" />
-    <PackageReference Include="MQTTnet" Version="4.3.1.873" />
   </ItemGroup>
 
   <ItemGroup>
