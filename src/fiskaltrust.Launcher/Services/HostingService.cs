@@ -18,6 +18,7 @@ using CoreWCF.Description;
 using System.Security.Cryptography.X509Certificates;
 using System.Runtime.Versioning;
 using Microsoft.AspNetCore.Server.HttpSys;
+using System.Text.Json;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -133,6 +134,7 @@ namespace fiskaltrust.Launcher.Services
             {
                 options.SerializerOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
                 options.SerializerOptions.Converters.Add(new NumberToStringConverter());
+                options.SerializerOptions.PropertyNamingPolicy = null;
             });
 
             builder.WebHost.ConfigureBinding(uri, listenOptions => ConfigureTls(listenOptions), isHttps: !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64), allowSynchronousIO: true, useHttpSys: _launcherConfiguration.UseHttpSysBinding!.Value);
