@@ -35,7 +35,93 @@ To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 > See help for other start parameters:
 > ```sh
 > fiskaltrust.Launcher.exe run --help
-> ```
+>
+
+The ***run*** command of the fiskaltrust.Launcher tool is used to execute the launcher, providing users with various options to configure its behavior and logging details.
+
+***Options***:
+
+`--cashbox-id <cashbox-id>`
+Specifies the ID of the cashbox.
+
+`--access-token <access-token>`
+Token used for authentication.
+
+`--sandbox`
+Enables sandbox mode.
+
+`--log-folder <log-folder>`
+Path to the folder where logs will be saved.
+
+`--log-level <level>`
+Determines the logging level. Accepts values like Critical, Debug, etc.
+
+`--launcher-configuration-file <file>`
+Path to the launcher configuration file. Defaults to launcher.configuration.json.
+
+`--legacy-configuration-file <file>`
+Path to the legacy configuration file. Defaults to fiskaltrust.exe.config.
+
+`--merge-legacy-config-if-exists`
+If set, merges legacy configuration if it exists. Default is true.
+
+`--launcher-port <port>`
+Specifies the port on which the launcher will run.
+
+`--use-offline`
+Enables offline mode.
+
+`--service-folder <service-folder>`
+Path to the service folder.
+
+`--configuration-url <configuration-url>`
+URL for the configuration.
+
+`--packages-url <packages-url>`
+URL to fetch packages from.
+
+`--package-cache <package-cache>`
+Cache directory for the packages.
+
+`--helipad-url <helipad-url>`
+URL for the helipad.
+
+`--download-timeout-sec <download-timeout-sec>`
+Timeout for downloads in seconds.
+
+`--download-retry <download-retry>`
+Number of times to retry a failed download.
+
+`--ssl-validation`
+Validates SSL certificates.
+
+`--proxy <proxy>`
+Proxy server details.
+
+`--processhost-ping-period-sec <processhost-ping-period-sec>`
+Ping period for the process host in seconds.
+
+`--cashbox-configuration-file <cashbox-configuration-file>`
+Path to the cashbox configuration file.
+
+`--tls-certificate-path <tls-certificate-path>`
+Path to the TLS certificate.
+
+`--tls-certificate-base64 <tls-certificate-base64>`
+Base64 encoded TLS certificate.
+
+`--tls-certificate-password <tls-certificate-password>`
+Password for the TLS certificate.
+
+`--use-http-sys-binding <use-http-sys-binding>`
+Uses HTTP sys binding.
+
+`--use-legacy-data-protection <use-legacy-data-protection>`
+Enables use of legacy data protection.
+
+`-?`, `-h`, `--help`
+Displays help and usage information.
+> 
 > See help for other available commands:
 > ```sh
 > fiskaltrust.Launcher.exe --help
