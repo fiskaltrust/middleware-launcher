@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace fiskaltrust.Launcher.Helpers
 {
-    sealed class DateTimeConverter : JsonConverter<DateTime>
+    sealed class CustomDateTimeConverter : JsonConverter<DateTime>
     {
         private readonly static JsonConverter<DateTime> DEFAULT_CONVERTER = (JsonConverter<DateTime>)JsonSerializerOptions.Default.GetConverter(typeof(DateTime));
         static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0);
