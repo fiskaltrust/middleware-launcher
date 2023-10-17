@@ -135,6 +135,7 @@ namespace fiskaltrust.Launcher.Services
                 options.SerializerOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
                 options.SerializerOptions.Converters.Add(new NumberToStringConverter());
                 options.SerializerOptions.Converters.Add(new CustomDateTimeConverter());
+                options.SerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
                 options.SerializerOptions.PropertyNamingPolicy = null;
                 options.SerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
             });
