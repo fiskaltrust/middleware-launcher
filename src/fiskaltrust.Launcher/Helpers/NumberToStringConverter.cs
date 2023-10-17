@@ -15,7 +15,7 @@ namespace fiskaltrust.Launcher.Helpers
                     return number.ToString(CultureInfo.InvariantCulture);
                 }
 
-                if (reader.TryGetDouble(out var doubleNumber))
+                if (reader.TryGetDecimal(out var doubleNumber))
                 {
                     return doubleNumber.ToString(CultureInfo.InvariantCulture);
                 }

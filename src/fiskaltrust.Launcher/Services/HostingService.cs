@@ -134,7 +134,9 @@ namespace fiskaltrust.Launcher.Services
             {
                 options.SerializerOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
                 options.SerializerOptions.Converters.Add(new NumberToStringConverter());
+                options.SerializerOptions.Converters.Add(new DateTimeConverter());
                 options.SerializerOptions.PropertyNamingPolicy = null;
+                options.SerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
             });
 
             builder.WebHost.ConfigureBinding(uri, listenOptions => ConfigureTls(listenOptions), isHttps: !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64), allowSynchronousIO: true, useHttpSys: _launcherConfiguration.UseHttpSysBinding!.Value);
