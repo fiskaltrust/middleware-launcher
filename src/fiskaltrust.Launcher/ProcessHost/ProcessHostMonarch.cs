@@ -51,6 +51,22 @@ namespace fiskaltrust.Launcher.ProcessHost
             _process.EnableRaisingEvents = true;
             _stopped = new TaskCompletionSource();
             _started = new TaskCompletionSource();
+
+            _process.OutputDataReceived += (sender, e) => 
+            {
+                if (e.Data != null) 
+                {
+                    _logger.LogInformation($"Plebian Output: {e.Data}");
+                }
+            };
+
+            _process.ErrorDataReceived += (sender, e) => 
+            {
+                if (e.Data != null) 
+                {
+                    _logger.LogError($"Plebian Error: {e.Data}");
+                }
+            };
         }
 
         public Task Start(CancellationToken cancellationToken)
@@ -87,11 +103,14 @@ namespace fiskaltrust.Launcher.ProcessHost
                                 _process.BeginOutputReadLine();
                                 _process.BeginErrorReadLine();
                             }
-                            catch { }
+                            catch 
+                            {
+                                _logger.LogError("Error while initiating the output and error read lines.");
+                            }
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, "Could not start ProcessHost process for {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
+                            _logger.LogError(ex, "Could not restart ProcessHost process for {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
                             _started.TrySetResult();
                             _stopped.TrySetCanceled(cancellationToken);
                         }
