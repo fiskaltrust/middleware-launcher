@@ -33,17 +33,12 @@ fiskaltrust.Launcher.exe run --cashbox-id <cashboxid> --access-token <accesstoke
 To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 
 > See help for other start parameters:
->  
-
-```sh
+> ```sh
 > fiskaltrust.Launcher.exe run --help
 > ```
-
->  
+> 
 > See help for other available commands:
->  
-
-```sh
+> ```sh
 > fiskaltrust.Launcher.exe --help
 > ```
 
@@ -121,7 +116,7 @@ All of these config keys can be overridden using the corresponding cli arguments
 
 ### `run`
 
-The _**run**_ command of the fiskaltrust. Launcher tool is used to execute the launcher, providing users with various options to configure its behaviour and logging details.
+The `run` command of the fiskaltrust.Launcher is used to execute the launcher, providing users with various options to configure its behaviour and logging details.
 
 | Option                                                        | Description                                                                | Default                                                                                                                             |
 |---------------------------------------------------------------|----------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
@@ -155,7 +150,53 @@ The _**run**_ command of the fiskaltrust. Launcher tool is used to execute the l
 
 ## `config`
 
+### `config get`
+
+The `config get` command of the fiskaltrust.Launcher can be used to get the current values of the Launcher configuration file.
+
+> **Usage:**
+>
+> `fiskaltrust.Launcher.exe config get`
+>
+> `fiskaltrust.Launcher.exe config --launcher-configuration-file <launcher-configuration-file> get` To use an other location of the configuration file.
+
+### `config set`
+
+The `config set` command of the fiskaltrust.Launcher can be used to set configuration values in the Launcher configuration file.
+
+> **Usage:**
+>
+> `fiskaltrust.Launcher.exe config set --<config-key> <value>`
+>
+> E.g. `fiskaltrust.Launcher.exe config set --log-leve Debug`
+
+
 ## `doctor`
+
+The `doctor` command of the fiskaltrust.Launcher can be used to for troubleshooting launcher problems. It can be run with the same cli parameters as the `run` command.
+
+The `doctor` command should give the following output when run successfully:
+
+```
+[10:11:09 INF] ✅ Parse launcher configuration
+[10:11:10 INF] ✅ Load ECDH Curve
+[10:11:10 INF] ✅ Download cashbox configuration
+[10:11:10 INF] ✅ Parse cashbox configuration in launcher configuration
+[10:11:11 INF] ✅ Parse cashbox configuration
+[10:11:11 INF] ✅ Decrypt cashbox configuration
+[10:11:11 INF] ✅ Setup data protection
+[10:11:11 INF] ✅ Decrypt launcher configuration
+[10:11:11 INF] ✅ Setup monarch services
+[10:11:11 INF] ✅ Setup monarch ProcessHostService
+[10:11:11 INF] ✅ Build monarch WebApplication
+[10:11:11 INF] ✅ Start monarch WebApplication
+[10:11:11 INF] ✅ Start plebian processhostservice client
+[10:11:11 INF] ✅ Setup plebian services
+[10:11:11 INF] ✅ Build plebian Host
+[10:11:11 INF] ✅ Start plebian Host
+[10:11:11 INF] ✅ Shutdown launcher gracefully
+[10:11:11 INF] Doctor found no issues.
+```
 
 ## Service
 
