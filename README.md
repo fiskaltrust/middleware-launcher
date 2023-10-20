@@ -1,8 +1,9 @@
 # fiskaltrust Launcher
+
 The **fiskaltrust Launcher** is an application that hosts the packages of the **fiskaltrust Middleware**, a modular fiscalization and POS platform that can be embedded into POS systems to suffice international fiscalization regulations.
 
-> **Warning** 
->This all-new fiskaltrust Launcher is currently in development. We plan to release a preview version to interested customers soon - please reach out to us in the [discussion section](https://github.com/fiskaltrust/middleware-launcher/discussions) if you want to participate.
+> **Warning**
+> This all-new fiskaltrust Launcher is currently in development. We plan to release a preview version to interested customers soon - please reach out to us in the [discussion section](https://github.com/fiskaltrust/middleware-launcher/discussions) if you want to participate.
 
 **You can track the ongoing development of the first release in the project's [backlog and board](https://github.com/orgs/fiskaltrust/projects/3/).**
 
@@ -10,12 +11,11 @@ The **fiskaltrust Launcher** is an application that hosts the packages of the **
 
 Middleware packages each provide specific fiscalization-, data source- and security device implementations. These package can be aggregated into a configuration container (_Cashbox_) in the fiskaltrust Portal. The Launcher then uses this configuration to decide which packages to download and run, and provides configurable hosted endpoints so that the POS software can communicate with them (e.g. gRPC or HTTP).
 
-Below, we illustrate a minimal sample configuration with the international SQLite _Queue_ package (with a configured HTTP endpoint) and a German _Signature Creation Unit_ (with a gRPC endpoint) that abstracts a Swissbit TSS. 
+Below, we illustrate a minimal sample configuration with the international SQLite _Queue_ package (with a configured HTTP endpoint) and a German _Signature Creation Unit_ (with a gRPC endpoint) that abstracts a Swissbit TSS.
 
 <div align="center">
   <img src="./doc/images/overview.png" alt="overview" />
 </div>
-
 
 ## Getting Started
 
@@ -25,111 +25,33 @@ Download the latest release from GitHub. We always recommend using the latest re
 Unzip the downloaded release.
 
 Start the Launcher via the commandline:
+
 ```sh
 fiskaltrust.Launcher.exe run --cashbox-id <cashboxid> --access-token <accesstoken> --sandbox
 ```
 
 To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 
-> ***Note:***  
 > See help for other start parameters:
-> ```sh
+>  
+
+```sh
 > fiskaltrust.Launcher.exe run --help
->
+> ```
 
-The ***run*** command of the fiskaltrust.Launcher tool is used to execute the launcher, providing users with various options to configure its behavior and logging details.
-
-***Options***:
-
-`--cashbox-id <cashbox-id>`
-Specifies the ID of the cashbox.
-
-`--access-token <access-token>`
-Token used for authentication.
-
-`--sandbox`
-Enables sandbox mode.
-
-`--log-folder <log-folder>`
-Path to the folder where logs will be saved.
-
-`--log-level <level>`
-Determines the logging level. Accepts values like Critical, Debug, etc.
-
-`--launcher-configuration-file <file>`
-Path to the launcher configuration file. Defaults to launcher.configuration.json.
-
-`--legacy-configuration-file <file>`
-Path to the legacy configuration file. Defaults to fiskaltrust.exe.config.
-
-`--merge-legacy-config-if-exists`
-If set, merges legacy configuration if it exists. Default is true.
-
-`--launcher-port <port>`
-Specifies the port on which the launcher will run.
-
-`--use-offline`
-Enables offline mode.
-
-`--service-folder <service-folder>`
-Path to the service folder.
-
-`--configuration-url <configuration-url>`
-URL for the configuration.
-
-`--packages-url <packages-url>`
-URL to fetch packages from.
-
-`--package-cache <package-cache>`
-Cache directory for the packages.
-
-`--helipad-url <helipad-url>`
-URL for the helipad.
-
-`--download-timeout-sec <download-timeout-sec>`
-Timeout for downloads in seconds.
-
-`--download-retry <download-retry>`
-Number of times to retry a failed download.
-
-`--ssl-validation`
-Validates SSL certificates.
-
-`--proxy <proxy>`
-Proxy server details.
-
-`--processhost-ping-period-sec <processhost-ping-period-sec>`
-Ping period for the process host in seconds.
-
-`--cashbox-configuration-file <cashbox-configuration-file>`
-Path to the cashbox configuration file.
-
-`--tls-certificate-path <tls-certificate-path>`
-Path to the TLS certificate.
-
-`--tls-certificate-base64 <tls-certificate-base64>`
-Base64 encoded TLS certificate.
-
-`--tls-certificate-password <tls-certificate-password>`
-Password for the TLS certificate.
-
-`--use-http-sys-binding <use-http-sys-binding>`
-Uses HTTP sys binding.
-
-`--use-legacy-data-protection <use-legacy-data-protection>`
-Enables use of legacy data protection.
-
-`-?`, `-h`, `--help`
-Displays help and usage information.
-> 
+>  
 > See help for other available commands:
-> ```sh
+>  
+
+```sh
 > fiskaltrust.Launcher.exe --help
 > ```
 
+> See [CLI](#cli) for more information.
+
 ### Installation
 
-On debian based linux systems the Launcher can also be installed via `apt-get`. The executable will be installed at `/usr/bin/fiskaltrust.Launcher` and can be run like that `fiskaltrust.Launcher --help`.
+On debian based linux systems the Launcher can also be installed via `apt-get` . The executable will be installed at `/usr/bin/fiskaltrust.Launcher` and can be run like that `fiskaltrust.Launcher --help` .
 
 ```bash
 curl -L http://downloads.fiskaltrust.cloud/apt-repo/KEY.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/fiskaltrust-archive-keyring.gpg > /dev/null
@@ -138,8 +60,10 @@ sudo apt update
 sudo apt install fiskaltrust-middleware-launcher
 ```
 
-> When installed this way the self-update funtionality of the launcher is disabled and it has to be updated via `apt-get`.
-> ```bash
+> When installed this way the self-update funtionality of the launcher is disabled and it has to be updated via `apt-get` .
+>  
+
+```bash
 > sudo apt update && sudo apt install --only-upgrade fiskaltrust-middleware-launcher
 > ```
 
@@ -153,17 +77,18 @@ Run the uninstall-service.cmd or sh command to deinstall the old launcher.
 
 Create the [configuration file](#launcher-configuration), and make sure to include the cashboxId and access token. 
 
-In the new launcher folder run the following command `.\fiskaltrust.Launcher.exe install --sandbox`.
+In the new launcher folder run the following command `.\fiskaltrust.Launcher.exe install --sandbox` .
 
 To check that the switch is successful, try send receipt to the middleware using our Postman collection.
 
 ## Launcher configuration
 
-The Launcher 2.0 configuration is now read from a json file (`launcher.configuration.json` in the working directory per default).The configuration has to be created mannually.
+The Launcher 2.0 configuration is now read from a json file ( `launcher.configuration.json` in the working directory per default). The configuration has to be created mannually.
 
 This file can be set via the `--launcher-configuration-file` cli argument.
 
 The configuration file should contain the following config keys:
+
 ```jsonc
 {
   
@@ -188,11 +113,53 @@ The configuration file should contain the following config keys:
   "useHttpSysBinding": "useHttpSysBinding",                 // bool (default: false)
 }
 ```
+
 All of these config keys can be overridden using the corresponding cli arguments.
+
+## CLI
+
+### `run`
+
+The _**run**_ command of the fiskaltrust. Launcher tool is used to execute the launcher, providing users with various options to configure its behaviour and logging details.
+
+| Option                                                        | Description                                                                       |
+|---------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| `--cashbox-id <cashbox-id>`                                   | Specifies the ID of the cashbox.                                                  |
+| `--access-token <access-token>`                               | Token used for authentication.                                                    |
+| `--sandbox`                                                   | Enables sandbox mode.                                                             |
+| `--log-folder <log-folder>`                                   | Path to the folder where logs will be saved.                                      |
+| `--log-level <level>`                                         | Determines the logging level. Accepts values like Critical, Debug, etc.           |
+| `--launcher-configuration-file <file>`                        | Path to the launcher configuration file. Defaults to launcher.configuration.json. |
+| `--legacy-configuration-file <file>`                          | Path to the legacy configuration file. Defaults to fiskaltrust.exe.config.        |
+| `--merge-legacy-config-if-exists`                             | If set, merges legacy configuration if it exists. Default is true.                |
+| `--launcher-port <port>`                                      | Specifies the port which the launcher will use for internal communication.        |
+| `--use-offline`                                               | Enables offline mode.                                                             |
+| `--service-folder <service-folder>`                           | Path to the service folder.                                                       |
+| `--configuration-url <configuration-url>`                     | URL for the configuration.                                                        |
+| `--packages-url <packages-url>`                               | URL to fetch packages from.                                                       |
+| `--package-cache <package-cache>`                             | Cache directory for the packages.                                                 |
+| `--helipad-url <helipad-url>`                                 | URL for the helipad.                                                              |
+| `--download-timeout-sec <download-timeout-sec>`               | Timeout for downloads in seconds.                                                 |
+| `--download-retry <download-retry>`                           | Number of times to retry a failed download.                                       |
+| `--ssl-validation`                                            | Validates SSL certificates.                                                       |
+| `--proxy <proxy>`                                             | Proxy server details.                                                             |
+| `--processhost-ping-period-sec <processhost-ping-period-sec>` | Ping period for the process host in seconds.                                      |
+| `--cashbox-configuration-file <cashbox-configuration-file>`   | Path to the cashbox configuration file.                                           |
+| `--tls-certificate-path <tls-certificate-path>`               | Path to the TLS certificate.                                                      |
+| `--tls-certificate-base64 <tls-certificate-base64>`           | Base64 encoded TLS certificate.                                                   |
+| `--tls-certificate-password <tls-certificate-password>`       | Password for the TLS certificate.                                                 |
+| `--use-http-sys-binding <use-http-sys-binding>`               | Uses HTTP sys binding.                                                            |
+| `--use-legacy-data-protection <use-legacy-data-protection>`   | Enables use of legacy data protection.                                            |
+| `-?` , `-h` , `--help`                                        | Displays help and usage information.                                              |
+
+## `config`
+
+## `doctor`
 
 ## Service
 
 The Launcher 2.0 can be installed as a service on Windows and linux (when systemd is available) using the `install` command:
+
 ```sh
 fiskaltrust.Launcher.exe install --cashbox-id <cashboxid> --access-token <accesstoken> --launcher-configuration-file <launcher-configuration-file>
 ```
@@ -201,7 +168,7 @@ fiskaltrust.Launcher.exe install --cashbox-id <cashboxid> --access-token <access
 
 The Launcher 2.0 can update itsself automatically. For this the `launcherVersion` must be set in the [launcher configuration file](#launcher-configuration).
 
-This can be set to a specific version (e.g. `"launcherVersion": "2.0.0-preview3"` updates to version `2.0.0-preview3`).
+This can be set to a specific version (e.g. `"launcherVersion": "2.0.0-preview3"` updates to version `2.0.0-preview3` ).
 
 Or this can be set to a [semver range](https://devhints.io/semver#ranges) (e.g. `"launcherVersion": ">= 2.0.0-preview3 < 2.0.0"` automatically updates to all preview versions greater or equal to `2.0.0-preview3` but does not update to non preview versions).
 
@@ -209,13 +176,13 @@ Or this can be set to a [semver range](https://devhints.io/semver#ranges) (e.g. 
 
 Clone this github repository and bild the project with Visual Studio.
 
-When using VS Code, please ensure that the following command line parameters are passed to `dotnet build` to enable seamless debugging: `-p:PublishSingleFile=true -p:PublishReadyToRun=true`.
+When using VS Code, please ensure that the following command line parameters are passed to `dotnet build` to enable seamless debugging: `-p:PublishSingleFile=true -p:PublishReadyToRun=true` .
 
 ## FAQ
 
 **Q:** Are additional components required to be installed to be able to run the Launcher 2.0?
 
-**A:** The Launcher 2.0 does not require any additionnal components to be installed. 
+**A:** The Launcher 2.0 does not require any additionnal components to be installed.
 
 ---
 
@@ -231,11 +198,12 @@ When using VS Code, please ensure that the following command line parameters are
 
 ---
 
-**Q:** Can I use portsharing to run multiple Queues or SCUs on the same port (e.g. `rest://localhost:1500/queue1` and `rest://localhost:1500/queue2`)
+**Q:** Can I use portsharing to run multiple Queues or SCUs on the same port (e.g. `rest://localhost:1500/queue1` and `rest://localhost:1500/queue2` )
 
 **A:** Yes this is possible by setting the launcher config parameter `useHttpSysBinding` to true.
 
 HttpSysBinding has some limitations:
+
 * It is only supported on windows
 * It is not supported for grpc communication
 * The launcher may need to be run as an administrator
@@ -243,9 +211,9 @@ HttpSysBinding has some limitations:
 
 ---
 
-**Q:** The Launcher fails with the messages `Host ... has shutdown.` and `Restarting ...`.
+**Q:** The Launcher fails with the messages `Host ... has shutdown.` and `Restarting ...` .
 
-**A:** The Launcher could probably not bind to the configured `launcherPort`. Try setting another port in the configuration. This is a [known issue](https://github.com/fiskaltrust/middleware-launcher/issues/98) that will be fixed in a future version.
+**A:** The Launcher could probably not bind to the configured `launcherPort` . Try setting another port in the configuration. This is a [known issue](https://github.com/fiskaltrust/middleware-launcher/issues/98) that will be fixed in a future version.
 
 ## Known Issues
 
@@ -253,13 +221,15 @@ HttpSysBinding has some limitations:
 * The Launcher has access problems when writing to the keyring on linux if run as a service. The launcher configuration parameter `useLegacyDataProtection` needs to be set to `true` as a workaround. ([#100](https://github.com/fiskaltrust/middleware-launcher/issues/100)
 
 ## Contributing
+
 We welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!
 
 Please check out the [contribution guidelines](CONTRIBUTING.md) for more detailed information about how to proceed.
 
 ## License
-The fiskaltrust Middleware is released under the [EUPL 1.2](./LICENSE). 
+
+The fiskaltrust Middleware is released under the [EUPL 1.2](./LICENSE).
 
 As a Compliance-as-a-Service provider, the security and authenticity of the products installed on our users' endpoints is essential to us. To ensure that only peer-reviewed binaries are distributed by maintainers, fiskaltrust explicitly reserves the sole right to use the brand name "fiskaltrust Middleware" (and the brand names of related products and services) for the software provided here as open source - regardless of the spelling or abbreviation, as long as conclusions can be drawn about the original product name.  
 
-The fiskaltrust Middleware (and related products and services) as contained in these repositories may therefore only be used in the form of binaries signed by fiskaltrust. 
+The fiskaltrust Middleware (and related products and services) as contained in these repositories may therefore only be used in the form of binaries signed by fiskaltrust.
