@@ -10,27 +10,22 @@ namespace fiskaltrust.Launcher.Download
 {
     public sealed class ConfigurationDownloader : IDisposable
     {
-        private readonly HttpClient _httpClient;
-        private readonly IAsyncPolicy<HttpResponseMessage> _policy;
+        private readonly PolicyHttpClient _policyHttpClient;
         private readonly LauncherConfiguration _configuration;
 
-        public ConfigurationDownloader(LauncherConfiguration configuration) 
-            : this(configuration, new HttpClient(new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) })) 
-        { 
+        public ConfigurationDownloader(LauncherConfiguration configuration)
+            : this(configuration, new HttpClient(new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) }))
+        {
         }
 
         public ConfigurationDownloader(LauncherConfiguration configuration, HttpClient httpClient)
         {
+
+            _policyHttpClient = new PolicyHttpClient(configuration, httpClient);
             _configuration = configuration;
-            _httpClient = httpClient;
-
-            var retryPolicy = PolicyHelper.GetRetryPolicy(configuration);
-            var timeoutPolicy = PolicyHelper.GetTimeoutPolicy(configuration);
-
-            _policy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
         }
 
-        
+
         public async Task<string> GetConfigurationAsync(ECDiffieHellman clientCurve)
         {
             if (_configuration.UseOffline!.Value)
@@ -46,16 +41,15 @@ namespace fiskaltrust.Launcher.Download
             }
 
             var clientPublicKey = Convert.ToBase64String(clientCurve.PublicKey.ExportSubjectPublicKeyInfo());
-            var overallTimeoutPolicy = Policy.TimeoutAsync(_configuration.DownloadTimeoutSec!.Value); // overall timeout policy
 
-            var response = await overallTimeoutPolicy.ExecuteAsync(async () => await _policy.ExecuteAsync(async ct => 
+            var response = await _policyHttpClient.SendAsync(() =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.ConfigurationUrl}api/configuration/{_configuration.CashboxId}"));
                 request.Headers.Add("accesstoken", _configuration.AccessToken);
                 request.Content = new StringContent($"{{ \"publicKeyX509\": \"{clientPublicKey}\" }}", Encoding.UTF8, "application/json");
 
-                return await _httpClient!.SendAsync(request, ct);
-            }, CancellationToken.None));
+                return request;
+            });
 
             response.EnsureSuccessStatusCode();
 
@@ -88,7 +82,7 @@ namespace fiskaltrust.Launcher.Download
 
         public void Dispose()
         {
-            _httpClient?.Dispose();
+            _policyHttpClient?.Dispose();
         }
     }
 

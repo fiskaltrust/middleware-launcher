@@ -10,8 +10,8 @@ namespace fiskaltrust.Launcher.Download
 {
     public sealed class PackageDownloader : IDisposable
     {
-        private readonly HttpClient _httpClient;
-        private readonly IAsyncPolicy<HttpResponseMessage> _policy;
+        private readonly PolicyHttpClient _policyHttpClient;
+
         private readonly LauncherConfiguration _configuration;
         private readonly ILogger<PackageDownloader>? _logger;
         private readonly LauncherExecutablePath _launcherExecutablePath;
@@ -23,13 +23,7 @@ namespace fiskaltrust.Launcher.Download
             _configuration = configuration;
             _launcherExecutablePath = launcherExecutablePath;
 
-            var retryPolicy = PolicyHelper.GetRetryPolicy(configuration);
-            var timeoutPolicy = PolicyHelper.GetTimeoutPolicy(configuration);
-
-            _policy = Policy.WrapAsync(retryPolicy, timeoutPolicy);
-
-            var httpClientHandler = new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(_configuration.Proxy) };
-            _httpClient = new HttpClient(httpClientHandler);
+            _policyHttpClient = new PolicyHttpClient(configuration);
         }
 
         public string GetPackagePath(PackageConfiguration configuration)
@@ -81,15 +75,15 @@ namespace fiskaltrust.Launcher.Download
 
             try
             {
-                var response = await _policy.ExecuteAsync(async ct =>
+                var response = await _policyHttpClient.SendAsync(() =>
                 {
                     var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/packages/{name}?platform={platform}"));
 
                     request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
                     request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-                    return await _httpClient!.SendAsync(request, ct);
-                }, CancellationToken.None);
+                    return request;
+                });
 
                 response.EnsureSuccessStatusCode();
 
@@ -104,106 +98,106 @@ namespace fiskaltrust.Launcher.Download
             }
         }
 
- public async Task DownloadAsync(string name, string version, string platform, string targetPath, IEnumerable<string> targetNames)
-{
-    var combinedName = $"{name}-{version}";
-
-    var sourcePath = Path.Combine(_configuration.PackageCache!, "packages", $"{combinedName}.zip");
-
-    var versionFile = Path.Combine(targetPath, "version.txt");
-
-    if (File.Exists(versionFile) && await File.ReadAllTextAsync(versionFile) == version && targetNames.Select(t => File.Exists(Path.Combine(targetPath, t))).All(t => t))
-    {
-        return;
-    }
-
-    if (Directory.Exists(targetPath)) { Directory.Delete(targetPath, true); }
-
-    Directory.CreateDirectory(targetPath);
-    await File.WriteAllTextAsync(versionFile, version);
-
-    for (var i = 0; i <= 1; i++)
-    {
-        if (!File.Exists(sourcePath))
+        public async Task DownloadAsync(string name, string version, string platform, string targetPath, IEnumerable<string> targetNames)
         {
-            if (_configuration.UseOffline!.Value)
+            var combinedName = $"{name}-{version}";
+
+            var sourcePath = Path.Combine(_configuration.PackageCache!, "packages", $"{combinedName}.zip");
+
+            var versionFile = Path.Combine(targetPath, "version.txt");
+
+            if (File.Exists(versionFile) && await File.ReadAllTextAsync(versionFile) == version && targetNames.Select(t => File.Exists(Path.Combine(targetPath, t))).All(t => t))
             {
-                _logger?.LogWarning("Package {name} not found in download cache.", combinedName);
-                break;
+                return;
             }
 
-            _logger?.LogInformation("Downloading package {name}.", combinedName);
-            Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
+            if (Directory.Exists(targetPath)) { Directory.Delete(targetPath, true); }
 
+            Directory.CreateDirectory(targetPath);
+            await File.WriteAllTextAsync(versionFile, version);
+
+            for (var i = 0; i <= 1; i++)
             {
-                var response = await _policy.ExecuteAsync(async ct => 
+                if (!File.Exists(sourcePath))
                 {
-                    var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}?version={version}&platform={platform}"));
+                    if (_configuration.UseOffline!.Value)
+                    {
+                        _logger?.LogWarning("Package {name} not found in download cache.", combinedName);
+                        break;
+                    }
 
-                    request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
-                    request.Headers.Add("accesstoken", _configuration.AccessToken);
+                    _logger?.LogInformation("Downloading package {name}.", combinedName);
+                    Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
 
-                    return await _httpClient.SendAsync(request, ct);
-                }, CancellationToken.None);
-                
-                response.EnsureSuccessStatusCode();
+                    {
+                        var response = await _policyHttpClient.SendAsync(() =>
+                        {
+                            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}?version={version}&platform={platform}"));
 
-                await using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                await response.Content.CopyToAsync(fileStream);
-            }
+                            request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                            request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-            {
-                var response = await _policy.ExecuteAsync(async ct => 
+                            return request;
+                        });
+
+                        response.EnsureSuccessStatusCode();
+
+                        await using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                        await response.Content.CopyToAsync(fileStream);
+                    }
+
+                    {
+                        var response = await _policyHttpClient.SendAsync(() =>
+                        {
+                            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}/hash?version={version}&platform={platform}"));
+
+                            request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                            request.Headers.Add("accesstoken", _configuration.AccessToken);
+
+                            return request;
+                        });
+
+                        response.EnsureSuccessStatusCode();
+                        await File.WriteAllTextAsync($"{sourcePath}.hash", await response.Content.ReadAsStringAsync());
+                    }
+
+                }
+                else
                 {
-                    var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}/hash?version={version}&platform={platform}"));
+                    _logger?.LogDebug("Found package in download cache.");
+                }
 
-                    request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
-                    request.Headers.Add("accesstoken", _configuration.AccessToken);
+                if (!await CheckHashAsync(sourcePath))
+                {
+                    _logger?.LogWarning("File hash for {name} incorrect.", combinedName);
+                    if (!_configuration.UseOffline!.Value)
+                    {
+                        File.Delete(sourcePath);
+                        continue;
+                    }
+                }
 
-                    return await _httpClient.SendAsync(request, ct);
-                }, CancellationToken.None);
+                ZipFile.ExtractToDirectory(sourcePath, targetPath);
 
-                response.EnsureSuccessStatusCode();
-                await File.WriteAllTextAsync($"{sourcePath}.hash", await response.Content.ReadAsStringAsync());
+                if (targetNames.Any(t => !File.Exists(Path.Combine(targetPath, t))))
+                {
+                    _logger?.LogWarning("Package {name} did not contain the needed files.", combinedName);
+                    if (_configuration.UseOffline!.Value)
+                    {
+                        break;
+                    }
+
+                    if (i == 0) { File.Delete(sourcePath); }
+                    continue;
+                }
+
+                return;
             }
-
-        }
-        else
-        {
-            _logger?.LogDebug("Found package in download cache.");
-        }
-
-        if (!await CheckHashAsync(sourcePath))
-        {
-            _logger?.LogWarning("File hash for {name} incorrect.", combinedName);
             if (!_configuration.UseOffline!.Value)
             {
-                File.Delete(sourcePath);
-                continue;
+                throw new Exception("Downloaded package is invalid");
             }
         }
-
-        ZipFile.ExtractToDirectory(sourcePath, targetPath);
-
-        if (targetNames.Any(t => !File.Exists(Path.Combine(targetPath, t))))
-        {
-            _logger?.LogWarning("Package {name} did not contain the needed files.", combinedName);
-            if (_configuration.UseOffline!.Value)
-            {
-                break;
-            }
-
-            if (i == 0) { File.Delete(sourcePath); }
-            continue;
-        }
-
-        return;
-    }
-    if (!_configuration.UseOffline!.Value)
-    {
-        throw new Exception("Downloaded package is invalid");
-    }
-}
 
 
         public void CopyPackagesToCache()
@@ -216,9 +210,9 @@ namespace fiskaltrust.Launcher.Download
                 _logger?.LogDebug("No offline packages found");
                 return;
             }
-            
+
             Directory.CreateDirectory(destinationPath);
-            
+
 
             foreach (var filePath in Directory.GetFiles(sourcePath, "*.zip")
                          .Concat(Directory.GetFiles(sourcePath, "*.hash")))
@@ -228,12 +222,12 @@ namespace fiskaltrust.Launcher.Download
 
                 if (File.Exists(destinationFilePath))
                 {
-                    _logger?.LogDebug("Package {fileName} already exists in cache.");
+                    _logger?.LogDebug("Package {fileName} already exists in cache.", fileName);
                     continue;
                 }
                 File.Copy(filePath, destinationFilePath, true);
 
-                _logger?.LogInformation("Copied package {fileName to cache}");
+                _logger?.LogInformation("Copied package {fileName} to cache", fileName);
 
             }
 
@@ -263,7 +257,7 @@ namespace fiskaltrust.Launcher.Download
 
         public void Dispose()
         {
-            _httpClient?.Dispose();
+            _policyHttpClient?.Dispose();
         }
     }
 }

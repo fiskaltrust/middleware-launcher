@@ -1,20 +1,46 @@
 ﻿using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Download;
 using Polly;
 using Polly.Extensions.Http;
 
 namespace fiskaltrust.Launcher.Helpers;
 
-public static class PolicyHelper
+public sealed class PolicyHttpClient : IDisposable
 {
-    public static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(LauncherConfiguration configuration)
+    private readonly HttpClient _httpClient;
+    private readonly IAsyncPolicy<HttpResponseMessage> _policy;
+
+    public PolicyHttpClient(LauncherConfiguration configuration)
     {
-        return HttpPolicyExtensions.HandleTransientHttpError().WaitAndRetryAsync(configuration.DownloadRetry!.Value,
-            retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+
+        var httpClientHandler = new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) };
+        _httpClient = new HttpClient(httpClientHandler);
+        _policy = GetPolicy(configuration);
     }
 
-    public static IAsyncPolicy<HttpResponseMessage> GetTimeoutPolicy(LauncherConfiguration configuration)
+    public PolicyHttpClient(LauncherConfiguration configuration, HttpClient httpClient)
     {
-        return Policy.TimeoutAsync<HttpResponseMessage>(configuration.DownloadTimeoutSec!.Value);
+        _httpClient = httpClient;
+        _policy = GetPolicy(configuration);
     }
 
+    private IAsyncPolicy<HttpResponseMessage> GetPolicy(LauncherConfiguration configuration)
+    {
+        var retryPolicy = HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .WaitAndRetryAsync(
+                configuration.DownloadRetry!.Value,
+                retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+
+        var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(configuration.DownloadTimeoutSec!.Value);
+
+        return Policy.WrapAsync(retryPolicy, timeoutPolicy);
+    }
+
+    public Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> getMessage) => _policy.ExecuteAsync(ct => _httpClient.SendAsync(getMessage(), ct), CancellationToken.None);
+
+    public void Dispose()
+    {
+        _httpClient.Dispose();
+    }
 }
