@@ -4,6 +4,7 @@ using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.storage.serialization.V0;
+using Microsoft.Extensions.Logging;
 
 namespace fiskaltrust.Launcher.ProcessHost
 {
@@ -23,50 +24,55 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly TaskCompletionSource _stopped;
         private readonly PackageConfiguration _packageConfiguration;
         private readonly ILogger<ProcessHostMonarch> _logger;
+        private readonly List<string> _plebianLogBuffer = new List<string>();
 
         public ProcessHostMonarch(ILogger<ProcessHostMonarch> logger, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PackageType packageType, LauncherExecutablePath launcherExecutablePath)
         {
             _packageConfiguration = packageConfiguration;
             _logger = logger;
 
-            _process = new Process();
-            _process.StartInfo.UseShellExecute = false;
-            _process.StartInfo.FileName = launcherExecutablePath.Path;
-            _process.StartInfo.CreateNoWindow = false;
-
-            _process.StartInfo.Arguments = string.Join(" ", new string[] {
-                "host",
-                "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(new PlebianConfiguration { PackageType = packageType, PackageId = packageConfiguration.Id }.Serialize()))}\"",
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize()))}\"",
-            });
-
+            _process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    UseShellExecute = false,
+                    FileName = launcherExecutablePath.Path,
+                    CreateNoWindow = false,
+                    Arguments = string.Join(" ", new string[] {
+                        "host",
+                        "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(new PlebianConfiguration { PackageType = packageType, PackageId = packageConfiguration.Id }.Serialize()))}\"",
+                        "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize()))}\"",
+                    }),
+                    RedirectStandardInput = true,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true
+                },
+                EnableRaisingEvents = true
+            };
+            
             // if (Debugger.IsAttached)
             // {
             //     _process.StartInfo.Arguments += " --debugging";
             // }
-            _process.StartInfo.RedirectStandardInput = true;
-            _process.StartInfo.RedirectStandardError = true;
-            _process.StartInfo.RedirectStandardOutput = true;
 
-            _process.EnableRaisingEvents = true;
+            _process.OutputDataReceived += (sender, e) =>
+            {
+                if (e.Data != null)
+                {
+                    _plebianLogBuffer.Add($"Plebian Output: {e.Data}");
+                }
+            };
+
+            _process.ErrorDataReceived += (sender, e) =>
+            {
+                if (e.Data != null)
+                {
+                    _plebianLogBuffer.Add($"Plebian Error: {e.Data}");
+                }
+            };
+
             _stopped = new TaskCompletionSource();
             _started = new TaskCompletionSource();
-
-            _process.OutputDataReceived += (sender, e) => 
-            {
-                if (e.Data != null) 
-                {
-                    _logger.LogInformation($"Plebian Output: {e.Data}");
-                }
-            };
-
-            _process.ErrorDataReceived += (sender, e) => 
-            {
-                if (e.Data != null) 
-                {
-                    _logger.LogError($"Plebian Error: {e.Data}");
-                }
-            };
         }
 
         public Task Start(CancellationToken cancellationToken)
@@ -88,6 +94,23 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 _logger.LogInformation("Host {package} {id} has shutdown.", _packageConfiguration.Package, _packageConfiguration.Id);
 
+                if (_process.ExitCode != 0)
+                {
+                    foreach (var log in _plebianLogBuffer)
+                    {
+                        if (log.Contains("Error"))
+                        {
+                            _logger.LogError(log);
+                        }
+                        else
+                        {
+                            _logger.LogInformation(log);
+                        }
+                    }
+                }
+
+                _plebianLogBuffer.Clear();
+
                 await Task.Delay(1000);
                 if (!cancellationToken.IsCancellationRequested)
                 {
@@ -103,7 +126,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                                 _process.BeginOutputReadLine();
                                 _process.BeginErrorReadLine();
                             }
-                            catch 
+                            catch
                             {
                                 _logger.LogError("Error while initiating the output and error read lines.");
                             }
