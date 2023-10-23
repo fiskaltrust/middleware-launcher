@@ -6,6 +6,7 @@ using fiskaltrust.Launcher.Common.Constants;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.DataProtection;
+using Serilog;
 
 namespace fiskaltrust.Launcher.Common.Configuration
 {
@@ -102,6 +103,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private LogLevel? _logLevel;
         [JsonPropertyName("logLevel")]
+        [AlternateName("verbosity")]
         public LogLevel? LogLevel { get => WithDefault(_logLevel, Microsoft.Extensions.Logging.LogLevel.Information); set => _logLevel = value; }
 
         private Uri? _packagesUrl;
@@ -157,6 +159,10 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("useHttpSysBinding")]
         public bool? UseHttpSysBinding { get => WithDefault(_useHttpSysBinding, false); set => _useHttpSysBinding = value; }
 
+        private bool? _useLegacyDataProtection;
+        [JsonPropertyName("useLegacyDataProtection")]
+        public bool? UseLegacyDataProtection { get => WithDefault(_useLegacyDataProtection, false); set => _useLegacyDataProtection = value; }
+
         private SemanticVersioning.Range? _launcherVersion = null;
         [JsonPropertyName("launcherVersion")]
         [JsonConverter(typeof(SemVersionConverter))]
@@ -192,12 +198,11 @@ namespace fiskaltrust.Launcher.Common.Configuration
             var configuration = JsonSerializer.Deserialize(
                 text,
                 typeof(LauncherConfiguration),
-                new SerializerContext(new JsonSerializerOptions
+                new JsonSerializerOptions
                 {
-                    Converters = {
-                        new JsonStringEnumConverter()
-                    },
-                })
+                    PropertyNameCaseInsensitive = true,
+                    Converters = { new JsonStringEnumConverter() },
+                }
             ) as LauncherConfiguration ?? throw new Exception($"Could not deserialize {nameof(LauncherConfiguration)}");
             configuration.SetAlternateNames(text);
             return configuration;
@@ -334,12 +339,11 @@ namespace fiskaltrust.Launcher.Common.Configuration
             var configuration = (JsonSerializer.Deserialize(
                 text,
                 typeof(LauncherConfigurationInCashBoxConfiguration),
-                new SerializerContext(new JsonSerializerOptions
+                new JsonSerializerOptions
                 {
-                    Converters = {
-                        new JsonStringEnumConverter()
-                    }
-                })
+                    PropertyNameCaseInsensitive = true,
+                    Converters = { new JsonStringEnumConverter() },
+                }
             ) as LauncherConfigurationInCashBoxConfiguration ?? throw new Exception($"Could not deserialize {nameof(LauncherConfigurationInCashBoxConfiguration)}")).LauncherConfiguration;
             configuration?.SetAlternateNames(text);
             return configuration;

@@ -34,14 +34,14 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             var arguments = new List<string> {
                 "create",
                 $"\"{_serviceName}\"",
-                $"start={(delayedStart ? "delayed-auto" : "auto")}",
-                $"binPath=\"{processPath} {commandArgs.Replace("\"", "\\\"")}\"",
+                "start=", $"{(delayedStart ? "delayed-auto" : "auto")}",
+                "binPath=", $"\"{processPath} {commandArgs.Replace("\"", "\\\"")}\"",
                 // $"depend=" // TODO
             };
 
             if (displayName is not null)
             {
-                arguments.Add($"DisplayName=\"{displayName}\"");
+                arguments.AddRange(new string[] { "DisplayName=", $"\"{displayName}\"" });
             }
 
             Log.Information("Installing service.");

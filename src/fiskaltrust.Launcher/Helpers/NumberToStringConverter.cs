@@ -6,6 +6,8 @@ namespace fiskaltrust.Launcher.Helpers
 {
     public class NumberToStringConverter : JsonConverter<string>
     {
+        private readonly static JsonConverter<string> DEFAULT_CONVERTER = (JsonConverter<string>)JsonSerializerOptions.Default.GetConverter(typeof(string));
+
         public override string? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType == JsonTokenType.Number)
@@ -15,7 +17,7 @@ namespace fiskaltrust.Launcher.Helpers
                     return number.ToString(CultureInfo.InvariantCulture);
                 }
 
-                if (reader.TryGetDouble(out var doubleNumber))
+                if (reader.TryGetDecimal(out var doubleNumber))
                 {
                     return doubleNumber.ToString(CultureInfo.InvariantCulture);
                 }
@@ -29,9 +31,6 @@ namespace fiskaltrust.Launcher.Helpers
             return null;
         }
 
-        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
-        {
-            writer.WriteStringValue(value.ToString());
-        }
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options) => DEFAULT_CONVERTER.Write(writer, value, options);
     }
 }

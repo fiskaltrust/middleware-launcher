@@ -34,7 +34,7 @@ stages:
           target: linux-arm64
 
         osx-x64:
-          vmImage: macos-latest
+          vmImage: macos-11
           target: osx-x64
 
     pool:

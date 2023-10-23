@@ -47,5 +47,55 @@ namespace fiskaltrust.Launcher.UnitTest.Configuration
                 deserialized.Should().BeEquivalentTo(deserialized);
             }
         }
+        
+        [Fact]
+        public void DifferentCaseInKeys_Deserialize_ShouldPreserveProperties()
+        {
+            var json = @"{
+                ""loglevel"": ""Information"",
+                ""LOGLEVEL"": ""Error"",
+                ""LogLevel"": ""Warning""
+            }";
+        
+            var deserialized = LauncherConfiguration.Deserialize(json);
+        
+            deserialized.LogLevel.Should().Be(LogLevel.Warning);
+        }
+        
+        [Fact]
+        public void LowerCaseKeys_Deserialize_ShouldPreserveProperties()
+        {
+            var json = @"{
+                ""loglevel"": ""Information""
+            }";
+        
+            var deserialized = LauncherConfiguration.Deserialize(json);
+        
+            deserialized.LogLevel.Should().Be(LogLevel.Information);
+        }
+        
+        [Fact]
+        public void UpperCaseKeys_Deserialize_ShouldPreserveProperties()
+        {
+            var json = @"{
+                ""LOGLEVEL"": ""Error""
+            }";
+        
+            var deserialized = LauncherConfiguration.Deserialize(json);
+        
+            deserialized.LogLevel.Should().Be(LogLevel.Error);
+        }
+        
+        [Fact]
+        public void MixedCaseKeys_Deserialize_ShouldPreserveProperties()
+        {
+            var json = @"{
+                ""logLevel"": ""Warning""
+            }";
+        
+            var deserialized = LauncherConfiguration.Deserialize(json);
+        
+            deserialized.LogLevel.Should().Be(LogLevel.Warning);
+        }        
     }
 }

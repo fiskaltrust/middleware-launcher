@@ -25,7 +25,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--access-token"));
             AddOption(new Option<bool>("--sandbox"));
             AddOption(new Option<string?>("--log-folder"));
-            AddOption(new Option<LogLevel?>("--log-level"));
+            AddOption(new Option<LogLevel?>(new[] { "--log-level", "-v", "--verbosity" }, "Sets the verbosity level of the logging."));
 
             if (addCliOnlyParameters)
             {
@@ -58,6 +58,7 @@ namespace fiskaltrust.Launcher.Commands
 
             _launcherConfiguration = new LauncherConfiguration();
 
+            Log.Verbose("Reading launcher config file.");
             try
             {
                 LauncherConfigurationFile = Path.GetFullPath(LauncherConfigurationFile);
@@ -78,7 +79,7 @@ namespace fiskaltrust.Launcher.Commands
                     Log.Warning("Using command line parameters only.", LauncherConfigurationFile);
                 }
             }
-
+            Log.Verbose("Merging legacy launcher config file.");
             if (MergeLegacyConfigIfExists && File.Exists(LegacyConfigurationFile))
             {
                 var legacyConfig = await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigurationFile);
@@ -97,6 +98,7 @@ namespace fiskaltrust.Launcher.Commands
                 fi.Delete();
             }
 
+            Log.Verbose("Merging launcher cli args.");
             _launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
 
             if (!_launcherConfiguration.UseOffline!.Value && (_launcherConfiguration.CashboxId is null || _launcherConfiguration.AccessToken is null))
@@ -181,7 +183,7 @@ namespace fiskaltrust.Launcher.Commands
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", _launcherConfiguration.Redacted());
 
 
-            _dataProtectionProvider = DataProtectionExtensions.Create(_launcherConfiguration.AccessToken);
+            _dataProtectionProvider = DataProtectionExtensions.Create(_launcherConfiguration.AccessToken, useFallback: _launcherConfiguration.UseLegacyDataProtection!.Value);
 
             try
             {
@@ -194,9 +196,10 @@ namespace fiskaltrust.Launcher.Commands
             return 0;
         }
 
-        public static async Task<ECDiffieHellman> LoadCurve(string accessToken, bool useOffline = false, bool dryRun = false)
+        public static async Task<ECDiffieHellman> LoadCurve(string accessToken, bool useOffline = false, bool dryRun = false, bool useFallback = false)
         {
-            var dataProtector = DataProtectionExtensions.Create(accessToken).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
+            Log.Verbose("Loading Curve.");
+            var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
             var clientEcdhPath = Path.Combine(Common.Constants.Paths.CommonFolder, "fiskaltrust.Launcher", "client.ecdh");
             if (File.Exists(clientEcdhPath))
             {
@@ -221,7 +224,10 @@ namespace fiskaltrust.Launcher.Commands
                     clientEcdh = CashboxConfigEncryption.CreateCurve();
                 }
 
-                if (!dryRun) { await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize())); }
+                if (!dryRun)
+                {
+                    await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize()));
+                }
 
                 return clientEcdh;
             }

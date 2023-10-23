@@ -67,7 +67,7 @@ namespace fiskaltrust.Launcher.Commands
 
             var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
 
-            cashboxConfiguration.Decrypt(launcherConfiguration, await CommonCommandHandler.LoadCurve(launcherConfiguration.AccessToken!));
+            cashboxConfiguration.Decrypt(launcherConfiguration, await CommonCommandHandler.LoadCurve(launcherConfiguration.AccessToken!, launcherConfiguration.UseLegacyDataProtection!.Value));
 
             var packageConfiguration = (plebianConfiguration.PackageType switch
             {
@@ -89,6 +89,8 @@ namespace fiskaltrust.Launcher.Commands
                 .AddLoggingConfiguration(launcherConfiguration)
                 .WriteTo.GrpcSink(packageConfiguration, processHostService)
                 .CreateLogger();
+
+            System.Text.Encoding.RegisterProvider(new LauncherEncodingProvider());
 
             var builder = Host.CreateDefaultBuilder()
                 .UseSerilog()

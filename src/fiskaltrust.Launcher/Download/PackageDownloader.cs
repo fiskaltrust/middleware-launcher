@@ -111,13 +111,13 @@ namespace fiskaltrust.Launcher.Download
                 return;
             }
 
-            if (Directory.Exists(targetPath)) { Directory.Delete(targetPath, true); }
-
-            Directory.CreateDirectory(targetPath);
-            await File.WriteAllTextAsync(versionFile, version);
-
             for (var i = 0; i <= 1; i++)
             {
+                if (Directory.Exists(targetPath)) { Directory.Delete(targetPath, true); }
+
+                Directory.CreateDirectory(targetPath);
+                await File.WriteAllTextAsync(versionFile, version);
+
                 if (!File.Exists(sourcePath))
                 {
                     if (_configuration.UseOffline!.Value)
@@ -227,8 +227,8 @@ namespace fiskaltrust.Launcher.Download
                 }
                 File.Copy(filePath, destinationFilePath, true);
 
-                _logger?.LogInformation("Copied package {fileName} to cache", fileName);
 
+                _logger?.LogInformation("Copied package {fileName} to cache", fileName);
             }
 
         }

@@ -19,6 +19,8 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
             AddCommand(new ConfigSetCommand());
             AddCommand(new ConfigGetCommand());
+            AddOption(new Option<LogLevel?>(new[] { "--log-level", "-v", "--verbosity" }, "Sets the verbosity level of the logging."));
+
         }
     }
 
@@ -57,7 +59,7 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Warning("Launcher configuration file {file} does not exist. Creating new file.", LauncherConfigurationFile);
                 launcherConfiguration = new LauncherConfiguration();
 
-                dataProtector = DataProtectionExtensions.Create(ArgsLauncherConfiguration.AccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+                dataProtector = DataProtectionExtensions.Create(ArgsLauncherConfiguration.AccessToken, useFallback: ArgsLauncherConfiguration.UseLegacyDataProtection!.Value).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
             }
             else
             {
@@ -77,7 +79,7 @@ namespace fiskaltrust.Launcher.Commands
                     return 1;
                 }
 
-                dataProtector = DataProtectionExtensions.Create(ArgsLauncherConfiguration.AccessToken ?? launcherConfiguration?.AccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+                dataProtector = DataProtectionExtensions.Create(ArgsLauncherConfiguration.AccessToken ?? launcherConfiguration?.AccessToken, useFallback: ArgsLauncherConfiguration!.UseLegacyDataProtection!.Value || launcherConfiguration!.UseLegacyDataProtection!.Value).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
 
                 try
                 {
@@ -228,17 +230,17 @@ namespace fiskaltrust.Launcher.Commands
                 return null;
             }
 
-            if (AccessToken is null && launcherConfiguration?.AccessToken is null)
+            if (AccessToken is null && launcherConfiguration!.AccessToken is null)
             {
                 Log.Warning("To decrypt the encrypted values from the configuration file specify the --access-token parameter or set it in the provided launcher configuration file.");
             }
             else
             {
-                var dataProtector = DataProtectionExtensions.Create(AccessToken ?? launcherConfiguration?.AccessToken).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+                var dataProtector = DataProtectionExtensions.Create(AccessToken ?? launcherConfiguration!.AccessToken, useFallback: launcherConfiguration!.UseLegacyDataProtection!.Value).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
 
                 try
                 {
-                    launcherConfiguration?.Decrypt(dataProtector);
+                    launcherConfiguration!.Decrypt(dataProtector);
                 }
                 catch (Exception e)
                 {

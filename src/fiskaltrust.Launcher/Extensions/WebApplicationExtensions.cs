@@ -65,7 +65,8 @@ namespace fiskaltrust.Launcher.Extensions
             app.MapMultiplePrefixed(_prefixesV1, "FiscalReceiptInvoice", EndpointRouteBuilderExtensions.MapPost, async (FiscalReceiptInvoice req) => await sscd.FiscalReceiptInvoiceAsync(req));
             app.MapMultiplePrefixed(_prefixesV1, "FiscalReceiptRefund", EndpointRouteBuilderExtensions.MapPost, async (FiscalReceiptRefund req) => await sscd.FiscalReceiptRefundAsync(req));
             app.MapMultiplePrefixed(_prefixesV1, "ExecuteDailyClosing", EndpointRouteBuilderExtensions.MapPost, async (DailyClosingRequest req) => await sscd.ExecuteDailyClosingAsync(req));
-
+            app.MapMultiplePrefixed(_prefixesV1, "ProcessReceipt", EndpointRouteBuilderExtensions.MapPost, async (ProcessRequest req) => await sscd.ProcessReceiptAsync(req));
+            app.MapMultiplePrefixed(_prefixesV1, "GetRTInfo", EndpointRouteBuilderExtensions.MapGet, async () => await sscd.GetRTInfoAsync());
             return app;
         }
     }
