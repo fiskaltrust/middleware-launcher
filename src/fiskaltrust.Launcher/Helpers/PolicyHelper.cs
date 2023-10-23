@@ -10,14 +10,6 @@ public sealed class PolicyHttpClient : IDisposable
     private readonly HttpClient _httpClient;
     private readonly IAsyncPolicy<HttpResponseMessage> _policy;
 
-    public PolicyHttpClient(LauncherConfiguration configuration)
-    {
-
-        var httpClientHandler = new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) };
-        _httpClient = new HttpClient(httpClientHandler);
-        _policy = GetPolicy(configuration);
-    }
-
     public PolicyHttpClient(LauncherConfiguration configuration, HttpClient httpClient)
     {
         _httpClient = httpClient;

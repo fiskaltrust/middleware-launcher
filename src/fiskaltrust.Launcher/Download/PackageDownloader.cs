@@ -23,7 +23,7 @@ namespace fiskaltrust.Launcher.Download
             _configuration = configuration;
             _launcherExecutablePath = launcherExecutablePath;
 
-            _policyHttpClient = new PolicyHttpClient(configuration);
+            _policyHttpClient = new PolicyHttpClient(configuration, new HttpClient(new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) }));
         }
 
         public string GetPackagePath(PackageConfiguration configuration)
