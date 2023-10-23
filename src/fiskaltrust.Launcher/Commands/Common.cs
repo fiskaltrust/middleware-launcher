@@ -25,7 +25,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--access-token"));
             AddOption(new Option<bool>("--sandbox"));
             AddOption(new Option<string?>("--log-folder"));
-            AddOption(new Option<LogLevel?>("--log-level"));
+            AddOption(new Option<LogLevel?>(new[] { "--log-level", "-v", "--verbosity" }, "Sets the verbosity level of the logging."));
 
             if (addCliOnlyParameters)
             {
