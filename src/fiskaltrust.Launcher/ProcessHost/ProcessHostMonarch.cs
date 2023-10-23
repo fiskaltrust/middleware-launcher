@@ -59,7 +59,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 if (e.Data != null)
                 {
-                    _plebianLogBuffer.Add($"Plebian Output: {e.Data}");
+                    _plebianLogBuffer.Add(e.Data);
                 }
             };
 
@@ -94,29 +94,19 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 _logger.LogInformation("Host {package} {id} has shutdown.", _packageConfiguration.Package, _packageConfiguration.Id);
 
-                if (_process.ExitCode != 0)
-                {
-                    foreach (var log in _plebianLogBuffer)
-                    {
-                        if (log.Contains("Error"))
-                        {
-                            _logger.LogError(log);
-                        }
-                        else
-                        {
-                            _logger.LogInformation(log);
-                        }
-                    }
-                }
-
-                _plebianLogBuffer.Clear();
-
                 await Task.Delay(1000);
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                    if (_process.ExitCode != 0)
+                    try
                     {
-                        try
+                        if (_process.ExitCode != 0)
+                        {
+                            var errorMessage = string.Join("\n", _plebianLogBuffer);
+                            _logger.LogError("Error when starting {package} {id}.\n{error}", _packageConfiguration.Package, _packageConfiguration.Id, errorMessage);
+                            _started.TrySetResult();
+                            _stopped.TrySetCanceled(cancellationToken);
+                        }
+                        else
                         {
                             _logger.LogInformation("Restarting {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
                             if (!_process.Start()) { throw new Exception($"Process.Start() was false for {_packageConfiguration.Package} {_packageConfiguration.Id}"); }
@@ -126,22 +116,17 @@ namespace fiskaltrust.Launcher.ProcessHost
                                 _process.BeginOutputReadLine();
                                 _process.BeginErrorReadLine();
                             }
-                            catch
+                            catch 
                             {
                                 _logger.LogError("Error while initiating the output and error read lines.");
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Could not restart ProcessHost process for {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
-                            _started.TrySetResult();
-                            _stopped.TrySetCanceled(cancellationToken);
-                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        _started.TrySetCanceled();
-                        _stopped.SetResult();
+                        _logger.LogError(ex, "Could not restart ProcessHost process for {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
+                        _started.TrySetResult();
+                        _stopped.TrySetCanceled(cancellationToken);
                     }
                 }
                 else
@@ -150,7 +135,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                     _stopped.SetResult();
                 }
             };
-
+            
             try
             {
                 if (!_process.Start()) { throw new Exception("Process.Start() was false"); }
