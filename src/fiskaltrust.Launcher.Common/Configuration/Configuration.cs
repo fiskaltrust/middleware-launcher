@@ -103,6 +103,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private LogLevel? _logLevel;
         [JsonPropertyName("logLevel")]
+        [AlternateName("verbosity")]
         public LogLevel? LogLevel { get => WithDefault(_logLevel, Microsoft.Extensions.Logging.LogLevel.Information); set => _logLevel = value; }
 
         private Uri? _packagesUrl;
