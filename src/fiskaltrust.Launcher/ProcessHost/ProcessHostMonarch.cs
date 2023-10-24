@@ -27,7 +27,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private readonly PackageConfiguration _packageConfiguration;
         private readonly ILogger<ProcessHostMonarch> _logger;
-        private readonly List<string> _plebianLogBuffer = new List<string>();
+        private readonly List<string> _plebeianLogBuffer = new List<string>();
         private LauncherConfiguration _launcherConfiguration;
         private PackageType _packageType;
         private LauncherExecutablePath _launcherExecutablePath;
@@ -63,7 +63,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                     CreateNoWindow = false,
                     Arguments = string.Join(" ", new string[] {
                         "host",
-                        "--plebian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(new PlebianConfiguration { PackageType = _packageType, PackageId = _packageConfiguration.Id }.Serialize()))}\"",
+                        "--plebeian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(new PlebeianConfiguration { PackageType = _packageType, PackageId = _packageConfiguration.Id }.Serialize()))}\"",
                         "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(_launcherConfiguration.Serialize()))}\"",
                     }),
                     RedirectStandardInput = true,
@@ -81,7 +81,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         {
             if (e.Data != null)
             {
-                _plebianLogBuffer.Add(e.Data);
+                _plebeianLogBuffer.Add(e.Data);
             }
         }
 
@@ -122,11 +122,11 @@ namespace fiskaltrust.Launcher.ProcessHost
             if (!_started.Task.IsCompleted)
             {
                 // If the process hat not signaled startup, we print the log buffer.
-                _logger.LogError($"Error while starting {{package}} {{id}}.{Environment.NewLine}{{error}}", _packageConfiguration.Package, _packageConfiguration.Id, string.Join(Environment.NewLine, _plebianLogBuffer));
-                _plebianLogBuffer.Clear();
+                _logger.LogError($"Error while starting {{package}} {{id}}.{Environment.NewLine}{{error}}", _packageConfiguration.Package, _packageConfiguration.Id, string.Join(Environment.NewLine, _plebeianLogBuffer));
+                _plebeianLogBuffer.Clear();
             }
 
-            // Plebian crash happened during the startup phase so we don't went to keep restarting.
+            // Plebeian crash happened during the startup phase so we don't went to keep restarting.
             if (!_monarchStartupCompleted)
             {
                 _started.TrySetCanceled();
@@ -212,7 +212,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 _process.OutputDataReceived -= ReceiveStdOut;
                 _process.ErrorDataReceived -= ReceiveStdOut;
             }
-            _plebianLogBuffer.Clear();
+            _plebeianLogBuffer.Clear();
         }
 
         public void SetStartupCompleted()

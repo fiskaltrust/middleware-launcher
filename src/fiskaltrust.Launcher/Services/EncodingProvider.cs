@@ -6,7 +6,7 @@ namespace fiskaltrust.Launcher.Services
   {
     public override Encoding? GetEncoding(int codepage) => null;
 
-    // This EncodingProvider needs to be registered in the plebian processes
+    // This EncodingProvider needs to be registered in the plebeian processes
     // because ASP.NET Core uses the Encoding.GetEncoding(string) method to parse the charset of the Content-Type header.
     // According to the http standard (https://datatracker.ietf.org/doc/html/rfc7231#section-3.1.1.1) the charset may be wrapped in quotes.
     // Until this is fixed in ASP.NET we'll need the workaround below.

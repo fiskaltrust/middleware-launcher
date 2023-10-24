@@ -13,24 +13,24 @@ using fiskaltrust.storage.serialization.V0;
 namespace fiskaltrust.Launcher.ProcessHost
 {
 
-    public class ProcessHostPlebian : BackgroundService
+    public class ProcessHostPlebeian : BackgroundService
     {
         private readonly PackageConfiguration _packageConfiguration;
         private readonly IProcessHostService? _processHostService;
         private readonly HostingService _hosting;
-        private readonly PlebianConfiguration _plebianConfiguration;
+        private readonly PlebeianConfiguration _plebeianConfiguration;
         private readonly LauncherConfiguration _launcherConfiguration;
-        private readonly ILogger<ProcessHostPlebian> _logger;
+        private readonly ILogger<ProcessHostPlebeian> _logger;
         private readonly IServiceProvider _services;
         private readonly IHostApplicationLifetime _lifetime;
 
-        public ProcessHostPlebian(ILogger<ProcessHostPlebian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebianConfiguration plebianConfiguration, IServiceProvider services, IHostApplicationLifetime lifetime, IProcessHostService? processHostService = null)
+        public ProcessHostPlebeian(ILogger<ProcessHostPlebeian> logger, HostingService hosting, LauncherConfiguration launcherConfiguration, PackageConfiguration packageConfiguration, PlebeianConfiguration plebeianConfiguration, IServiceProvider services, IHostApplicationLifetime lifetime, IProcessHostService? processHostService = null)
         {
             _logger = logger;
             _hosting = hosting;
             _launcherConfiguration = launcherConfiguration;
             _packageConfiguration = packageConfiguration;
-            _plebianConfiguration = plebianConfiguration;
+            _plebeianConfiguration = plebeianConfiguration;
             _services = services;
             _processHostService = processHostService;
             _lifetime = lifetime;
@@ -45,7 +45,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 await StartHosting(_packageConfiguration.Url);
 
-                if (_plebianConfiguration.PackageType == PackageType.Helper)
+                if (_plebeianConfiguration.PackageType == PackageType.Helper)
                 {
                     _logger.LogDebug("Helper StartBegin() and StartEnd()");
                     var helper = _services.GetRequiredService<IHelper>();
@@ -69,7 +69,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 try
                 {
 
-                    if (_plebianConfiguration.PackageType == PackageType.Helper)
+                    if (_plebeianConfiguration.PackageType == PackageType.Helper)
                     {
                         IHelper helper;
                         try
@@ -118,7 +118,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         {
             var hostingFailedCompletely = uris.Length > 0;
 
-            (object instance, Action<WebApplication> addEndpoints, Type instanceInterface) = _plebianConfiguration.PackageType switch
+            (object instance, Action<WebApplication> addEndpoints, Type instanceInterface) = _plebeianConfiguration.PackageType switch
             {
                 PackageType.Queue => GetQueue(_services),
                 PackageType.SCU => GetScu(_services),
@@ -140,7 +140,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
                 try
                 {
-                    switch (_plebianConfiguration.PackageType)
+                    switch (_plebeianConfiguration.PackageType)
                     {
                         case PackageType.SCU:
                             if (instanceInterface == typeof(IDESSCD))
