@@ -96,7 +96,11 @@ namespace fiskaltrust.Launcher.Commands
                 .UseSerilog()
                 .ConfigureServices(services =>
                 {
-                    services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
+                    services.Configure<HostOptions>(opts =>
+                    {
+                        opts.ShutdownTimeout = TimeSpan.FromSeconds(30);
+                        opts.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
+                    });
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => packageConfiguration);
                     services.AddSingleton(_ => plebianConfiguration);
@@ -162,7 +166,7 @@ namespace fiskaltrust.Launcher.Commands
             catch (Exception e)
             {
                 Log.Error(e, "An unhandled exception occured.");
-                return 1;
+                throw;
             }
             finally
             {

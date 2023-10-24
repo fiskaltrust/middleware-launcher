@@ -53,11 +53,10 @@ namespace fiskaltrust.Launcher.ProcessHost
                     helper.StartEnd();
                 }
             }
-            catch (Exception e)
+            catch
             {
-                _logger.LogError(e, "Error Starting Hosting");
-                _lifetime.StopApplication();
-                return;
+                _logger.LogError("Error Starting Hosting");
+                throw;
             }
 
             _processHostService?.Started(_packageConfiguration.Id.ToString());
@@ -72,7 +71,15 @@ namespace fiskaltrust.Launcher.ProcessHost
 
                     if (_plebianConfiguration.PackageType == PackageType.Helper)
                     {
-                        var helper = _services.GetRequiredService<IHelper>();
+                        IHelper helper;
+                        try
+                        {
+                            helper = _services.GetRequiredService<IHelper>();
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            return;
+                        }
                         helper.StopBegin();
                         helper.StopEnd();
                     };

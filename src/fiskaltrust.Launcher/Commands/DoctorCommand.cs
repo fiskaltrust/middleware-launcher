@@ -353,15 +353,17 @@ namespace fiskaltrust.Launcher.Commands
             return Task.CompletedTask;
         }
 
-        public void Started()
+        public void SetPlebeanStarted()
         {
             IsStarted.SetResult();
         }
 
-        public Task Stopped()
+        public Task GetStopped()
         {
             return Task.CompletedTask;
         }
+
+        public void SetStartupCompleted() { }
     }
 
     public class DoctorMiddlewareBootstrapper : IMiddlewareBootstrapper
