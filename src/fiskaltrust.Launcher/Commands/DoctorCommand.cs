@@ -158,7 +158,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 await CheckAwait("Start monarch WebApplication", async () => await WithTimeout(async () => await monarchApp.StartAsync(_lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)), throws: true);
 
-                var plebianConfiguration = new PlebianConfiguration
+                var plebeianConfiguration = new PlebeianConfiguration
                 {
                     PackageId = doctorId,
                     PackageType = Constants.PackageType.Queue
@@ -167,24 +167,24 @@ namespace fiskaltrust.Launcher.Commands
                 var packageConfiguration = new PackageConfiguration
                 {
                     Configuration = new(),
-                    Id = plebianConfiguration.PackageId,
+                    Id = plebeianConfiguration.PackageId,
                     Package = "none",
                     Url = Array.Empty<string>(),
                     Version = "1.0.0"
                 };
 
-                IProcessHostService? processHostService = Check("Start plebian processhostservice client", () => GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>());
+                IProcessHostService? processHostService = Check("Start plebeian processhostservice client", () => GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>());
 
-                var plebianBuilder = Host.CreateDefaultBuilder()
+                var plebeianBuilder = Host.CreateDefaultBuilder()
                     .UseSerilog(new LoggerConfiguration().CreateLogger())
                     .ConfigureServices(services =>
                     {
-                        Check("Setup plebian services", () =>
+                        Check("Setup plebeian services", () =>
                         {
                             services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                             services.AddSingleton(_ => launcherConfiguration);
                             services.AddSingleton(_ => packageConfiguration);
-                            services.AddSingleton(_ => plebianConfiguration);
+                            services.AddSingleton(_ => plebeianConfiguration);
 
                             var pluginLoader = new PluginLoader();
                             services.AddSingleton(_ => pluginLoader);
@@ -195,7 +195,7 @@ namespace fiskaltrust.Launcher.Commands
                             }
 
                             services.AddSingleton<HostingService>();
-                            services.AddHostedService<ProcessHostPlebian>();
+                            services.AddHostedService<ProcessHostPlebeian>();
 
                             services.AddSingleton<IClientFactory<IDESSCD>, DESSCDClientFactory>();
                             services.AddSingleton<IClientFactory<IPOS>, POSClientFactory>();
@@ -212,9 +212,9 @@ namespace fiskaltrust.Launcher.Commands
                         }, throws: true);
                     });
 
-                var plebianApp = Check("Build plebian Host", plebianBuilder.Build, throws: true)!;
+                var plebeianApp = Check("Build plebeian Host", plebeianBuilder.Build, throws: true)!;
 
-                await CheckAwait("Start plebian Host", async () => await WithTimeout(async () => await plebianApp.StartAsync(_lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)));
+                await CheckAwait("Start plebeian Host", async () => await WithTimeout(async () => await plebeianApp.StartAsync(_lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)));
 
                 await doctorProcessHostMonarch.IsStarted.Task;
 
@@ -225,8 +225,8 @@ namespace fiskaltrust.Launcher.Commands
                         await monarchApp.StopAsync();
                         await monarchApp.WaitForShutdownAsync();
 
-                        await plebianApp.StopAsync();
-                        await plebianApp.WaitForShutdownAsync();
+                        await plebeianApp.StopAsync();
+                        await plebeianApp.WaitForShutdownAsync();
                     }, TimeSpan.FromSeconds(5))
                 );
             }
@@ -353,15 +353,17 @@ namespace fiskaltrust.Launcher.Commands
             return Task.CompletedTask;
         }
 
-        public void Started()
+        public void SetPlebeanStarted()
         {
             IsStarted.SetResult();
         }
 
-        public Task Stopped()
+        public Task GetStopped()
         {
             return Task.CompletedTask;
         }
+
+        public void SetStartupCompleted() { }
     }
 
     public class DoctorMiddlewareBootstrapper : IMiddlewareBootstrapper

@@ -28,7 +28,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public HostCommand() : base("host")
         {
-            AddOption(new Option<string>("--plebian-configuration"));
+            AddOption(new Option<string>("--plebeian-configuration"));
             AddOption(new Option<string>("--debugging"));
             AddOption(new Option<string>("--launcher-configuration"));
             AddOption(new Option<bool>("--no-process-host-service", getDefaultValue: () => false));
@@ -38,7 +38,7 @@ namespace fiskaltrust.Launcher.Commands
     public class HostCommandHandler : ICommandHandler
     {
         public string LauncherConfiguration { get; set; } = null!;
-        public string PlebianConfiguration { get; set; } = null!;
+        public string PlebeianConfiguration { get; set; } = null!;
         public bool NoProcessHostService { get; set; }
         public bool Debugging { get; set; }
 
@@ -63,19 +63,19 @@ namespace fiskaltrust.Launcher.Commands
 
             var launcherConfiguration = Common.Configuration.LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration)));
 
-            var plebianConfiguration = Configuration.PlebianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration)));
+            var plebeianConfiguration = Configuration.PlebeianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebeianConfiguration)));
 
             var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
 
             cashboxConfiguration.Decrypt(launcherConfiguration, await CommonCommandHandler.LoadCurve(launcherConfiguration.AccessToken!, launcherConfiguration.UseLegacyDataProtection!.Value));
 
-            var packageConfiguration = (plebianConfiguration.PackageType switch
+            var packageConfiguration = (plebeianConfiguration.PackageType switch
             {
                 PackageType.Queue => cashboxConfiguration.ftQueues,
                 PackageType.SCU => cashboxConfiguration.ftSignaturCreationDevices,
                 PackageType.Helper => cashboxConfiguration.helpers,
                 var unknown => throw new Exception($"Unknown PackageType {unknown}")
-            }).First(p => p.Id == plebianConfiguration.PackageId);
+            }).First(p => p.Id == plebeianConfiguration.PackageId);
 
             packageConfiguration.Configuration = ProcessPackageConfiguration(packageConfiguration.Configuration, launcherConfiguration, cashboxConfiguration);
 
@@ -96,10 +96,14 @@ namespace fiskaltrust.Launcher.Commands
                 .UseSerilog()
                 .ConfigureServices(services =>
                 {
-                    services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
+                    services.Configure<HostOptions>(opts =>
+                    {
+                        opts.ShutdownTimeout = TimeSpan.FromSeconds(30);
+                        opts.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
+                    });
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => packageConfiguration);
-                    services.AddSingleton(_ => plebianConfiguration);
+                    services.AddSingleton(_ => plebeianConfiguration);
 
                     var pluginLoader = new PluginLoader();
                     services.AddSingleton(_ => pluginLoader);
@@ -110,7 +114,7 @@ namespace fiskaltrust.Launcher.Commands
                     }
 
                     services.AddSingleton<HostingService>();
-                    services.AddHostedService<ProcessHostPlebian>();
+                    services.AddHostedService<ProcessHostPlebeian>();
 
                     services.AddSingleton<IClientFactory<IDESSCD>, DESSCDClientFactory>();
                     services.AddSingleton<IClientFactory<IITSSCD>, ITSSCDClientFactory>();
@@ -162,7 +166,7 @@ namespace fiskaltrust.Launcher.Commands
             catch (Exception e)
             {
                 Log.Error(e, "An unhandled exception occured.");
-                return 1;
+                throw;
             }
             finally
             {
