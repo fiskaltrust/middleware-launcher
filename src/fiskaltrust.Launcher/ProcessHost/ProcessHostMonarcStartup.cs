@@ -79,17 +79,23 @@ namespace fiskaltrust.Launcher.ProcessHost
                 await new TaskCompletionSource().Task;
             }
 
+            foreach (var host in _hosts)
+            {
+                host.Value.SetStartupCompleted();
+            }
+
             try
             {
-                await Task.WhenAll(_hosts.Select(h => h.Value.Stopped()));
+                await Task.WhenAll(_hosts.Select(h => h.Value.GetStopped()));
             }
             catch
             {
-                foreach (var failed in _hosts.Where(h => !h.Value.Stopped().IsCompletedSuccessfully).Select(h => (h.Key, h.Value.Stopped().Exception)))
+                foreach (var failed in _hosts.Where(h => !h.Value.GetStopped().IsCompletedSuccessfully).Select(h => (h.Key, h.Value.GetStopped().Exception)))
                 {
                     _logger.LogWarning(failed.Exception, "ProcessHost {Id} had crashed.", failed.Key);
                 }
             }
+            _lifetime.ApplicationLifetime.StopApplication();
         }
 
         private async Task StartProcessHostMonarch(PackageConfiguration configuration, PackageType packageType, CancellationToken cancellationToken)

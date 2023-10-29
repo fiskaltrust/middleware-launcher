@@ -3,26 +3,27 @@ using System.Security.Cryptography;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.storage.serialization.V0;
+using Polly;
+using Polly.Extensions.Http;
 
 namespace fiskaltrust.Launcher.Download
 {
     public sealed class PackageDownloader : IDisposable
     {
+        private readonly PolicyHttpClient _policyHttpClient;
+
         private readonly LauncherConfiguration _configuration;
         private readonly ILogger<PackageDownloader>? _logger;
-        private readonly HttpClient? _httpClient;
         private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public PackageDownloader(ILogger<PackageDownloader>? logger, LauncherConfiguration configuration, LauncherExecutablePath launcherExecutablePath)
+        public PackageDownloader(ILogger<PackageDownloader>? logger, LauncherConfiguration configuration,
+            LauncherExecutablePath launcherExecutablePath)
         {
             _logger = logger;
             _configuration = configuration;
             _launcherExecutablePath = launcherExecutablePath;
 
-            if (!configuration.UseOffline!.Value)
-            {
-                _httpClient = new HttpClient(new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) });
-            }
+            _policyHttpClient = new PolicyHttpClient(configuration, new HttpClient(new HttpClientHandler { Proxy = ProxyFactory.CreateProxy(configuration.Proxy) }));
         }
 
         public string GetPackagePath(PackageConfiguration configuration)
@@ -74,12 +75,15 @@ namespace fiskaltrust.Launcher.Download
 
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/packages/{name}?platform={platform}"));
+                var response = await _policyHttpClient.SendAsync(() =>
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/packages/{name}?platform={platform}"));
 
-                request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
-                request.Headers.Add("accesstoken", _configuration.AccessToken);
+                    request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                    request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-                var response = await _httpClient!.SendAsync(request);
+                    return request;
+                });
 
                 response.EnsureSuccessStatusCode();
 
@@ -126,30 +130,37 @@ namespace fiskaltrust.Launcher.Download
                     Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
 
                     {
-                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}?version={version}&platform={platform}"));
+                        var response = await _policyHttpClient.SendAsync(() =>
+                        {
+                            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}?version={version}&platform={platform}"));
 
-                        request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
-                        request.Headers.Add("accesstoken", _configuration.AccessToken);
+                            request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                            request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-                        var response = await _httpClient!.SendAsync(request);
+                            return request;
+                        });
 
                         response.EnsureSuccessStatusCode();
 
-                        using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                        await using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
                         await response.Content.CopyToAsync(fileStream);
                     }
 
                     {
-                        var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}/hash?version={version}&platform={platform}"));
+                        var response = await _policyHttpClient.SendAsync(() =>
+                        {
+                            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{_configuration.PackagesUrl}api/download/{name}/hash?version={version}&platform={platform}"));
 
-                        request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
-                        request.Headers.Add("accesstoken", _configuration.AccessToken);
+                            request.Headers.Add("cashboxid", _configuration.CashboxId.ToString());
+                            request.Headers.Add("accesstoken", _configuration.AccessToken);
 
-                        var response = await _httpClient.SendAsync(request);
+                            return request;
+                        });
 
                         response.EnsureSuccessStatusCode();
                         await File.WriteAllTextAsync($"{sourcePath}.hash", await response.Content.ReadAsStringAsync());
                     }
+
                 }
                 else
                 {
@@ -188,6 +199,7 @@ namespace fiskaltrust.Launcher.Download
             }
         }
 
+
         public void CopyPackagesToCache()
         {
             var sourcePath = Path.Combine(Path.GetDirectoryName(_launcherExecutablePath.Path)!, "packages");
@@ -215,8 +227,8 @@ namespace fiskaltrust.Launcher.Download
                 }
                 File.Copy(filePath, destinationFilePath, true);
 
-                _logger?.LogInformation("Copied package {fileName to cache}", fileName);
 
+                _logger?.LogInformation("Copied package {fileName} to cache", fileName);
             }
 
         }
@@ -245,7 +257,7 @@ namespace fiskaltrust.Launcher.Download
 
         public void Dispose()
         {
-            _httpClient?.Dispose();
+            _policyHttpClient?.Dispose();
         }
     }
 }

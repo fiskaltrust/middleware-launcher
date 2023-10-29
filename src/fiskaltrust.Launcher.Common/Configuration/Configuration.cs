@@ -120,11 +120,11 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private int? _downloadTimeoutSec;
         [JsonPropertyName("downloadTimeoutSec")]
-        public int? DownloadTimeoutSec { get => WithDefault(_downloadTimeoutSec, 15); set => _downloadTimeoutSec = value; } // TODO implement
+        public int? DownloadTimeoutSec { get => WithDefault(_downloadTimeoutSec, 15); set => _downloadTimeoutSec = value; }
 
         private int? _downloadRetry;
         [JsonPropertyName("downloadRetry")]
-        public int? DownloadRetry { get => WithDefault(_downloadRetry, 1); set => _downloadRetry = value; } // TODO implement
+        public int? DownloadRetry { get => WithDefault(_downloadRetry, 1); set => _downloadRetry = value; }
 
         private bool? _sslValidation;
         [JsonPropertyName("sslValidation")]

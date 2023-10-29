@@ -3,6 +3,6 @@ using fiskaltrust.Launcher.Configuration;
 
 namespace fiskaltrust.Launcher.Helpers.Serialization
 {
-    [JsonSerializable(typeof(PlebianConfiguration))]
+    [JsonSerializable(typeof(PlebeianConfiguration))]
     public partial class SerializerContext : JsonSerializerContext { }
 }

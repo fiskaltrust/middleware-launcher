@@ -24,7 +24,7 @@ namespace fiskaltrust.Launcher.Services
         [OperationContract]
         public void Started(string id)
         {
-            _hosts[Guid.Parse(id)].Started();
+            _hosts[Guid.Parse(id)].SetPlebeanStarted();
         }
 
         [OperationContract]
