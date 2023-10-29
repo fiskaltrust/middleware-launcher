@@ -32,6 +32,10 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string>("--debugging"));
             AddOption(new Option<string>("--launcher-configuration"));
             AddOption(new Option<bool>("--no-process-host-service", getDefaultValue: () => false));
+            AddOption(new Option<bool>("--use-domain-sockets"));
+            AddOption(new Option<string>("--domain-socket-path"));
+            AddOption(new Option<bool>("--use-named-pipes"));
+            AddOption(new Option<string?>("--named-pipe-name"));
         }
     }
 
@@ -41,14 +45,19 @@ namespace fiskaltrust.Launcher.Commands
         public string PlebeianConfiguration { get; set; } = null!;
         public bool NoProcessHostService { get; set; }
         public bool Debugging { get; set; }
+        
+        public bool UseDomainSockets { get; }
+        public string? DomainSocketPath { get; }
 
         private readonly CancellationToken _cancellationToken;
         private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public HostCommandHandler(IHostApplicationLifetime lifetime, LauncherExecutablePath launcherExecutablePath)
+        public HostCommandHandler(IHostApplicationLifetime lifetime, LauncherExecutablePath launcherExecutablePath, bool useDomainSockets, string? domainSocketPath)
         {
             _cancellationToken = lifetime.ApplicationStopping;
             _launcherExecutablePath = launcherExecutablePath;
+            UseDomainSockets = useDomainSockets;
+            DomainSocketPath = domainSocketPath;
         }
 
         public async Task<int> InvokeAsync(InvocationContext context)
@@ -61,9 +70,17 @@ namespace fiskaltrust.Launcher.Commands
                 }
             }
 
-            var launcherConfiguration = Common.Configuration.LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration)));
-
-            var plebeianConfiguration = Configuration.PlebeianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebeianConfiguration)));
+            var launcherConfigurationBase64Decoded = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration));
+            var launcherConfiguration = Common.Configuration.LauncherConfiguration.Deserialize(launcherConfigurationBase64Decoded);
+    
+            launcherConfiguration = launcherConfiguration with 
+            {
+                UseDomainSockets = UseDomainSockets,
+                DomainSocketPath = UseDomainSockets ? DomainSocketPath ?? throw new InvalidOperationException("Domain socket path must be provided when using domain sockets.") : null
+            };
+    
+            var plebeianConfigurationBase64Decoded = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebeianConfiguration));
+            var plebeianConfiguration = Configuration.PlebeianConfiguration.Deserialize(plebeianConfigurationBase64Decoded);
 
             var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
 
@@ -96,11 +113,7 @@ namespace fiskaltrust.Launcher.Commands
                 .UseSerilog()
                 .ConfigureServices(services =>
                 {
-                    services.Configure<HostOptions>(opts =>
-                    {
-                        opts.ShutdownTimeout = TimeSpan.FromSeconds(30);
-                        opts.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
-                    });
+                    services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => packageConfiguration);
                     services.AddSingleton(_ => plebeianConfiguration);
@@ -155,7 +168,7 @@ namespace fiskaltrust.Launcher.Commands
                     {
                         Log.Error(e, "Could not load {Type}.", nameof(IMiddlewareBootstrapper));
                         throw;
-                    } // Will also be detected and logged propperly later
+                    } 
                 });
 
             try
@@ -165,7 +178,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e, "An unhandled exception occured.");
+                Log.Error(e, "An unhandled exception occurred.");
                 throw;
             }
             finally
@@ -211,4 +224,3 @@ namespace fiskaltrust.Launcher.Commands
         }
     }
 }
-
