@@ -32,6 +32,10 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string>("--debugging"));
             AddOption(new Option<string>("--launcher-configuration"));
             AddOption(new Option<bool>("--no-process-host-service", getDefaultValue: () => false));
+            AddOption(new Option<bool>("--use-domain-sockets"));
+            AddOption(new Option<string>("--domain-socket-path"));
+            AddOption(new Option<bool>("--use-named-pipes"));
+            AddOption(new Option<string?>("--named-pipe-name"));
         }
     }
 
@@ -41,14 +45,19 @@ namespace fiskaltrust.Launcher.Commands
         public string PlebianConfiguration { get; set; } = null!;
         public bool NoProcessHostService { get; set; }
         public bool Debugging { get; set; }
+        
+        public bool UseDomainSockets { get; }
+        public string? DomainSocketPath { get; }
 
         private readonly CancellationToken _cancellationToken;
         private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public HostCommandHandler(IHostApplicationLifetime lifetime, LauncherExecutablePath launcherExecutablePath)
+        public HostCommandHandler(IHostApplicationLifetime lifetime, LauncherExecutablePath launcherExecutablePath, bool useDomainSockets, string? domainSocketPath)
         {
             _cancellationToken = lifetime.ApplicationStopping;
             _launcherExecutablePath = launcherExecutablePath;
+            UseDomainSockets = useDomainSockets;
+            DomainSocketPath = domainSocketPath;
         }
 
         public async Task<int> InvokeAsync(InvocationContext context)
@@ -61,9 +70,17 @@ namespace fiskaltrust.Launcher.Commands
                 }
             }
 
-            var launcherConfiguration = Common.Configuration.LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration)));
-
-            var plebianConfiguration = Configuration.PlebianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration)));
+            var launcherConfigurationBase64Decoded = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration));
+            var launcherConfiguration = Common.Configuration.LauncherConfiguration.Deserialize(launcherConfigurationBase64Decoded);
+    
+            launcherConfiguration = launcherConfiguration with 
+            {
+                UseDomainSockets = UseDomainSockets,
+                DomainSocketPath = UseDomainSockets ? DomainSocketPath ?? throw new InvalidOperationException("Domain socket path must be provided when using domain sockets.") : null
+            };
+    
+            var plebianConfigurationBase64Decoded = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebianConfiguration));
+            var plebianConfiguration = Configuration.PlebianConfiguration.Deserialize(plebianConfigurationBase64Decoded);
 
             var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
 

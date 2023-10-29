@@ -327,6 +327,10 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
             return null;
         }
+        public bool UseDomainSockets { get; init; }
+        public string? DomainSocketPath { get; init; }
+        public bool UseNamedPipes { get; init; }
+        public string? NamedPipeName { get; init; }
     }
 
     public record LauncherConfigurationInCashBoxConfiguration
