@@ -52,7 +52,7 @@ namespace fiskaltrust.Launcher.Commands
         private readonly CancellationToken _cancellationToken;
         private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public HostCommandHandler(IHostApplicationLifetime lifetime, LauncherExecutablePath launcherExecutablePath, bool useDomainSockets, string? domainSocketPath)
+        public HostCommandHandler(IHostApplicationLifetime lifetime, LauncherExecutablePath launcherExecutablePath)
         {
             _cancellationToken = lifetime.ApplicationStopping;
             _launcherExecutablePath = launcherExecutablePath;
@@ -224,3 +224,4 @@ namespace fiskaltrust.Launcher.Commands
         }
     }
 }
+
