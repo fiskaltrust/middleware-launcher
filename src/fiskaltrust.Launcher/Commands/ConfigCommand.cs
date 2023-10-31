@@ -17,10 +17,15 @@ namespace fiskaltrust.Launcher.Commands
         public ConfigCommand() : base("config")
         {
             AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
+            AddOption(new Option<string?>("--launcher-version"));
+
+            var logLevelOption = new Option<LogLevel?>("--log-level", "Set the log level of the application.");
+            logLevelOption.AddAlias("-v");
+            logLevelOption.AddAlias("--verbosity");
+            AddOption(logLevelOption);
+
             AddCommand(new ConfigSetCommand());
             AddCommand(new ConfigGetCommand());
-            AddOption(new Option<LogLevel?>(new[] { "--log-level", "-v", "--verbosity" }, "Sets the verbosity level of the logging."));
-
         }
     }
 

@@ -59,7 +59,7 @@ namespace fiskaltrust.Launcher.Download
             });
         }
 
-        public async Task<SemanticVersioning.Version?> GetConcreteVersionFromRange(string name, SemanticVersioning.Range range, string platform)
+        public async Task<SemanticVersioning.Version?> GetConcreteVersionFromRange(string name, SemanticVersioning.Range range, string platform, bool? includePrerelease = null)
         {
             try
             {
@@ -89,7 +89,14 @@ namespace fiskaltrust.Launcher.Download
 
                 var versions = (await response.Content.ReadFromJsonAsync<IEnumerable<string>>())?.Select(v => new SemanticVersioning.Version(v)) ?? new List<SemanticVersioning.Version>();
 
-                return range.MaxSatisfying(versions);
+                if (includePrerelease.HasValue)
+                {
+                    return range.MaxSatisfying(versions, includePrerelease.Value);
+                }
+                else
+                {
+                    return range.MaxSatisfying(versions);
+                }
             }
             catch (Exception e)
             {

@@ -25,7 +25,11 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--access-token"));
             AddOption(new Option<bool>("--sandbox"));
             AddOption(new Option<string?>("--log-folder"));
-            AddOption(new Option<LogLevel?>(new[] { "--log-level", "-v", "--verbosity" }, "Sets the verbosity level of the logging."));
+
+            var logLevelOption = new Option<LogLevel?>("--log-level", "Set the log level of the application.");
+            logLevelOption.AddAlias("-v");
+            logLevelOption.AddAlias("--verbosity");
+            AddOption(logLevelOption);
 
             if (addCliOnlyParameters)
             {
@@ -38,7 +42,17 @@ namespace fiskaltrust.Launcher.Commands
 
     public class CommonCommandHandler : ICommandHandler
     {
-        public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
+        private LauncherConfiguration _argsLauncherConfiguration = null!;
+        public LauncherConfiguration ArgsLauncherConfiguration
+        {
+            get => _argsLauncherConfiguration;
+            set
+            {
+                _argsLauncherConfiguration = value;
+                _argsLauncherConfiguration.LauncherVersion = null;
+            }
+        }
+
         public string LauncherConfigurationFile { get; set; } = null!;
         public string LegacyConfigurationFile { get; set; } = null!;
         public bool MergeLegacyConfigIfExists { get; set; }

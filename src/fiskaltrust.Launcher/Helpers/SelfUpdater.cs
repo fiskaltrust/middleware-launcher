@@ -30,13 +30,15 @@ namespace fiskaltrust.Launcher.Helpers
         public async Task PrepareSelfUpdate(Serilog.ILogger logger, LauncherConfiguration launcherConfiguration, PackageDownloader packageDownloader)
         {
 #if EnableSelfUpdate
+            logger.Debug("SelfUpdate Enabled.");
             var configuredVersion = launcherConfiguration.LauncherVersion;
 #else
+            logger.Debug("SelfUpdate Disabled.");
             var configuredVersion = new SemanticVersioning.Range("*");
 #endif
             if (configuredVersion is not null && Common.Constants.Version.CurrentVersion is not null)
             {
-                SemanticVersioning.Version? launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, configuredVersion, Constants.Runtime.Identifier);
+                SemanticVersioning.Version? launcherVersion = await packageDownloader.GetConcreteVersionFromRange(PackageDownloader.LAUNCHER_NAME, configuredVersion, Constants.Runtime.Identifier, Common.Constants.Version.CurrentVersion.IsPreRelease);
 
                 if (launcherVersion is not null && Common.Constants.Version.CurrentVersion != launcherVersion)
                 {

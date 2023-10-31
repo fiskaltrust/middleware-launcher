@@ -166,7 +166,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         private SemanticVersioning.Range? _launcherVersion = null;
         [JsonPropertyName("launcherVersion")]
         [JsonConverter(typeof(SemVersionConverter))]
-        public SemanticVersioning.Range? LauncherVersion { get => _launcherVersion; set => _launcherVersion = (value is null || value == new SemanticVersioning.Range("")) ? null : value; }
+        public SemanticVersioning.Range? LauncherVersion { get => _launcherVersion; set => _launcherVersion = value; }
 
         public void OverwriteWith(LauncherConfiguration? source)
         {
