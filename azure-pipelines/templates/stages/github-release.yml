@@ -40,15 +40,16 @@ stages:
         displayName: "[${{ target }}] Download artifact"
 
     - pwsh: |
-        Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File | Where-Object { !($_ -match "fiskaltrust.Launcher(.exe)?") } | Remove-Item
+        Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File | Where-Object { !($_ -match "fiskaltrust.Launcher(.exe)?`$") } | Remove-Item
         Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -Directory | %{ $_ -match "drop-(.*)"; Move-Item $_ $(Join-Path $_.Parent $Matches[1]); }
       displayName: Prepare artifacts
 
+    - bash: mkdir $(Pipeline.Workspace)/zipped/
+
     - ${{ each target in parameters.targets }}:
       - bash: |
-          mkdir $(Build.ArtifactStagingDirectory)/zipped/
-          cd $(Build.ArtifactStagingDirectory)/${{ parameters.artifact }}/{{ target }}
-          zip -r $(Build.ArtifactStagingDirectory)/zipped/{{ target }}.zip ./"
+          cd $(Pipeline.Workspace)/${{ parameters.artifact }}/${{ target }}
+          zip -r $(Pipeline.Workspace)/zipped/${{ target }}.zip ./
 
     - task: GitHubRelease@0
       displayName: "Edit GitHub Release"
@@ -57,4 +58,4 @@ stages:
         repositoryName: ${{ parameters.repositoryName }}
         action: edit
         tag: $(Build.SourceBranchName)
-        assets: $(Build.ArtifactStagingDirectory)/zipped/*.zip
+        assets: $(Pipeline.Workspace)/zipped/*.zip
