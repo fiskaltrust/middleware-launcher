@@ -51,11 +51,12 @@ stages:
           cd $(Pipeline.Workspace)/${{ parameters.artifact }}/${{ target }}
           zip -r $(Pipeline.Workspace)/zipped/${{ target }}.zip ./
 
-    - task: GitHubRelease@0
+    - task: GitHubRelease@1
       displayName: "Edit GitHub Release"
       inputs:
         gitHubConnection: ${{ parameters.serviceConnection }}
         repositoryName: ${{ parameters.repositoryName }}
         action: edit
         tag: $(Build.SourceBranchName)
+        addChangeLog: false
         assets: $(Pipeline.Workspace)/zipped/*.zip
