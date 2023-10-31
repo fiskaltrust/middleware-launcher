@@ -8,8 +8,10 @@ namespace fiskaltrust.Launcher.Extensions
 {
     public static class WebApplicationExtensions
     {
-        private static readonly string[] _prefixes = new[] { "", "json/", "v1/", "json/v1/", "v0/", "json/v0/" };
+        private static readonly string[] _prefixesV0 = new[] { "v0/", "json/v0/" };
         private static readonly string[] _prefixesV1 = new[] { "", "json/", "v1/", "json/v1/" };
+        private static readonly string[] _prefixes = _prefixesV0.Concat(_prefixesV1).ToArray();
+
 
         private static IEnumerable<RouteHandlerBuilder> MapMultiple(this WebApplication app, IEnumerable<string> urls, Func<IEndpointRouteBuilder, string, Delegate, RouteHandlerBuilder> method, Delegate callback) =>
             urls.Select(url => method(app, url, callback)).ToList();
@@ -19,7 +21,8 @@ namespace fiskaltrust.Launcher.Extensions
 
         public static WebApplication AddQueueEndpoints(this WebApplication app, IPOS pos)
         {
-            app.MapMultiplePrefixed(_prefixes, "Echo", EndpointRouteBuilderExtensions.MapPost, async (EchoRequest req) => await pos.EchoAsync(req));
+            app.MapMultiplePrefixed(_prefixesV1, "Echo", EndpointRouteBuilderExtensions.MapPost, async (EchoRequest req) => await pos.EchoAsync(req));
+            app.MapMultiplePrefixed(_prefixesV0, "Echo", EndpointRouteBuilderExtensions.MapPost, async ([FromBody] string message) => (await pos.EchoAsync(new EchoRequest { Message = message })).Message);
             app.MapMultiplePrefixed(_prefixes, "Sign", EndpointRouteBuilderExtensions.MapPost, async (ReceiptRequest req) => await pos.SignAsync(req));
             app.MapMultiplePrefixed(_prefixes, "Journal", EndpointRouteBuilderExtensions.MapPost, ([FromQuery] long type, [FromQuery] long? from, [FromQuery] long? to) =>
             {
