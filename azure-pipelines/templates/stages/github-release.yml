@@ -1,0 +1,60 @@
+parameters:
+- name: artifact
+  type: string
+  default: current
+
+- name: targets
+  type: object
+  default:
+  - win-x64
+  - win-x86
+  - linux-x64
+  - linux-arm
+  - linux-arm64
+  - osx-x64
+
+- name: dependsOn
+  type: string
+
+- name: serviceConnection
+  type: string
+
+- name: repositoryName
+  type: string
+
+
+stages:
+- stage: Github_Release
+  displayName: Edit Github Release
+  dependsOn: ${{ parameters.dependsOn }}
+
+  jobs:
+  - job: Release
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+
+    - ${{ each target in parameters.targets }}:
+      - download: ${{ parameters.artifact }}
+        artifact: drop-${{ target }}
+        displayName: "[${{ target }}] Download artifact"
+
+    - pwsh: |
+        Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File | Where-Object { !($_ -match "fiskaltrust.Launcher(.exe)?") } | Remove-Item
+        Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -Directory | %{ $_ -match "drop-(.*)"; Move-Item $_ $(Join-Path $_.Parent $Matches[1]); }
+      displayName: Prepare artifacts
+
+    - ${{ each target in parameters.targets }}:
+      - bash: |
+          mkdir $(Build.ArtifactStagingDirectory)/zipped/
+          cd $(Build.ArtifactStagingDirectory)/${{ parameters.artifact }}/{{ target }}
+          zip -r $(Build.ArtifactStagingDirectory)/zipped/{{ target }}.zip ./"
+
+    - task: GitHubRelease@0
+      displayName: "Edit GitHub Release"
+      inputs:
+        gitHubConnection: ${{ parameters.serviceConnection }}
+        repositoryName: ${{ parameters.repositoryName }}
+        action: edit
+        tag: $(Build.SourceBranchName)
+        assets: $(Build.ArtifactStagingDirectory)/zipped/*.zip
