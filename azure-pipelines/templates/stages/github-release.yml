@@ -45,11 +45,13 @@ stages:
       displayName: Prepare artifacts
 
     - bash: mkdir $(Pipeline.Workspace)/zipped/
+      displayName: Create folder
 
     - ${{ each target in parameters.targets }}:
       - bash: |
           cd $(Pipeline.Workspace)/${{ parameters.artifact }}/${{ target }}
           zip -r $(Pipeline.Workspace)/zipped/${{ target }}.zip ./
+        displayName: "[${{ target }}] Zip artifact"
 
     - task: GitHubRelease@1
       displayName: "Edit GitHub Release"
