@@ -28,6 +28,13 @@ stages:
             storage: stprodwesteuropepackages
             serviceConnection: rg-prod-westeurope-packages
 
+  - template: templates/stages/github-release.yml
+    parameters:
+      dependsOn: Release_Production
+      artifact: build
+      serviceConnection: github-fiskaltrust
+      repositoryName: fiskaltrust/middleware-launcher
+
   - template: templates/deb/release.yml
     parameters:
       artifact: build
