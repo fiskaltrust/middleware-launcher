@@ -36,6 +36,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            _lifetime.ApplicationLifetime.ApplicationStopping.Register(() => _logger.LogInformation("Shutting down launcher."));
             StartupLogging();
             _downloader.CopyPackagesToCache();
             try
