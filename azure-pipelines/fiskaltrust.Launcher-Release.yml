@@ -32,7 +32,7 @@ stages:
     parameters:
       dependsOn: Release_Production
       artifact: build
-      serviceConnection: github-fiskaltrust
+      serviceConnection: fiskaltrust
       repositoryName: fiskaltrust/middleware-launcher
 
   - template: templates/deb/release.yml
