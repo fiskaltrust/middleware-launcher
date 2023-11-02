@@ -56,9 +56,8 @@ sudo apt install fiskaltrust-middleware-launcher
 ```
 
 > When installed this way the self-update funtionality of the launcher is disabled and it has to be updated via `apt-get` .
->  
-
-```bash
+> 
+>  ```bash
 > sudo apt update && sudo apt install --only-upgrade fiskaltrust-middleware-launcher
 > ```
 
