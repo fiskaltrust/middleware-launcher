@@ -60,6 +60,22 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             StartupLogging();
 
+            if (_launcherConfiguration.LauncherPort == 0)
+            {
+                try
+                {
+                    var url = await _kestrelReady.Task.ConfigureAwait(false);
+                    _launcherConfiguration.LauncherPort = url.Port;
+                    _logger.LogInformation("ProcessHostService running on {url}", url);
+                }
+                catch (Exception e)
+                {
+                    if (cancellationToken.IsCancellationRequested) { return; }
+                    _logger.LogError(e, "Could not get Kestrel port.");
+                    throw new AlreadyLoggedException();
+                }
+            }
+
             _downloader.CopyPackagesToCache();
 
             try
@@ -137,22 +153,6 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 _logger.LogError(e, "Could not download package.");
                 throw new AlreadyLoggedException();
-            }
-
-            if (_launcherConfiguration.LauncherPort == 0)
-            {
-                try
-                {
-                    var url = await _kestrelReady.Task.ConfigureAwait(false);
-                    _launcherConfiguration.LauncherPort = url.Port;
-                    _logger.LogInformation("ProcessHostService running on {url}", url);
-                }
-                catch (Exception e)
-                {
-                    if (cancellationToken.IsCancellationRequested) { return; }
-                    _logger.LogError(e, "Could not get Kestrel port.");
-                    throw new AlreadyLoggedException();
-                }
             }
 
             var monarch = new ProcessHostMonarch(
