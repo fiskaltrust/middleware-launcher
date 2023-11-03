@@ -88,7 +88,7 @@ The configuration file should contain the following config keys:
   
   "ftCashBoxId": "<ftCashBoxId>",         // string
   "accessToken": "<accessToken>",         // string
-  "launcherPort": "<launcherPort>",       // int (default: 5050)
+  "launcherPort": "<launcherPort>",       // int (default: 0)
   "serviceFolder": "<serviceFolder>",     // string (default-windows: "C:/ProgramData/fiskaltrust", default-linux: "/var/lib/fiskaltrust", default-macos: "/Library/Application Support/fiskaltrust")
   "sandbox": "<sandbox>",                 // bool (default: true)
   "useOffline": "<useOffline>",           // bool (default: false)
@@ -117,35 +117,35 @@ All of these config keys can be overridden using the corresponding cli arguments
 
 The `run` command of the fiskaltrust.Launcher is used to execute the launcher, providing users with various options to configure its behaviour and logging details.
 
-| Option                                                        | Description                                                                | Default                                                                                                                             |
-|---------------------------------------------------------------|----------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| `--cashbox-id <cashbox-id>`                                   | Specifies the ID of the cashbox.                                           |                                                                                                                                     |
-| `--access-token <access-token>`                               | Token used for authentication.                                             |                                                                                                                                     |
-| `--sandbox`                                                   | Enables sandbox mode.                                                      | `false`                                                                                                                             |
-| `--log-folder <log-folder>`                                   | Path to the folder where logs will be saved.                               | `"<service-folder>/logs"`                                                                                                           |
-| `--log-level <level>`                                         | Determines the logging level. Accepts values like Critical, Debug, etc.    | `"Information"`                                                                                                                     |
-| `--launcher-configuration-file <file>`                        | Path to the launcher configuration file.                                   | `"launcher.configuration.json"`                                                                                                     |
-| `--legacy-configuration-file <file>`                          | Path to the legacy configuration file.                                     | `"fiskaltrust.exe.config"`                                                                                                          |
-| `--merge-legacy-config-if-exists`                             | If set, merges legacy configuration if it exists.                          | `true`                                                                                                                              |
-| `--launcher-port <port>`                                      | Specifies the port which the launcher will use for internal communication. | `5050`                                                                                                                              |
-| `--use-offline`                                               | Enables offline mode.                                                      | `false`                                                                                                                             |
-| `--service-folder <service-folder>`                           | Path to the service folder.                                                | windows: `"C:/ProgramData/fiskaltrust"`<br/>linux: `"/var/lib/fiskaltrust"`<br/>macos: `"/Library/Application Support/fiskaltrust"` |
-| `--configuration-url <configuration-url>`                     | URL to fetch the configuration from.                                       | `"https://configuration[-sandbox].fiskaltrust.cloud"`                                                                               |
-| `--packages-url <packages-url>`                               | URL to fetch packages from.                                                | `"https://packages-2-0[-sandbox].fiskaltrust.cloud"`                                                                                |
-| `--package-cache <package-cache>`                             | Cache directory for the packages.                                          | `"<serviceFolder>/cache"`                                                                                                           |
-| `--helipad-url <helipad-url>`                                 | URL for the helipad.                                                       | `"https://helipad[-sandbox].fiskaltrust.cloud"`                                                                                     |
-| `--download-timeout-sec <download-timeout-sec>`               | Timeout for downloads in seconds.                                          | `15`                                                                                                                                |
-| `--download-retry <download-retry>`                           | Number of times to retry a failed download.                                | `1`                                                                                                                                 |
-| `--ssl-validation`                                            | Validates SSL certificates.                                                | `true`                                                                                                                              |
-| `--proxy <proxy>`                                             | Proxy server details.                                                      |                                                                                                                                     |
-| `--processhost-ping-period-sec <processhost-ping-period-sec>` | Ping period for the process host in seconds.                               | `10`                                                                                                                                |
-| `--cashbox-configuration-file <cashbox-configuration-file>`   | Path to the cashbox configuration file.                                    | `""<serviceFolder>/service/Configuration-<ftCashBoxId>.json"`                                                                       |
-| `--tls-certificate-path <tls-certificate-path>`               | Path to the TLS certificate.                                               |                                                                                                                                     |
-| `--tls-certificate-base64 <tls-certificate-base64>`           | Base64 encoded TLS certificate.                                            |                                                                                                                                     |
-| `--tls-certificate-password <tls-certificate-password>`       | Password for the TLS certificate.                                          |                                                                                                                                     |
-| `--use-http-sys-binding <use-http-sys-binding>`               | Uses HTTP sys binding.                                                     | `false`                                                                                                                             |
-| `--use-legacy-data-protection <use-legacy-data-protection>`   | Enables use of legacy data protection.                                     | `false`                                                                                                                             |
-| `-?` , `-h` , `--help`                                        | Displays help and usage information.                                       |                                                                                                                                     |
+| Option                                                        | Description                                                                                                      | Default                                                                                                                             |
+|---------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| `--cashbox-id <cashbox-id>`                                   | Specifies the ID of the cashbox.                                                                                 |                                                                                                                                     |
+| `--access-token <access-token>`                               | Token used for authentication.                                                                                   |                                                                                                                                     |
+| `--sandbox`                                                   | Enables sandbox mode.                                                                                            | `false`                                                                                                                             |
+| `--log-folder <log-folder>`                                   | Path to the folder where logs will be saved.                                                                     | `"<service-folder>/logs"`                                                                                                           |
+| `--log-level <level>`                                         | Determines the logging level. Accepts values like Critical, Debug, etc.                                          | `"Information"`                                                                                                                     |
+| `--launcher-configuration-file <file>`                        | Path to the launcher configuration file.                                                                         | `"launcher.configuration.json"`                                                                                                     |
+| `--legacy-configuration-file <file>`                          | Path to the legacy configuration file.                                                                           | `"fiskaltrust.exe.config"`                                                                                                          |
+| `--merge-legacy-config-if-exists`                             | If set, merges legacy configuration if it exists.                                                                | `true`                                                                                                                              |
+| `--launcher-port <port>`                                      | Specifies the port which the launcher will use for internal communication. A dynamic binding is used by default. | `0`                                                                                                                                 |
+| `--use-offline`                                               | Enables offline mode.                                                                                            | `false`                                                                                                                             |
+| `--service-folder <service-folder>`                           | Path to the service folder.                                                                                      | windows: `"C:/ProgramData/fiskaltrust"`<br/>linux: `"/var/lib/fiskaltrust"`<br/>macos: `"/Library/Application Support/fiskaltrust"` |
+| `--configuration-url <configuration-url>`                     | URL to fetch the configuration from.                                                                             | `"https://configuration[-sandbox].fiskaltrust.cloud"`                                                                               |
+| `--packages-url <packages-url>`                               | URL to fetch packages from.                                                                                      | `"https://packages-2-0[-sandbox].fiskaltrust.cloud"`                                                                                |
+| `--package-cache <package-cache>`                             | Cache directory for the packages.                                                                                | `"<serviceFolder>/cache"`                                                                                                           |
+| `--helipad-url <helipad-url>`                                 | URL for the helipad.                                                                                             | `"https://helipad[-sandbox].fiskaltrust.cloud"`                                                                                     |
+| `--download-timeout-sec <download-timeout-sec>`               | Timeout for downloads in seconds.                                                                                | `15`                                                                                                                                |
+| `--download-retry <download-retry>`                           | Number of times to retry a failed download.                                                                      | `1`                                                                                                                                 |
+| `--ssl-validation`                                            | Validates SSL certificates.                                                                                      | `true`                                                                                                                              |
+| `--proxy <proxy>`                                             | Proxy server details.                                                                                            |                                                                                                                                     |
+| `--processhost-ping-period-sec <processhost-ping-period-sec>` | Ping period for the process host in seconds.                                                                     | `10`                                                                                                                                |
+| `--cashbox-configuration-file <cashbox-configuration-file>`   | Path to the cashbox configuration file.                                                                          | `""<serviceFolder>/service/Configuration-<ftCashBoxId>.json"`                                                                       |
+| `--tls-certificate-path <tls-certificate-path>`               | Path to the TLS certificate.                                                                                     |                                                                                                                                     |
+| `--tls-certificate-base64 <tls-certificate-base64>`           | Base64 encoded TLS certificate.                                                                                  |                                                                                                                                     |
+| `--tls-certificate-password <tls-certificate-password>`       | Password for the TLS certificate.                                                                                |                                                                                                                                     |
+| `--use-http-sys-binding <use-http-sys-binding>`               | Uses HTTP sys binding.                                                                                           | `false`                                                                                                                             |
+| `--use-legacy-data-protection <use-legacy-data-protection>`   | Enables use of legacy data protection.                                                                           | `false`                                                                                                                             |
+| `-?` , `-h` , `--help`                                        | Displays help and usage information.                                                                             |                                                                                                                                     |
 
 ## `config`
 
@@ -229,13 +229,13 @@ When using VS Code, please ensure that the following command line parameters are
 
 **Q:** Which market can test the launcher 2.0?
 
-**A:** Right now only the German market can test the launcher 2.0. It is possible for everyone to register to the German sandbox and test the launcher 2.0.  Also, we are working on making the launcher available for all market.
+**A:** Right now only the German and Italian market can test the launcher 2.0. It is possible for everyone to register to the German/Italian sandbox and test the launcher 2.0.  Also, we are working on making the launcher available for all market.
 
 ---
 
 **Q:** Is it possible to update the launcher version (e.g. from 1.3 to 2.0)?
 
-**A:** It is possible to switch the launcher version from 1.3 to 2.0 using the version Launcher 2.0-Public Preview 3 and later versions.
+**A:** It is possible to switch the launcher version from 1.3 to 2.0 using the version Launcher 2.0.0-rc.3 and later versions.
 
 ---
 
@@ -250,15 +250,8 @@ HttpSysBinding has some limitations:
 * The launcher may need to be run as an administrator
 * No Tls certificates can be set
 
----
-
-**Q:** The Launcher fails with the messages `Host ... has shutdown.` and `Restarting ...` .
-
-**A:** The Launcher could probably not bind to the configured `launcherPort` . Try setting another port in the configuration. This is a [known issue](https://github.com/fiskaltrust/middleware-launcher/issues/98) that will be fixed in a future version.
-
 ## Known Issues
 
-* For multiple Launcher installations on the same maching the `launcherPort` configuration parameter needs to be set to a different port for each running launcher. ([#98](https://github.com/fiskaltrust/middleware-launcher/issues/98))
 * The Launcher has access problems when writing to the keyring on linux if run as a service. The launcher configuration parameter `useLegacyDataProtection` needs to be set to `true` as a workaround. ([#100](https://github.com/fiskaltrust/middleware-launcher/issues/100)
 
 ## Contributing

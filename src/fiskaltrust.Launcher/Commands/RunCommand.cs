@@ -12,6 +12,9 @@ using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.storage.serialization.V0;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+
 
 namespace fiskaltrust.Launcher.Commands
 {
