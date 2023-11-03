@@ -16,6 +16,11 @@ namespace fiskaltrust.Launcher.Commands
 
     public class UninstallOptions
     {
+        public UninstallOptions(string? serviceName)
+        {
+            ServiceName = serviceName;
+        }
+
         public string? ServiceName { get; set; }
     }
 
