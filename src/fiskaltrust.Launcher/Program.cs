@@ -6,33 +6,47 @@ using System.CommandLine.Hosting;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using System.CommandLine.NamingConventionBinder;
+using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Constants;
 
 var command = new RootCommand("Launcher for the fiskaltrust.Middleware") {
-  new RunCommand() {
-    Handler = CommandHandler.Create<CommonOptions, RunOptions, IHost>(
-      (commonOptions, runOptions, host) => CommonHandler.HandleAsync<RunOptions, RunServices>(commonOptions, runOptions, host, RunHandler.HandleAsync))
-  },
-  new HostCommand() {
-    IsHidden = true,
-    Handler = CommandHandler.Create<fiskaltrust.Launcher.Commands.HostOptions, IHost>((hostOptions, host) => HostHandler.HandleAsync(hostOptions, host.Services.GetRequiredService<HostServices>()))
-  },
-  new InstallCommand() {
-    Handler = CommandHandler.Create<CommonOptions, InstallOptions, IHost>(
-      (commonOptions, installOptions, host) => CommonHandler.HandleAsync<InstallOptions, InstallServices>(commonOptions, installOptions, host, InstallHandler.HandleAsync))
-  },
-  new UninstallCommand() {
-    Handler = CommandHandler.Create<CommonOptions, UninstallOptions, IHost>(
-      (commonOptions, uninstallOptions, host) => CommonHandler.HandleAsync<UninstallOptions, UninstallServices>(commonOptions, uninstallOptions, host, UninstallHandler.HandleAsync))
-  },
-  new ConfigCommand(),
-  new DoctorCommand() {
-    Handler = CommandHandler.Create<CommonOptions, DoctorOptions, IHost>(
-      (commonOptions, doctorOptions, host) => CommonHandler.HandleAsync<DoctorOptions, DoctorServices>(commonOptions, doctorOptions, host, DoctorHandler.HandleAsync))
-  },
+    new RunCommand() {
+        Handler = CommandHandler.Create<CommonOptions, RunOptions, IHost>(
+            (commonOptions, runOptions, host) => CommonHandler.HandleAsync<RunOptions, RunServices>(commonOptions, runOptions, host, RunHandler.HandleAsync))
+    },
+    new HostCommand() {
+        IsHidden = true,
+        Handler = CommandHandler.Create<fiskaltrust.Launcher.Commands.HostOptions, IHost>(
+            (hostOptions, host) => HostHandler.HandleAsync(hostOptions, host.Services.GetRequiredService<HostServices>()))
+    },
+    new InstallCommand() {
+        Handler = CommandHandler.Create<CommonOptions, InstallOptions, IHost>(
+            (commonOptions, installOptions, host) => CommonHandler.HandleAsync<InstallOptions, InstallServices>(commonOptions, installOptions, host, InstallHandler.HandleAsync))
+    },
+    new UninstallCommand() {
+        Handler = CommandHandler.Create<CommonOptions, UninstallOptions, IHost>(
+            (commonOptions, uninstallOptions, host) => CommonHandler.HandleAsync<UninstallOptions, UninstallServices>(commonOptions, uninstallOptions, host, UninstallHandler.HandleAsync))
+    },
+    new ConfigCommand(),
+    new DoctorCommand() {
+        Handler = CommandHandler.Create<CommonOptions, DoctorOptions, IHost>(
+            (commonOptions, doctorOptions, host) => CommonHandler.HandleAsync<DoctorOptions, DoctorServices>(commonOptions, doctorOptions, host, DoctorHandler.HandleAsync))
+    },
 };
 
 
-command.SetHandler(() => Console.Error.WriteLine($"Please specify a command to run this application. Use '--help' for more information."));
+command.Handler = CommandHandler.Create<IHost>(host =>
+    CommonHandler.HandleAsync<RunOptions, RunServices>(
+        new CommonOptions(
+            new LauncherConfiguration(),
+            Paths.LauncherConfigurationFileName,
+            Paths.LegacyConfigurationFileName,
+            true
+        ),
+        new RunOptions(),
+        host,
+        RunHandler.HandleAsync)
+  );
 
 var subArguments = new SubArguments(args.SkipWhile(a => a != "--").Skip(1));
 args = args.TakeWhile(a => a != "--").ToArray();
@@ -41,23 +55,23 @@ return await new CommandLineBuilder(command)
   .UseHost(
     host =>
       {
-        host.UseCustomHostLifetime();
+          host.UseCustomHostLifetime();
 
-        host.ConfigureServices(services => services
-          .Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(45))
-          .AddSingleton(_ => subArguments)
-          .AddSingleton(_ => new LauncherProcessId(Environment.ProcessId))
-          .AddSingleton(_ => new LauncherExecutablePath
-          {
-            Path = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")
-          })
-          .AddSingleton<SelfUpdater>()
-          .AddSingleton<RunServices>()
-          .AddSingleton<HostServices>()
-          .AddSingleton<InstallServices>()
-          .AddSingleton<UninstallServices>()
-          .AddSingleton<DoctorServices>()
-        );
+          host.ConfigureServices(services => services
+            .Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(45))
+            .AddSingleton(_ => subArguments)
+            .AddSingleton(_ => new LauncherProcessId(Environment.ProcessId))
+            .AddSingleton(_ => new LauncherExecutablePath
+            {
+                Path = Environment.ProcessPath ?? throw new Exception("Could not find launcher executable")
+            })
+            .AddSingleton<SelfUpdater>()
+            .AddSingleton<RunServices>()
+            .AddSingleton<HostServices>()
+            .AddSingleton<InstallServices>()
+            .AddSingleton<UninstallServices>()
+            .AddSingleton<DoctorServices>()
+          );
       })
   .UseHelp()
   .UseVersionOption()

@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Security.Cryptography;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Constants;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Download;
@@ -33,8 +34,8 @@ namespace fiskaltrust.Launcher.Commands
 
             if (addCliOnlyParameters)
             {
-                AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
-                AddOption(new Option<string>("--legacy-configuration-file", getDefaultValue: () => "fiskaltrust.exe.config"));
+                AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => Paths.LauncherConfigurationFileName));
+                AddOption(new Option<string>("--legacy-configuration-file", getDefaultValue: () => Paths.LegacyConfigurationFileName));
                 AddOption(new Option<bool>("--merge-legacy-config-if-exists", getDefaultValue: () => true));
             }
         }
