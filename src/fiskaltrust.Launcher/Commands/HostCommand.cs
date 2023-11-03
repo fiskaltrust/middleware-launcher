@@ -29,31 +29,45 @@ namespace fiskaltrust.Launcher.Commands
         public HostCommand() : base("host")
         {
             AddOption(new Option<string>("--plebeian-configuration"));
-            AddOption(new Option<string>("--debugging"));
+            AddOption(new Option<bool>("--debugging"));
             AddOption(new Option<string>("--launcher-configuration"));
             AddOption(new Option<bool>("--no-process-host-service", getDefaultValue: () => false));
         }
     }
 
-    public class HostCommandHandler : ICommandHandler
+    public class HostOptions
     {
-        public string LauncherConfiguration { get; set; } = null!;
-        public string PlebeianConfiguration { get; set; } = null!;
-        public bool NoProcessHostService { get; set; }
-        public bool Debugging { get; set; }
-
-        private readonly CancellationToken _cancellationToken;
-        private readonly LauncherExecutablePath _launcherExecutablePath;
-
-        public HostCommandHandler(IHostApplicationLifetime lifetime, LauncherExecutablePath launcherExecutablePath)
+        public HostOptions(string launcherConfiguration, string plebeianConfiguration, bool noProcessHostService, bool debugging)
         {
-            _cancellationToken = lifetime.ApplicationStopping;
-            _launcherExecutablePath = launcherExecutablePath;
+            LauncherConfiguration = launcherConfiguration;
+            PlebeianConfiguration = plebeianConfiguration;
+            NoProcessHostService = noProcessHostService;
+            Debugging = debugging;
         }
 
-        public async Task<int> InvokeAsync(InvocationContext context)
+        public readonly string LauncherConfiguration;
+        public readonly string PlebeianConfiguration;
+        public readonly bool NoProcessHostService;
+        public readonly bool Debugging;
+    }
+
+    public class HostServices
+    {
+        public HostServices(LauncherExecutablePath launcherExecutablePath, IHostApplicationLifetime lifetime)
         {
-            if (Debugging)
+            CancellationToken = lifetime.ApplicationStopping;
+            LauncherExecutablePath = launcherExecutablePath;
+        }
+
+        public CancellationToken CancellationToken { get; set; }
+        public LauncherExecutablePath LauncherExecutablePath { get; set; }
+    }
+
+    public static class HostHandler
+    {
+        public static async Task<int> HandleAsync(HostOptions hostOptions, HostServices hostServices)
+        {
+            if (hostOptions.Debugging)
             {
                 while (!Debugger.IsAttached)
                 {
@@ -61,13 +75,13 @@ namespace fiskaltrust.Launcher.Commands
                 }
             }
 
-            var launcherConfiguration = Common.Configuration.LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(LauncherConfiguration)));
+            var launcherConfiguration = Common.Configuration.LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.LauncherConfiguration)));
 
-            var plebeianConfiguration = Configuration.PlebeianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PlebeianConfiguration)));
+            var plebeianConfiguration = Configuration.PlebeianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.PlebeianConfiguration)));
 
             var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
 
-            cashboxConfiguration.Decrypt(launcherConfiguration, await CommonCommandHandler.LoadCurve(launcherConfiguration.AccessToken!, launcherConfiguration.UseLegacyDataProtection!.Value));
+            cashboxConfiguration.Decrypt(launcherConfiguration, await CommonHandler.LoadCurve(launcherConfiguration.AccessToken!, launcherConfiguration.UseLegacyDataProtection!.Value));
 
             var packageConfiguration = (plebeianConfiguration.PackageType switch
             {
@@ -80,7 +94,7 @@ namespace fiskaltrust.Launcher.Commands
             packageConfiguration.Configuration = ProcessPackageConfiguration(packageConfiguration.Configuration, launcherConfiguration, cashboxConfiguration);
 
             IProcessHostService? processHostService = null;
-            if (!NoProcessHostService)
+            if (!hostOptions.NoProcessHostService)
             {
                 processHostService = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>();
             }
@@ -96,7 +110,7 @@ namespace fiskaltrust.Launcher.Commands
                 .UseSerilog()
                 .ConfigureServices(services =>
                 {
-                    services.Configure<HostOptions>(opts =>
+                    services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts =>
                     {
                         opts.ShutdownTimeout = TimeSpan.FromSeconds(30);
                         opts.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
@@ -120,7 +134,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton<IClientFactory<IITSSCD>, ITSSCDClientFactory>();
                     services.AddSingleton<IClientFactory<IPOS>, POSClientFactory>();
 
-                    using var downloader = new PackageDownloader(services.BuildServiceProvider().GetRequiredService<ILogger<PackageDownloader>>(), launcherConfiguration, _launcherExecutablePath);
+                    using var downloader = new PackageDownloader(services.BuildServiceProvider().GetRequiredService<ILogger<PackageDownloader>>(), launcherConfiguration, hostServices.LauncherExecutablePath);
 
                     try
                     {
@@ -161,7 +175,7 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 var app = builder.Build();
-                await app.RunAsync(_cancellationToken);
+                await app.RunAsync(hostServices.CancellationToken);
             }
             catch (Exception e)
             {
@@ -211,4 +225,5 @@ namespace fiskaltrust.Launcher.Commands
         }
     }
 }
+
 
