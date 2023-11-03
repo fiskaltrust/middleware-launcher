@@ -68,11 +68,11 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             return new[]
             {
                 "[Unit]",
-                $"Description={serviceDescription}",
+                $"Description=\"{serviceDescription}\"",
                 "",
                 "[Service]",
                 "Type=simple",
-                $"ExecStart={command}",
+                $"ExecStart=\"{command}\"",
                 "",
                 "[Install]",
                 "WantedBy = multi-user.target"
