@@ -79,7 +79,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private int? _launcherPort;
         [JsonPropertyName("launcherPort")]
-        public int? LauncherPort { get => WithDefault(_launcherPort, 5050); set => _launcherPort = value; }
+        public int? LauncherPort { get => WithDefault(_launcherPort, 0); set => _launcherPort = value; }
 
         private string? _serviceFolder;
         [JsonPropertyName("serviceFolder")]

@@ -8,6 +8,8 @@ using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 
 namespace fiskaltrust.Launcher.Commands
 {
