@@ -64,7 +64,7 @@ async static Task<int> RootCommandHandler(int processId, string from, string to,
 
         process.StartInfo.Arguments = string.Join(" ", new string[] {
             "doctor",
-            "--launcher-configuration", launcherConfigurationFile ?? "launcher.configuration.json",
+            "--launcher-configuration", $"\"{launcherConfigurationFile ?? "launcher.configuration.json"}\"",
         }) + LauncherConfigurationToArgs(launcherConfiguration);
 
         process.StartInfo.RedirectStandardError = true;
