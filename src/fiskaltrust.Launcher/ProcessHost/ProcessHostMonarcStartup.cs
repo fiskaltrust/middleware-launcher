@@ -149,6 +149,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 }
                 catch (Exception e)
                 {
+                    if (cancellationToken.IsCancellationRequested) { return; }
                     _logger.LogError(e, "Could not get Kestrel port.");
                     throw new AlreadyLoggedException();
                 }
