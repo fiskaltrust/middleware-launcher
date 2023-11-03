@@ -42,6 +42,8 @@ namespace fiskaltrust.Launcher.Commands
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
         public string LauncherConfigurationFile { get; set; } = null!;
 
+        public SemanticVersioning.Range? LauncherVersion { get => ArgsLauncherConfiguration.LauncherVersion; set => ArgsLauncherConfiguration.LauncherVersion = value; }
+
         public async Task<int> InvokeAsync(InvocationContext context)
         {
             Log.Logger = new LoggerConfiguration()
