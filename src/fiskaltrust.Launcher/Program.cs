@@ -9,11 +9,14 @@ using System.CommandLine.NamingConventionBinder;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Constants;
 
-var command = new RootCommand("Launcher for the fiskaltrust.Middleware") {
-    new RunCommand() {
-        Handler = CommandHandler.Create<CommonOptions, RunOptions, IHost>(
+var runCommand = new RunCommand()
+{
+    Handler = CommandHandler.Create<CommonOptions, RunOptions, IHost>(
             (commonOptions, runOptions, host) => CommonHandler.HandleAsync<RunOptions, RunServices>(commonOptions, runOptions, host, RunHandler.HandleAsync))
-    },
+};
+
+var command = new RootCommand("Launcher for the fiskaltrust.Middleware") {
+    runCommand,
     new HostCommand() {
         IsHidden = true,
         Handler = CommandHandler.Create<fiskaltrust.Launcher.Commands.HostOptions, IHost>(
@@ -34,19 +37,10 @@ var command = new RootCommand("Launcher for the fiskaltrust.Middleware") {
     },
 };
 
-
-command.Handler = CommandHandler.Create<IHost>(host =>
-    CommonHandler.HandleAsync<RunOptions, RunServices>(
-        new CommonOptions(
-            new LauncherConfiguration(),
-            Paths.LauncherConfigurationFileName,
-            Paths.LegacyConfigurationFileName,
-            true
-        ),
-        new RunOptions(),
-        host,
-        RunHandler.HandleAsync)
-  );
+if (!args.Any())
+{
+    args = new[] { runCommand.Name };
+}
 
 var subArguments = new SubArguments(args.SkipWhile(a => a != "--").Skip(1));
 args = args.TakeWhile(a => a != "--").ToArray();
