@@ -23,7 +23,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             }
             else
             {
-                writer.WriteRawValue($"\"{value}\"");
+                writer.WriteStringValue(value);
             }
         }
     }

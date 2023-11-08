@@ -138,7 +138,7 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                await File.WriteAllTextAsync(configSetOptions.LauncherConfigurationFile, launcherConfiguration.Serialize(true, false));
+                await File.WriteAllTextAsync(configSetOptions.LauncherConfigurationFile, launcherConfiguration.Serialize(true, true));
             }
             catch (Exception e)
             {
