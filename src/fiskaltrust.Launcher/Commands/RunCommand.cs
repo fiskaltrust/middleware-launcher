@@ -8,8 +8,13 @@ using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.storage.serialization.V0;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -38,43 +43,47 @@ namespace fiskaltrust.Launcher.Commands
         }
     }
 
-    public class RunCommandHandler : CommonCommandHandler
+    public class RunOptions
     {
-        private readonly ILifetime _lifetime;
-        private readonly SelfUpdater _selfUpdater;
-        private readonly LauncherExecutablePath _launcherExecutablePath;
 
-        public RunCommandHandler(ILifetime lifetime, SelfUpdater selfUpdater, LauncherExecutablePath launcherExecutablePath)
+    }
+
+    public class RunServices
+    {
+        public RunServices(ILifetime lifetime, SelfUpdater selfUpdater, LauncherExecutablePath launcherExecutablePath)
         {
-            _lifetime = lifetime;
-            _selfUpdater = selfUpdater;
-            _launcherExecutablePath = launcherExecutablePath;
+            Lifetime = lifetime;
+            SelfUpdater = selfUpdater;
+            LauncherExecutablePath = launcherExecutablePath;
         }
 
-        public new async Task<int> InvokeAsync(InvocationContext context)
+        public readonly ILifetime Lifetime;
+        public readonly SelfUpdater SelfUpdater;
+        public readonly LauncherExecutablePath LauncherExecutablePath;
+    }
+
+    public static class RunHandler
+    {
+        public static async Task<int> HandleAsync(CommonOptions commonOptions, CommonProperties commonProperties, RunOptions _, RunServices runServices)
         {
-            if (await base.InvokeAsync(context) != 0)
-            {
-                return 1;
-            }
             var builder = WebApplication.CreateBuilder();
 
             builder.Host
                 .UseSerilog()
                 .ConfigureServices((_, services) =>
                 {
-                    services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
-                    services.AddSingleton(_ => _launcherConfiguration);
-                    services.AddSingleton(_ => _lifetime);
-                    services.AddSingleton(_ => _cashboxConfiguration);
+                    services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
+                    services.AddSingleton(_ => commonProperties.LauncherConfiguration);
+                    services.AddSingleton(_ => runServices.Lifetime);
+                    services.AddSingleton(_ => commonProperties.CashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, IProcessHostMonarch>());
                     services.AddSingleton<PackageDownloader>();
                     services.AddHostedService<ProcessHostMonarcStartup>();
                     services.AddSingleton(_ => Log.Logger);
-                    services.AddSingleton(_ => _launcherExecutablePath);
+                    services.AddSingleton(_ => runServices.LauncherExecutablePath);
                 });
 
-            builder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{_launcherConfiguration.LauncherPort}"), protocols: HttpProtocols.Http2);
+            builder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{commonProperties.LauncherConfiguration.LauncherPort}"), protocols: HttpProtocols.Http2);
 
             builder.Services.AddCodeFirstGrpc();
 
@@ -85,13 +94,13 @@ namespace fiskaltrust.Launcher.Commands
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 #pragma warning restore ASP0014
 
-            await _selfUpdater.PrepareSelfUpdate(Log.Logger, _launcherConfiguration, app.Services.GetRequiredService<PackageDownloader>());
+            await runServices.SelfUpdater.PrepareSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, app.Services.GetRequiredService<PackageDownloader>());
 
             try
             {
-                await app.RunAsync(_lifetime.ApplicationLifetime.ApplicationStopping);
+                await app.RunAsync(runServices.Lifetime.ApplicationLifetime.ApplicationStopping);
 
-                await _selfUpdater.StartSelfUpdate(Log.Logger, _launcherConfiguration, LauncherConfigurationFile);
+                await runServices.SelfUpdater.StartSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, commonOptions.LauncherConfigurationFile);
             }
             catch (Exception e)
             {

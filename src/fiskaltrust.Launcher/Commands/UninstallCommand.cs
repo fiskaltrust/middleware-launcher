@@ -14,32 +14,38 @@ namespace fiskaltrust.Launcher.Commands
         }
     }
 
-    public class UninstallCommandHandler : CommonCommandHandler
+    public class UninstallOptions
     {
-        public string? ServiceName { get; set; }
-
-        private readonly LauncherExecutablePath _launcherExecutablePath;
-
-        public UninstallCommandHandler(LauncherExecutablePath launcherExecutablePath)
+        public UninstallOptions(string? serviceName)
         {
-            _launcherExecutablePath = launcherExecutablePath;
+            ServiceName = serviceName;
         }
 
-        public new async Task<int> InvokeAsync(InvocationContext context)
-        {
-            if (await base.InvokeAsync(context) != 0)
-            {
-                return 1;
-            }
+        public string? ServiceName { get; set; }
+    }
 
+    public class UninstallServices
+    {
+        public UninstallServices(LauncherExecutablePath launcherExecutablePath)
+        {
+            LauncherExecutablePath = launcherExecutablePath;
+        }
+
+        public readonly LauncherExecutablePath LauncherExecutablePath;
+    }
+
+    public static class UninstallHandler
+    {
+        public static async Task<int> HandleAsync(CommonOptions _, CommonProperties commonProperties, UninstallOptions uninstallOptions, UninstallServices uninstallServices)
+        {
             ServiceInstaller? installer = null;
             if (OperatingSystem.IsLinux())
             {
-                installer = new LinuxSystemD(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}", _launcherExecutablePath);
+                installer = new LinuxSystemD(uninstallOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}", uninstallServices.LauncherExecutablePath);
             }
             if (OperatingSystem.IsWindows())
             {
-                installer = new WindowsService(ServiceName ?? $"fiskaltrust-{_launcherConfiguration.CashboxId}", _launcherExecutablePath);
+                installer = new WindowsService(uninstallOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}", uninstallServices.LauncherExecutablePath);
             }
 
             if (installer is not null)
