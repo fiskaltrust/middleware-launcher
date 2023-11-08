@@ -19,6 +19,12 @@ using System.Security.Cryptography.X509Certificates;
 using System.Runtime.Versioning;
 using Microsoft.AspNetCore.Server.HttpSys;
 using System.Text.Json;
+using MQTTnet;
+using MQTTnet.Client;
+using System.Text;
+using Newtonsoft.Json;
+using fiskaltrust.ifPOS.v1;
+using MQTTnet.Server;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -32,6 +38,7 @@ namespace fiskaltrust.Launcher.Services
         private readonly long _messageSize = 16 * 1024 * 1024;
         private readonly TimeSpan _sendTimeout = TimeSpan.FromSeconds(15);
         private readonly TimeSpan _receiveTimeout = TimeSpan.FromDays(20);
+        private IMqttClient _mqttClient;
 
         public HostingService(ILogger<HostingService> logger, PackageConfiguration packageConfiguration, LauncherConfiguration launcherConfiguration, IProcessHostService? processHostService = null)
         {
@@ -97,6 +104,11 @@ namespace fiskaltrust.Launcher.Services
                     _logger.LogWarning($"{nameof(_launcherConfiguration.UseHttpSysBinding)} is only supported on Windows.");
                 }
             }
+            //if (instance is IPOS pos)
+            //{
+            //    _logger.LogInformation("Setup MQTT");
+            //    await HandleMQTTConnection(pos);
+            //}
 
             switch (hostingType)
             {
@@ -231,6 +243,49 @@ namespace fiskaltrust.Launcher.Services
             binding.ReceiveTimeout = _receiveTimeout;
             return binding;
         }
+
+        private async Task HandleMQTTConnection(IPOS pos)
+        {
+            var mqttFactory = new MqttFactory();
+
+            var clientId = _packageConfiguration.Id;
+
+            _mqttClient = mqttFactory.CreateMqttClient();
+            var mqttClientOptions = new MqttClientOptionsBuilder()
+                    .WithClientId(clientId.ToString())
+                    .WithCleanSession(false)
+                    .WithoutThrowOnNonSuccessfulConnectResponse()
+                    .WithProtocolVersion(MQTTnet.Formatter.MqttProtocolVersion.V500)
+                    .WithWebSocketServer(o => o.WithUri("gateway-sandbox.fiskaltrust.eu:80/mqtt"))
+            .Build();
+
+            _mqttClient.ApplicationMessageReceivedAsync += async e =>
+            {
+                await e.AcknowledgeAsync(CancellationToken.None);
+                await _mqttClient.PublishStringAsync(e.ApplicationMessage.ResponseTopic, JsonConvert.SerializeObject(new SignRequestAccepted()), MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce);
+
+                _logger.LogInformation("New mqtt message arrived {message}", Encoding.UTF8.GetString(e.ApplicationMessage.Payload));
+                var result = await pos.SignAsync(JsonConvert.DeserializeObject<ReceiptRequest>(Encoding.UTF8.GetString(e.ApplicationMessage.Payload)));         
+                await _mqttClient.PublishStringAsync(e.ApplicationMessage.ResponseTopic + "/done", JsonConvert.SerializeObject(new SignRequestDoneMessage(result)), MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce);
+            };
+
+            var result = await _mqttClient.ConnectAsync(mqttClientOptions, CancellationToken.None);
+            _logger.LogInformation("Connectionresult: {result}", JsonConvert.SerializeObject(result));                
+
+            var mqttSubscribeOptions = mqttFactory.CreateSubscribeOptionsBuilder()
+                .WithTopicFilter(
+                    f =>
+                    {
+                        f.WithTopic($"{_launcherConfiguration.CashboxId}/signrequest");
+                    })
+                .Build();
+            _logger.LogInformation("MQTT subscribed to topic {topic}", string.Join(",", mqttSubscribeOptions.TopicFilters));
+            await _mqttClient.SubscribeAsync(mqttSubscribeOptions, CancellationToken.None);
+        }
+
+        record SignRequestAccepted();
+
+        record SignRequestDoneMessage(ReceiptResponse response);
 
         private WebApplication CreateGrpcHost<T>(WebApplicationBuilder builder, Uri uri, T instance) where T : class
         {
