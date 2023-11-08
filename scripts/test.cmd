@@ -1,0 +1,1 @@
+fiskaltrust.Launcher.exe run --log-level debug
