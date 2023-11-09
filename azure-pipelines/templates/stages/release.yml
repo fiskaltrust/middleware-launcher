@@ -67,11 +67,18 @@ stages:
                             Overwrite: true
 
                     - ${{ each target in parameters.targets }}:
-                        - task: ArchiveFiles@2
-                          displayName: "[${{ target }}] Update package with scripts"
-                          inputs:
-                            rootFolderOrFile: "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}"
-                            includeRootFolder: false
-                            archiveType: "zip"
-                            archiveFile: "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}/fiskaltrust.Launcher-${{ target }}-${{ variables.version }}.zip"
-                            replaceExistingArchive: true
+                        - pwsh: |
+                            if ('${{ target }}' -like 'linux-*' -or '${{ target }}' -like 'osx-*') {
+                              # Use bash script to zip files in order to preserve file permissions on Unix systems
+                              bash -c "cd $(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }} && zip -r fiskaltrust.Launcher-${{ target }}-${{ variables.version }}.zip ./*"
+                            } else {
+                              # Use built-in task for Windows targets
+                              - task: ArchiveFiles@2
+                                displayName: "[${{ target }}] Update package with scripts"
+                                inputs:
+                                  rootFolderOrFile: "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}"
+                                  includeRootFolder: false
+                                  archiveType: "zip"
+                                  archiveFile: "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}/fiskaltrust.Launcher-${{ target }}-${{ variables.version }}.zip"
+                                  replaceExistingArchive: true
+                            displayName: "Archive and preserve file permissions for ${{ target }}"
