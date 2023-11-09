@@ -79,7 +79,7 @@ stages:
           vmImage: ubuntu-latest
         steps:
           - checkout: self
-          - script: |
+          - bash: |
               echo "Creating directories for Linux and macOS scripts..."
               mkdir -p $(Build.ArtifactStagingDirectory)/scripts-linux
               mkdir -p $(Build.ArtifactStagingDirectory)/scripts-macos
@@ -106,7 +106,7 @@ stages:
           vmImage: windows-latest
         steps:
           - checkout: self
-          - script: |
+          - pwsh: |
               echo "Creating directory for Windows scripts..."
               mkdir -p $(Build.ArtifactStagingDirectory)/scripts-windows
               echo "Copying Windows scripts to artifacts directory..."
