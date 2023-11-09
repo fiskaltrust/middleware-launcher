@@ -28,6 +28,15 @@ stages:
         dotnet publish ./src/fiskaltrust.Launcher/fiskaltrust.Launcher.csproj -c Release -o $(Pipeline.Workspace)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:SelfUpdate='false' /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true -p:PublishReadyToRun=true
       displayName: Publish
 
+    - task: codesigning@2
+      displayName: 'Code Signing'
+      inputs:
+        secureFileId: 'codesigning.pfx'
+        signCertPassword: '$(Code_Signing_Password)'
+        filePaths: |
+          ./src/**/fiskaltrust.Launcher.dll
+          ./src/**/fiskaltrust.Launcher
+
     - pwsh: |
         $meta = Get-Content ./meta.json -Encoding UTF8 | ConvertFrom-Json
         $arch = $meta.deb.architectures."$(target)"
