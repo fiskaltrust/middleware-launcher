@@ -76,20 +76,29 @@ stages:
         dependsOn: Build
         condition: succeeded()
         pool:
-          vmImage: ubuntu-latest 
+          vmImage: ubuntu-latest
         steps:
           - checkout: self
-          - pwsh: |
-              echo Copying Linux and macOS scripts to artifacts directory...
-              cp ./scripts/linux/install.sh $(Build.ArtifactStagingDirectory)/scripts-linux/
-              cp ./scripts/linux/uninstall.sh $(Build.ArtifactStagingDirectory)/scripts-linux/
-              cp ./scripts/linux/test.sh $(Build.ArtifactStagingDirectory)/scripts-linux/
-            displayName: 'Copy Linux and macOS scripts to artifact staging'
-          - publish: $(Build.ArtifactStagingDirectory)/scripts-linux
+          - script: |
+              echo "Creating directories for Linux and macOS scripts..."
+              mkdir -p $(Build.ArtifactStagingDirectory)/scripts-linux
+              mkdir -p $(Build.ArtifactStagingDirectory)/scripts-macos
+              echo "Copying Linux and macOS scripts to artifacts directory..."
+              cp ./scripts/linux/* $(Build.ArtifactStagingDirectory)/scripts-linux/
+              cp ./scripts/linux/* $(Build.ArtifactStagingDirectory)/scripts-macos/
+            displayName: 'Prepare Linux and macOS scripts'
+          - task: ArchiveFiles@2
+            inputs:
+              rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/scripts-linux"
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: "$(Build.ArtifactStagingDirectory)/scripts-linux.zip"
+              replaceExistingArchive: true
+          - publish: $(Build.ArtifactStagingDirectory)/scripts-linux.zip
             artifact: scripts-linux
-          - publish: $(Build.ArtifactStagingDirectory)/scripts-linux
+          - publish: $(Build.ArtifactStagingDirectory)/scripts-linux.zip
             artifact: scripts-macos
-        
+
       - job: PublishWindowsScripts
         dependsOn: Build
         condition: succeeded()
@@ -97,11 +106,18 @@ stages:
           vmImage: windows-latest
         steps:
           - checkout: self
-          - pwsh: |
-              echo Copying Windows scripts to artifacts directory...
-              cp ./scripts/windows/install.cmd $(Build.ArtifactStagingDirectory)/scripts-windows/
-              cp ./scripts/windows/uninstall.cmd $(Build.ArtifactStagingDirectory)/scripts-windows/
-              cp ./scripts/windows/test.cmd $(Build.ArtifactStagingDirectory)/scripts-windows/
-            displayName: 'Copy Windows scripts to artifact staging'
-      - publish: $(Build.ArtifactStagingDirectory)/scripts-windows
-        artifact: scripts-windows
+          - script: |
+              echo "Creating directory for Windows scripts..."
+              mkdir -p $(Build.ArtifactStagingDirectory)/scripts-windows
+              echo "Copying Windows scripts to artifacts directory..."
+              cp ./scripts/windows/* $(Build.ArtifactStagingDirectory)/scripts-windows/
+            displayName: 'Prepare Windows scripts'
+          - task: ArchiveFiles@2
+            inputs:
+              rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/scripts-windows"
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: "$(Build.ArtifactStagingDirectory)/scripts-windows.zip"
+              replaceExistingArchive: true
+          - publish: $(Build.ArtifactStagingDirectory)/scripts-windows.zip
+            artifact: scripts-windows
