@@ -80,3 +80,22 @@ stages:
 
     - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
       artifact: package-$(target)
+
+    - job: PublishScripts
+      dependsOn: Build
+      condition: succeeded()
+      steps:
+        - checkout: self
+        - script: |
+            echo Copying installation scripts to artifacts directory...
+            cp ./scripts/install.cmd $(Build.ArtifactStagingDirectory)/scripts/
+            cp ./scripts/install.sh $(Build.ArtifactStagingDirectory)/scripts/
+            echo Copying uninstallation scripts to artifacts directory...
+            cp ./scripts/uninstall.cmd $(Build.ArtifactStagingDirectory)/scripts/
+            cp ./scripts/uninstall.sh $(Build.ArtifactStagingDirectory)/scripts/
+            echo Copying test scripts to artifacts directory...
+            cp ./scripts/test.cmd $(Build.ArtifactStagingDirectory)/scripts/
+            cp ./scripts/test.sh $(Build.ArtifactStagingDirectory)/scripts/
+          displayName: 'Copy scripts to artifact staging'
+        - publish: $(Build.ArtifactStagingDirectory)/scripts
+          artifact: scripts
