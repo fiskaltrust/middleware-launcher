@@ -35,7 +35,9 @@ stages:
         signCertPassword: '$(Code_Signing_Password)'
         filePaths: |
           ./src/**/fiskaltrust.Launcher.dll
+          ./src/**/*fiskaltrust*.exe
           ./src/**/fiskaltrust.Launcher
+          ./src/**/fiskaltrust.LauncherUpdater
 
     - pwsh: |
         $meta = Get-Content ./meta.json -Encoding UTF8 | ConvertFrom-Json
