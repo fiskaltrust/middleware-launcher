@@ -94,15 +94,15 @@ stages:
         $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash
       displayName: Pagkage executables
 
-          - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
-            artifact: package-$(target)
-
-      - job: PublishScripts
-        dependsOn: Build
-        condition: succeeded()
-        pool:
+    - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
+      artifact: package-$(target)
+      
+    - job: PublishScripts
+      dependsOn: Build
+      condition: succeeded()
+      pool:
           vmImage: ubuntu-latest
-        steps:
+      steps:
           - checkout: self
           - bash: |
               echo "Creating directories for scripts..."
