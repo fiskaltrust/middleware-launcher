@@ -56,3 +56,29 @@ stages:
                             scriptLocation: inlineScript
                             inlineScript: |
                               az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}/" --pattern "*.zip*"
+
+                    - download: current
+                      artifact: scripts-linux
+                      displayName: "Download Linux script artifact"
+
+                    - task: AzureCLI@2
+                      displayName: "Publish Linux scripts to blob storage"
+                      inputs:
+                        azureSubscription: ${{ stage.templateContext.serviceConnection }}
+                        scriptType: ps
+                        scriptLocation: inlineScript
+                        inlineScript: |
+                          az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "scripts/linux/fiskaltrust.Launcher.Scripts/" -s "$(Pipeline.Workspace)/scripts-linux/" --pattern "*.zip"
+
+                    - download: current
+                      artifact: scripts-windows
+                      displayName: "Download Windows script artifact"
+
+                    - task: AzureCLI@2
+                      displayName: "Publish Windows scripts to blob storage"
+                      inputs:
+                        azureSubscription: ${{ stage.templateContext.serviceConnection }}
+                        scriptType: ps
+                        scriptLocation: inlineScript
+                        inlineScript: |
+                          az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "scripts/windows/fiskaltrust.Launcher.Scripts/" -s "$(Pipeline.Workspace)/scripts-windows/" --pattern "*.zip"
