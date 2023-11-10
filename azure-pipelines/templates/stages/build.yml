@@ -1,88 +1,98 @@
 parameters:
-  - name: config
-    type: string
-    default: debug
-  - name: projects
-    type: object
+- name: config
+  type: string
+  default: debug
+- name: projects
+  type: object
 
 stages:
-  - stage: Build
-    
-    jobs:
-      - job: Build
-        strategy:
-          matrix:
-            win-x64:
-              vmImage: windows-latest
-              target: win-x64
-            win-x86:
-              vmImage: windows-latest
-              target: win-x86
-            linux-x64:
-              vmImage: ubuntu-latest
-              target: linux-x64
-            linux-arm:
-              vmImage: ubuntu-latest
-              target: linux-arm
-            linux-arm64:
-              vmImage: ubuntu-latest
-              target: linux-arm64
-            osx-x64:
-              vmImage: macos-11
-              target: osx-x64
+- stage: Build
+
+  jobs:
+  - job: Build
+
+    strategy:
+      matrix:
+        win-x64:
+          vmImage: windows-latest
+          target: win-x64
+
+        win-x86:
+          vmImage: windows-latest
+          target: win-x86
+
+        linux-x64:
+          vmImage: ubuntu-latest
+          target: linux-x64
+
+        linux-arm:
+          vmImage: ubuntu-latest
+          target: linux-arm
+
+        linux-arm64:
+          vmImage: ubuntu-latest
+          target: linux-arm64
+
+        osx-x64:
+          vmImage: macos-11
+          target: osx-x64
+
+    pool:
+      vmImage: $(vmImage)
+
+    steps:
+    - template: ../restore.yml
+
+    - ${{ each project in parameters.projects }}:
+      - pwsh: |
+          mv ./Directory.build.props ./Directory.Build.props
+          dotnet publish ./src/${{ project }}/${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true -p:PublishReadyToRun=true
+        displayName: "[${{ project }}] Publish"
+
+
+    - task: codesigning@2
+      displayName: 'Code Signing'
+      inputs:
+        secureFileId: 'codesigning.pfx'
+        signCertPassword: '$(Code_Signing_Password)'
+        filePaths: |
+          $(Build.ArtifactStagingDirectory)/**/*fiskaltrust*
+          ./src/**/*fiskaltrust*.exe
+          ./src/**/*fiskaltrust*.dll
+          ./src/**/fiskaltrust.Launcher.dll
+          ./src/**/fiskaltrust.Launcher
+          ./src/**/fiskaltrust.Launcher.exe
+          ./src/**/fiskaltrust.LauncherUpdater
+          ./src/**/fiskaltrust.LauncherUpdater.exe
+          
+    - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
+      artifact: drop-$(target)
+
+    - pwsh: |
+        New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/
+        New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/package-$(target)/
+      displayName: Create Directories
+
+    - ${{ each project in parameters.projects }}:
+      - pwsh: |
+          Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
+        displayName: "[${{ project }}] Copy executables"
         
-        pool:
-          vmImage: $(vmImage)
-        
-        steps:
-          - template: ../restore.yml
 
-          - ${{ each project in parameters.projects }}:
-              - pwsh: |
-                  mv ./Directory.build.props ./Directory.Build.props
-                  dotnet publish ./src/${{ project }}/${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true -p:PublishReadyToRun=true
-                displayName: "[${{ project }}] Publish"
+    - pwsh: |
+        $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
 
-          - task: codesigning@2
-            displayName: 'Code Signing'
-            inputs:
-              secureFileId: 'codesigning.pfx'
-              signCertPassword: '$(Code_Signing_Password)'
-              filePaths: |
-                $(Build.ArtifactStagingDirectory)/**/*fiskaltrust*
-                ./src/**/*fiskaltrust*.exe
-                ./src/**/*fiskaltrust*.dll
-                ./src/**/fiskaltrust.Launcher.dll
-                ./src/**/fiskaltrust.Launcher
-                ./src/**/fiskaltrust.Launcher.exe
-                ./src/**/fiskaltrust.LauncherUpdater
-                ./src/**/fiskaltrust.LauncherUpdater.exe
+        if("$(vmImage)" -eq "windows-latest") {
+          Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip
+        } else {
+          bash -c "cd $(Build.ArtifactStagingDirectory)/raw-$(target)/`nzip -r $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip ./"
+        }
 
-          - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
-            artifact: drop-$(target)
-
-          - pwsh: |
-              New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/
-              New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/package-$(target)/
-            displayName: Create Directories
-
-          - ${{ each project in parameters.projects }}:
-              - pwsh: |
-                  Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
-                displayName: "[${{ project }}] Copy executables"
-
-          - pwsh: |
-              $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
-              if("$(vmImage)" -eq "windows-latest") {
-                Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip
-              } else {
-                bash -c "cd $(Build.ArtifactStagingDirectory)/raw-$(target)/ && zip -r $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip ./"
-              }
-              $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip -Algorithm SHA256
-              $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
-              $hashstring = [System.Convert]::ToBase64String($hashbytes)
-              $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash
-            displayName: "Package executables"
+        $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip -Algorithm SHA256
+        $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
+        $hashstring = [System.Convert]::ToBase64String($hashbytes)
+        $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash
+      displayName: Pagkage executables
 
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)

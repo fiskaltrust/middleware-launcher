@@ -3,8 +3,11 @@ using System.Text.Json;
 using fiskaltrust.Launcher.Commands;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Constants;
+using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.IntegrationTest.Helpers;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
 {
@@ -35,23 +38,34 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
             {
                 var lifetime = new TestLifetime();
                 var launcherExecutablePath = new LauncherExecutablePath { Path = $"fiskaltrust.Launcher{(Runtime.Identifier.StartsWith("win") ? ".exe" : "")}" };
-                var runCommand = new RunCommandHandler(lifetime, new SelfUpdater(new LauncherProcessId(dummyProcess.Id), launcherExecutablePath), launcherExecutablePath)
-                {
-                    ArgsLauncherConfiguration = new LauncherConfiguration
-                    {
-                        CashboxId = launcherConfiguration.CashboxId,
-                        AccessToken = launcherConfiguration.AccessToken,
-                        ServiceFolder = launcherConfiguration.ServiceFolder,
-                        Sandbox = true
-                    },
-                    LauncherConfigurationFile = $"{launcherConfiguration.ServiceFolder}launcher.configuration.json"
-                };
 
-                var command = runCommand.InvokeAsync(null!);
+                var builder = Host.CreateDefaultBuilder().ConfigureServices(services =>
+                    services
+                        .AddSingleton<ILifetime>(lifetime)
+                        .AddSingleton(launcherExecutablePath)
+                        .AddSingleton(new LauncherProcessId(dummyProcess.Id))
+                    );
+
+                var runCommand = CommonHandler.HandleAsync<RunOptions, RunServices>(
+                    new CommonOptions(
+                        new LauncherConfiguration
+                        {
+                            CashboxId = launcherConfiguration.CashboxId,
+                            AccessToken = launcherConfiguration.AccessToken,
+                            ServiceFolder = launcherConfiguration.ServiceFolder,
+                            Sandbox = true
+                        },
+                        $"{launcherConfiguration.ServiceFolder}launcher.configuration.json", "null",
+                        true),
+                    new RunOptions { },
+                    builder.Build(),
+                    RunHandler.HandleAsync);
+
+                runCommand.Start();
 
                 await lifetime.WaitForStartAsync(new CancellationToken());
 
-                if (command.IsCompleted)
+                if (runCommand.IsCompleted)
                 {
                     throw new Exception(Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file)));
                 }
@@ -65,7 +79,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                 updateStart = DateTime.UtcNow;
                 await lifetime.StopAsync(CancellationToken.None);
 
-                var exitCode = await command;
+                var exitCode = await runCommand.WaitAsync(TimeSpan.MaxValue);
                 if (exitCode != 0) { throw new Exception($"Exitcode {exitCode}\n{Directory.GetFiles("logs").Aggregate("", (acc, file) => acc + File.ReadAllText(file))}"); }
 
                 foreach (string file in Directory.GetFiles("./"))
