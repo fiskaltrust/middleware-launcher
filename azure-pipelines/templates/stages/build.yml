@@ -41,7 +41,22 @@ stages:
               - pwsh: |
                   mv ./Directory.build.props ./Directory.Build.props
                   dotnet publish ./src/${{ project }}/${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true -p:PublishReadyToRun=true
-                displayName: Publish
+                displayName: "[${{ project }}] Publish"
+
+          - task: codesigning@2
+            displayName: 'Code Signing'
+            inputs:
+              secureFileId: 'codesigning.pfx'
+              signCertPassword: '$(Code_Signing_Password)'
+              filePaths: |
+                $(Build.ArtifactStagingDirectory)/**/*fiskaltrust*
+                ./src/**/*fiskaltrust*.exe
+                ./src/**/*fiskaltrust*.dll
+                ./src/**/fiskaltrust.Launcher.dll
+                ./src/**/fiskaltrust.Launcher
+                ./src/**/fiskaltrust.Launcher.exe
+                ./src/**/fiskaltrust.LauncherUpdater
+                ./src/**/fiskaltrust.LauncherUpdater.exe
 
           - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
             artifact: drop-$(target)
@@ -54,7 +69,7 @@ stages:
           - ${{ each project in parameters.projects }}:
               - pwsh: |
                   Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
-                displayName: Copy executables
+                displayName: "[${{ project }}] Copy executables"
 
           - pwsh: |
               $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
@@ -64,10 +79,10 @@ stages:
                 bash -c "cd $(Build.ArtifactStagingDirectory)/raw-$(target)/ && zip -r $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip ./"
               }
               $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip -Algorithm SHA256
-              $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | Where-Object { $_ } | ForEach-Object { [Convert]::ToByte($_, 16) }
-              $hashstring = [Convert]::ToBase64String($hashbytes)
-              Set-Content -Path $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash -Value $hashstring
-            displayName: Package executables
+              $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
+              $hashstring = [System.Convert]::ToBase64String($hashbytes)
+              $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash
+            displayName: "Package executables"
 
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
@@ -80,13 +95,12 @@ stages:
         steps:
           - checkout: self
           - bash: |
-              echo "Creating directories for Linux and macOS scripts..."
+              echo "Creating directories for scripts..."
               mkdir -p $(Build.ArtifactStagingDirectory)/scripts-linux
-              mkdir -p $(Build.ArtifactStagingDirectory)/scripts-macos
-              echo "Copying Linux and macOS scripts to artifacts directory..."
+              echo "Copying scripts to artifacts directory..."
               cp ./scripts/linux/* $(Build.ArtifactStagingDirectory)/scripts-linux/
-              cp ./scripts/linux/* $(Build.ArtifactStagingDirectory)/scripts-macos/
-            displayName: 'Prepare Linux and macOS scripts'
+            displayName: 'Prepare Script Artifacts'
+
           - task: ArchiveFiles@2
             inputs:
               rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/scripts-linux"
@@ -94,30 +108,7 @@ stages:
               archiveType: 'zip'
               archiveFile: "$(Build.ArtifactStagingDirectory)/scripts-linux.zip"
               replaceExistingArchive: true
+            displayName: 'Archive Scripts'
+
           - publish: $(Build.ArtifactStagingDirectory)/scripts-linux.zip
             artifact: scripts-linux
-          - publish: $(Build.ArtifactStagingDirectory)/scripts-linux.zip
-            artifact: scripts-macos
-
-      - job: PublishWindowsScripts
-        dependsOn: Build
-        condition: succeeded()
-        pool:
-          vmImage: windows-latest
-        steps:
-          - checkout: self
-          - pwsh: |
-              echo "Creating directory for Windows scripts..."
-              mkdir -p $(Build.ArtifactStagingDirectory)/scripts-windows
-              echo "Copying Windows scripts to artifacts directory..."
-              cp ./scripts/windows/* $(Build.ArtifactStagingDirectory)/scripts-windows/
-            displayName: 'Prepare Windows scripts'
-          - task: ArchiveFiles@2
-            inputs:
-              rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/scripts-windows"
-              includeRootFolder: false
-              archiveType: 'zip'
-              archiveFile: "$(Build.ArtifactStagingDirectory)/scripts-windows.zip"
-              replaceExistingArchive: true
-          - publish: $(Build.ArtifactStagingDirectory)/scripts-windows.zip
-            artifact: scripts-windows
