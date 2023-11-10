@@ -117,7 +117,7 @@ stages:
         steps:
           - checkout: self
           - pwsh: |
-              $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
+              $version = (Select-Xml -Path "$(System.DefaultWorkingDirectory)/Directory.Build.props" -XPath 'Project/PropertyGroup/Version').Node.InnerText
               echo "Creating directory for Windows scripts..."
               mkdir -p $(Build.ArtifactStagingDirectory)/scripts-windows
               echo "Copying Windows scripts to artifacts directory..."
