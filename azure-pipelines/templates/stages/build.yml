@@ -122,3 +122,28 @@ stages:
 
           - publish: $(Build.ArtifactStagingDirectory)/scripts-linux.zip
             artifact: scripts-linux
+            displayName: 'Publish Scripts'
+            
+          - job: PublishWindowsScripts
+            dependsOn: Build
+            condition: succeeded()
+            pool:
+              vmImage: windows-latest
+            steps:
+              - checkout: self
+              - pwsh: |
+                  echo "Creating directory for Windows scripts..."
+                  mkdir -p $(Build.ArtifactStagingDirectory)/scripts-windows
+                  echo "Copying Windows scripts to artifacts directory..."
+                  cp ./scripts/windows/* $(Build.ArtifactStagingDirectory)/scripts-windows/
+                displayName: 'Prepare Windows scripts'
+              - task: ArchiveFiles@2
+                inputs:
+                  rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/scripts-windows"
+                  includeRootFolder: false
+                  archiveType: 'zip'
+                  archiveFile: "$(Build.ArtifactStagingDirectory)/scripts-windows.zip"
+                  replaceExistingArchive: true
+              - publish: $(Build.ArtifactStagingDirectory)/scripts-windows.zip
+                artifact: scripts-windows
+                displayName: 'Publish Windows scripts'
