@@ -20,12 +20,12 @@ stages:
   - ${{ each stage in parameters.stages }}:
       - ${{ each pair in stage }}:
           ${{ pair.key }}: ${{ pair.value }}
-
+        
         displayName: Release ${{ stage.templateContext.environment }}
-
+        
         ${{ if eq(stage.templateContext.environment, 'production') }}:
           condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
-
+        
         jobs:
           - deployment: Release
             
@@ -47,43 +47,12 @@ stages:
                     - pwsh: get-childitem "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-*/*" | foreach { rename-item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
                       displayName: Rename artifacts
 
-                    - download: scripts-linux
-                      artifact: scripts-linux
-                      displayName: "[Linux] Download script artifact"
-                    - download: scripts-windows
-                      artifact: scripts-windows
-                      displayName: "[Windows] Download script artifact"
-                    - download: scripts-macos
-                      artifact: scripts-macos
-                      displayName: "[macOS] Download script artifact"
-
-                    - ${{ each target in parameters.targets }}:
-                        - pwsh: |
-                            if ('${{ target }}' -like 'linux-*' -or '${{ target }}' -like 'osx-*') {
-                              # Zip Unix scripts and preserve file permissions
-                              bash -c "cd $(Pipeline.Workspace)/scripts-${{ target }} && zip -r $(Pipeline.Workspace)/scripts-${{ target }}/fiskaltrust.Launcher.Scripts-${{ target }}-${{ variables.version }}.zip ."
-                            } else {
-                              # Zip Windows scripts
-                              Compress-Archive -Path "$(Pipeline.Workspace)/scripts-${{ target }}/*" -DestinationPath "$(Pipeline.Workspace)/scripts-${{ target }}/fiskaltrust.Launcher.Scripts-${{ target }}-${{ variables.version }}.zip"
-                            }
-                          displayName: "[${{ target }}] Zip script artifacts"
-
                     - ${{ each target in parameters.targets }}:
                         - task: AzureCLI@2
-                          displayName: "[${{ target }}] Publish package to blob storage"
+                          displayName: "[${{ target }}] Publish to blob storage"
                           inputs:
                             azureSubscription: ${{ stage.templateContext.serviceConnection }}
                             scriptType: ps
                             scriptLocation: inlineScript
                             inlineScript: |
                               az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}/" --pattern "*.zip*"
-
-                    - ${{ each target in parameters.targets }}:
-                        - task: AzureCLI@2
-                          displayName: "[${{ target }}] Publish scripts to blob storage"
-                          inputs:
-                            azureSubscription: ${{ stage.templateContext.serviceConnection }}
-                            scriptType: ps
-                            scriptLocation: inlineScript
-                            inlineScript: |
-                              az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "scripts" --destination-path "${{ target }}/fiskaltrust.Launcher.Scripts/" -s "$(Pipeline.Workspace)/scripts-${{ target }}/" --pattern "*.zip"
