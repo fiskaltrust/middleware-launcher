@@ -47,8 +47,24 @@ stages:
       - pwsh: |
           mv ./Directory.build.props ./Directory.Build.props
           dotnet publish ./src/${{ project }}/${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true -p:PublishReadyToRun=true
-        displayName: Publish
+        displayName: "[${{ project }}] Publish"
 
+
+    - task: codesigning@2
+      displayName: 'Code Signing'
+      inputs:
+        secureFileId: 'codesigning.pfx'
+        signCertPassword: '$(Code_Signing_Password)'
+        filePaths: |
+          $(Build.ArtifactStagingDirectory)/**/*fiskaltrust*
+          ./src/**/*fiskaltrust*.exe
+          ./src/**/*fiskaltrust*.dll
+          ./src/**/fiskaltrust.Launcher.dll
+          ./src/**/fiskaltrust.Launcher
+          ./src/**/fiskaltrust.Launcher.exe
+          ./src/**/fiskaltrust.LauncherUpdater
+          ./src/**/fiskaltrust.LauncherUpdater.exe
+          
     - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
       artifact: drop-$(target)
 
@@ -60,7 +76,7 @@ stages:
     - ${{ each project in parameters.projects }}:
       - pwsh: |
           Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
-        displayName: Copy executables
+        displayName: "[${{ project }}] Copy executables"
         
 
     - pwsh: |
