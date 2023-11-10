@@ -58,7 +58,7 @@ stages:
                               az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}/" --pattern "*.zip*"
 
                     - download: current
-                      artifact: scripts-linux
+                      artifact: scripts-linux-$version
                       displayName: "Download Linux script artifact"
 
                     - task: AzureCLI@2
@@ -71,7 +71,7 @@ stages:
                           az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "scripts/linux/fiskaltrust.Launcher.Scripts/" -s "$(Pipeline.Workspace)/scripts-linux/" --pattern "*.zip"
 
                     - download: current
-                      artifact: scripts-windows
+                      artifact: scripts-windows-$version
                       displayName: "Download Windows script artifact"
 
                     - task: AzureCLI@2
