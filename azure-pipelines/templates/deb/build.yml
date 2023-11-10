@@ -34,8 +34,9 @@ stages:
         secureFileId: 'codesigning.pfx'
         signCertPassword: '$(Code_Signing_Password)'
         filePaths: |
+          $(Build.ArtifactStagingDirectory)/**/*fiskaltrust*
+          ./src/**/*fiskaltrust*.dll
           ./src/**/fiskaltrust.Launcher.dll
-          ./src/**/*fiskaltrust*.exe
           ./src/**/fiskaltrust.Launcher
           ./src/**/fiskaltrust.LauncherUpdater
 
