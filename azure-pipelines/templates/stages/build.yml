@@ -115,14 +115,16 @@ stages:
         pool:
           vmImage: windows-latest
         steps:
-          - checkout: self
+          - checkout: self    
           - pwsh: |
-              $version = (Select-Xml -Path "$(System.DefaultWorkingDirectory)/Directory.Build.props" -XPath 'Project/PropertyGroup/Version').Node.InnerText
-              echo "Creating directory for Windows scripts..."
-              mkdir -p $(Build.ArtifactStagingDirectory)/scripts-windows
-              echo "Copying Windows scripts to artifacts directory..."
-              cp ./scripts/windows/* $(Build.ArtifactStagingDirectory)/scripts-windows/
-            displayName: 'Prepare Windows Script Artifacts'
+              Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse
+              $path = Join-Path -Path "$(System.DefaultWorkingDirectory)" -ChildPath "Directory.Build.props"
+              if (Test-Path -Path $path) {
+                  Write-Host "Found Directory.Build.props at $path"
+              } else {
+                  Write-Host "Directory.Build.props not found at $path"
+              }
+            displayName: 'Verify Directory.Build.props path'
           - task: ArchiveFiles@2
             inputs:
               rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/scripts-windows"
