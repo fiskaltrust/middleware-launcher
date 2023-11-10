@@ -97,28 +97,28 @@ stages:
     - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
       artifact: package-$(target)
       
-    - job: PublishScripts
-      dependsOn: Build
-      condition: succeeded()
-      pool:
-          vmImage: ubuntu-latest
-      steps:
-          - checkout: self
-          - bash: |
-              echo "Creating directories for scripts..."
-              mkdir -p $(Build.ArtifactStagingDirectory)/scripts-linux
-              echo "Copying scripts to artifacts directory..."
-              cp ./scripts/linux/* $(Build.ArtifactStagingDirectory)/scripts-linux/
-            displayName: 'Prepare Script Artifacts'
-
-          - task: ArchiveFiles@2
-            inputs:
-              rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/scripts-linux"
-              includeRootFolder: false
-              archiveType: 'zip'
-              archiveFile: "$(Build.ArtifactStagingDirectory)/scripts-linux.zip"
-              replaceExistingArchive: true
-            displayName: 'Archive Scripts'
-
-          - publish: $(Build.ArtifactStagingDirectory)/scripts-linux.zip
-            artifact: scripts-linux
+#    - job: PublishScripts
+#      dependsOn: Build
+#      condition: succeeded()
+#      pool:
+#          vmImage: ubuntu-latest
+#      steps:
+#          - checkout: self
+#          - bash: |
+#              echo "Creating directories for scripts..."
+#              mkdir -p $(Build.ArtifactStagingDirectory)/scripts-linux
+#              echo "Copying scripts to artifacts directory..."
+#              cp ./scripts/linux/* $(Build.ArtifactStagingDirectory)/scripts-linux/
+#            displayName: 'Prepare Script Artifacts'
+#
+#          - task: ArchiveFiles@2
+#            inputs:
+#              rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/scripts-linux"
+#              includeRootFolder: false
+#              archiveType: 'zip'
+#              archiveFile: "$(Build.ArtifactStagingDirectory)/scripts-linux.zip"
+#              replaceExistingArchive: true
+#            displayName: 'Archive Scripts'
+#
+#          - publish: $(Build.ArtifactStagingDirectory)/scripts-linux.zip
+#            artifact: scripts-linux
