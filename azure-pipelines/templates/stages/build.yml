@@ -69,58 +69,61 @@ stages:
                   Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
                   # Extract the version number from the Directory.Build.props file
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
+                  
                   # Path variables for zip and tar.gz files
                   $zipPath = "$(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip"
                   $tarGzPath = "$(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.tar.gz"
+                  
                   # Check if the image is Windows to use zip, otherwise use tar.gz
-                  if ("$(vmImage)" -eq "windows-latest") {
+                  if("$(vmImage)" -eq "windows-latest") {
                       Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $zipPath -Force
                   } else {
                       tar -czf $tarGzPath -C $(Build.ArtifactStagingDirectory)/raw-$(target) .
                   }
-                  # Check if the file to hash exists
-                  $fileToHash = if ("$(vmImage)" -eq "windows-latest") { $zipPath } else { $tarGzPath }
-                  if (Test-Path $fileToHash) {
-                      # Check if the file is not empty
-                      if ((Get-Item $fileToHash).Length -gt 0) {
-                          Write-Host "File to hash: $fileToHash"
-                          # Compute the file hash
-                          if ("$(vmImage)" -eq "windows-latest") {
-                              $hashResult = Get-FileHash $zipPath -Algorithm SHA256
-                              $hashString = $hashResult.Hash
-                          } else {
-                              # Run sha256sum and capture the output
-                              $hashResult = bash -c "sha256sum $tarGzPath"
-                              # Split the output to get just the hash value
-                              $hashString = $hashResult.Split(' ')[0]
-                          }
-                          # Check if the hash string is not null or empty
-                          if (![string]::IsNullOrWhiteSpace($hashString)) {
-                              Write-Host "Hash result: $hashString"
+                  
+                  # Check if the file to hash exists and is not empty
+                  $fileToHash = if("$(vmImage)" -eq "windows-latest") { $zipPath } else { $tarGzPath }
+                  if (Test-Path $fileToHash -and (Get-Item $fileToHash).Length -gt 0) {
+                      Write-Host "File to hash: $fileToHash"
+                  
+                      # Compute the file hash
+                      if("$(vmImage)" -eq "windows-latest") {
+                          $hashResult = Get-FileHash $zipPath -Algorithm SHA256
+                      } elseif("$(vmImage)" -eq "macos-latest") {
+                          $hashResult = bash -c "shasum -a 256 $tarGzPath"
+                      } else {
+                          $hashResult = bash -c "sha256sum $tarGzPath"
+                      }
+                  
+                      # Check if the hash result is not null or empty
+                      if ($hashResult) {
+                          $hashString = if("$(vmImage)" -eq "macos-latest") { $hashResult.Split(' ')[0] } else { $hashResult.Hash }
+                  
+                          if ($hashString) {
+                              Write-Host "Hash string: $hashString"
+                  
                               # Convert the hash string into a byte array
-                              $hashbytes = $hashString -split '([A-F0-9]{2})' | Where-Object { $_ } | ForEach-Object { [System.Convert]::ToByte($_, 16) }
-                              # Ensure the byte array is not null or empty
-                              if ($hashbytes) {
-                                  $hashstring = [System.Convert]::ToBase64String($hashbytes)
-                                  # Write the hash value to a file
-                                  $hashFilePath = if ("$(vmImage)" -eq "windows-latest") { 
-                                      "$(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash"
-                                  } else { 
-                                      "$(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.tar.gz.hash"
-                                  }
-                                  Set-Content -Path $hashFilePath -Value $hashstring
-                                  Write-Host "Hash base64 string: $hashstring"
+                              $hashBytes = [System.BitConverter]::ToString([System.Text.Encoding]::UTF8.GetBytes($hashString)).Replace("-", "").Split('([A-F0-9]{2})') | Where-Object { $_ } | ForEach-Object { [System.Convert]::ToByte($_, 16) }
+                  
+                              if ($hashBytes) {
+                                  $hashBase64 = [System.Convert]::ToBase64String($hashBytes)
+                                  Set-Content -Path "$(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.tar.gz.hash" -Value $hashBase64
+                                  Write-Host "Hash base64 string: $hashBase64"
                               } else {
                                   Write-Error "Hash bytes array is null or empty."
                               }
                           } else {
-                              Write-Error "Failed to compute hash."
+                              Write-Error "Hash string is null or empty."
                           }
                       } else {
-                          Write-Error "File to hash is empty."
+                          Write-Error "Failed to compute hash."
                       }
                   } else {
-                      Write-Error "File to hash does not exist."
+                      if (-not (Test-Path $fileToHash)) {
+                          Write-Error "File to hash does not exist."
+                      } elseif ((Get-Item $fileToHash).Length -eq 0) {
+                          Write-Error "File to hash is empty."
+                      }
                   }
                 displayName: "Package ${{ project }}"
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
