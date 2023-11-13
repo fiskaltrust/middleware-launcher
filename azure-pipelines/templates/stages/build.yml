@@ -88,8 +88,10 @@ stages:
                               $hashResult = Get-FileHash $zipPath -Algorithm SHA256
                               $hashString = $hashResult.Hash
                           } else {
-                              # Run sha256sum and capture the output
-                              $hashResult = bash -c "sha256sum $tarGzPath"
+                              # Use shasum for macOS and sha256sum for Linux
+                              $hashCommand = if ("$(vmImage)" -match "macos-") { "shasum -a 256" } else { "sha256sum" }
+                              # Run hash command and capture the output
+                              $hashResult = bash -c "$hashCommand $tarGzPath"
                               # Split the output to get just the hash value
                               $hashString = $hashResult.Split(' ')[0]
                           }
