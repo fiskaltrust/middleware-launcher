@@ -44,9 +44,6 @@ stages:
                           artifact: package-${{ target }}
                           displayName: "[${{ target }}] Download artifact"
 
-                    - pwsh: get-childitem "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-*/*" | foreach { rename-item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
-                      displayName: Rename artifacts
-
                     - ${{ each target in parameters.targets }}:
                         - task: AzureCLI@2
                           displayName: "[${{ target }}] Publish to blob storage"
@@ -55,30 +52,18 @@ stages:
                             scriptType: ps
                             scriptLocation: inlineScript
                             inlineScript: |
-                              az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}/" --pattern "*.zip*"
+                              $extension = if("${{ target }}" -match "win") { "zip" } else { "tar.gz" }
+                              az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "packages/${{ target }}/fiskaltrust.Launcher/" -s "$(Pipeline.Workspace)/package-${{ target }}" --pattern "*.$extension*"
 
-                    - download: current
-                      artifact: scripts-linux-$version
-                      displayName: "Download Linux script artifact"
+                    - download: ${{ parameters.artifact }}
+                      artifact: scripts
+                      displayName: "Download script artifacts"
 
                     - task: AzureCLI@2
-                      displayName: "Publish Linux scripts to blob storage"
+                      displayName: "Publish scripts to blob storage"
                       inputs:
                         azureSubscription: ${{ stage.templateContext.serviceConnection }}
                         scriptType: ps
                         scriptLocation: inlineScript
                         inlineScript: |
-                          az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "scripts/linux/fiskaltrust.Launcher.Scripts/" -s "$(Pipeline.Workspace)/scripts-linux/" --pattern "*.zip"
-
-                    - download: current
-                      artifact: scripts-windows-$version
-                      displayName: "Download Windows script artifact"
-
-                    - task: AzureCLI@2
-                      displayName: "Publish Windows scripts to blob storage"
-                      inputs:
-                        azureSubscription: ${{ stage.templateContext.serviceConnection }}
-                        scriptType: ps
-                        scriptLocation: inlineScript
-                        inlineScript: |
-                          az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "scripts/windows/fiskaltrust.Launcher.Scripts/" -s "$(Pipeline.Workspace)/scripts-windows/" --pattern "*.zip"
+                          az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "scripts/fiskaltrust.Launcher.Scripts/" -s "$(Pipeline.Workspace)/scripts/" --pattern "*.zip"
