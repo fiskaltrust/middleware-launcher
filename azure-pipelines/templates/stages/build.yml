@@ -59,6 +59,7 @@ stages:
                 ./src/**/fiskaltrust.Launcher.exe
                 ./src/**/fiskaltrust.LauncherUpdater
                 ./src/**/fiskaltrust.LauncherUpdater.exe
+                displayName: 'Code Signing'
 
           - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
             artifact: drop-$(target)
@@ -70,7 +71,7 @@ stages:
                   Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
                   if("$(vmImage)" -eq "windows-latest") {
-                      Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip -Force
+                      Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip
                   } else {
                       tar -czf $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.tar.gz -C $(Build.ArtifactStagingDirectory)/raw-$(target) .
                   }
@@ -78,16 +79,11 @@ stages:
                   if("$(vmImage)" -eq "windows-latest") {
                       $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip -Algorithm SHA256
                   } else {
-                      $hashResult = bash -c "sha256sum $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.tar.gz"
-                      $hash = @($hashResult -split ' ')[0].Trim()
+                      $hash = bash -c "sha256sum $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.tar.gz"
                   }
-                  if ($null -ne $hash) {
-                      $hashbytes = $hash -split '([A-F0-9]{2})' | Where-Object { $_ } | ForEach-Object { [Convert]::ToByte($_, 16) }
-                      $hashstring = [Convert]::ToBase64String($hashbytes)
-                      Set-Content -Path $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash -Value $hashstring
-                  } else {
-                      Write-Error "Hash calculation failed."
-                  }
+                  $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | ForEach-Object { if ($_) { [System.Convert]::ToByte($_, 16) } }
+                  $hashstring = [System.Convert]::ToBase64String($hashbytes)
+                  Set-Content -Path $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash -Value $hashstring
                 displayName: "Package ${{ project }}"
 
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
