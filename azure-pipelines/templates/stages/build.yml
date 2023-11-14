@@ -77,7 +77,7 @@ stages:
 
                   $scriptFolderForPlatform = if ("$(target)" -match "osx-x64") { "linux" } else { $env:SCRIPT_FOLDER }
                   $scriptFolderPath = "./scripts/$scriptFolderForPlatform"
-                  Copy-Item -Path "$scriptFolderPath/*" -Destination $packagePath/
+                  Copy-Item -Path "$scriptFolderPath/*" -Destination $rawPath/                  
                   
                   if ("$(vmImage)" -eq "windows-latest") {
                       Compress-Archive -Path $rawPath/* -DestinationPath $zipPath -Force
