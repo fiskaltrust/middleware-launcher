@@ -1,70 +1,77 @@
 @echo off
-setlocal enableextensions enabledelayedexpansion
-SET "ftServiceName="
+setlocal enableextensions
+cd /d "%~dp0%"
+net.exe session 1>nul 2>nul || (echo This script requires elevated rights. & exit /b 1)
 set _cmd="%cd%\fiskaltrust.exe"
 for /f "skip=1 tokens=1-6 delims=, " %%A in ('wmic service get name^, PathName^') do ( 
 	if %_cmd% == %%B (
-		if .!ftServiceName!==. (
-			SET ftServiceName=%%A
-		) ELSE (
-			echo "More than one service is registered. This can not be migrated automatically."
+		if not defined ftServiceName (
+			set ftServiceName=%%A
+		) else (
+			echo More than one service is registered. This can not be migrated automatically.
+			timeout 15
 			exit /b 1
 		)
 	)
 )
 echo
-if .!ftServiceName!==. (
-	GOTO ResolveInitialState
+if exist .backup\ (
+	echo The Backup folder: '.backup' already exists. Rename this folder to not loose data.
+	timeout 15
+	exit /b 1
+)
+if defined ftServiceName (
+	goto ResolveInitialState
 )
 
-if .ftServiceName!==. (
-	echo  "No service installed"
+if not defined ftServiceName (
+	echo No service installed
+	timeout 15
 	exit /b 1
 )
 
 :ResolveInitialState
-SC query %ftServiceName% | FIND "STATE" | FIND "RUNNING" >NUL
-IF errorlevel 0 IF NOT errorlevel 1 GOTO StopService
-SC query %ftServiceName% | FIND "STATE" | FIND "STOPPED" >NUL
-IF errorlevel 0 IF NOT errorlevel 1 GOTO StopedService
-SC query %ftServiceName% | FIND "STATE" | FIND "PAUSED" >NUL
-IF errorlevel 0 IF NOT errorlevel 1 GOTO SystemOffline
+sc query %ftServiceName% | find "STATE" | find "RUNNING" >NUL
+if errorlevel 0 if not errorlevel 1 goto StopService
+SC query %ftServiceName% | find "STATE" | find "STOPPED" >NUL
+if errorlevel 0 if not errorlevel 1 goto StopedService
+SC query %ftServiceName% | find "STATE" | find "PAUSED" >NUL
+if errorlevel 0 if not errorlevel 1 goto SystemOffline
 echo Service State is changing, waiting for service to resolve its state before making changes
-sc query %ftServiceName% | Find "STATE"
+sc query %ftServiceName% | find "STATE"
 timeout /t 2 /nobreak >NUL
-GOTO ResolveInitialState
+goto ResolveInitialState
 
 :StopService
 echo Stopping %ftServiceName%
 sc stop %ftServiceName% >NUL
 
-GOTO StopingService
+goto StopingService
+
 :StopingServiceDelay
-echo Waiting for %ftServiceName% to stop
 timeout /t 2 /nobreak >NUL
+
 :StopingService
-SC query %ftServiceName% | FIND "STATE" | FIND "STOPPED" >NUL
-IF errorlevel 1 GOTO StopingServiceDelay
+echo Waiting for %ftServiceName% to stop
+sc query %ftServiceName% | find "STATE" | find "STOPPED" >NUL
+if errorlevel 1 goto StopingServiceDelay
 
 :StopedService
 echo %ftServiceName% is stopped
 
 sc delete %ftServiceName%
 
-if exist .backup\ (
-	echo "The Backup folder: '.backup' already exists. Rename this folder to not loose data."
-	exit /b 1
-)
 mkdir .backup
-set cpath=%cd%
-FOR /R %cd% %%F in (*.dll) do ( 
-	move %%F %cpath%\.backup
-)
-move %cpath%\fiskaltrust.exe %cpath%\.backup
-move %cpath%\fiskaltrust.InstallLog %cpath%\.backup
-move %cpath%\fiskaltrust.InstallState %cpath%\.backup
-move %cpath%\install-service.cmd %cpath%\.backup
-move %cpath%\test.cmd %cpath%\.backup
-move %cpath%\uninstall-service.cmd %cpath%\.backup
+
+move *.dll .backup\ >nul
+move fiskaltrust.exe .backup\ >nul
+move fiskaltrust.InstallLog .backup\ >nul
+move fiskaltrust.InstallState .backup\ >nul
+move install-service.cmd .backup\ >nul
+move test.cmd .backup\ >nul
+move uninstall-service.cmd .backup\ >nul
+copy fiskaltrust.exe.config .backup\ >nul
 
 fiskaltrust.Launcher.exe install --service-name %ftServiceName%
+
+timeout 15
