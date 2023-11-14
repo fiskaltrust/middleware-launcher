@@ -66,17 +66,18 @@ stages:
                   $packagePath = "$(Build.ArtifactStagingDirectory)/package-$(target)"
                   $rawPath = "$(Build.ArtifactStagingDirectory)/raw-$(target)"
                   $zipPath = "$packagePath/fiskaltrust.Launcher-$version.zip"
-                  
+
                   New-Item -ItemType Directory -Path $rawPath, $packagePath -Force
                   Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $rawPath/
                   Compress-Archive -Path $rawPath/* -DestinationPath $zipPath -Force
-                  
+
                   $hash = Get-FileHash $zipPath -Algorithm SHA256
-                  $hashstring = [System.Convert]::ToBase64String($hash.Hash)
+                  $hashBytes = [System.Convert]::FromHexString($hash.Hash)
+                  $hashBase64 = [System.Convert]::ToBase64String($hashBytes)
                   $hashFilePath = "$packagePath/fiskaltrust.Launcher-$version.zip.hash"
-                  Set-Content -Path $hashFilePath -Value $hashstring
-                displayName: "Package ${{ project }}"
-                
+                  Set-Content -Path $hashFilePath -Value $hashBase64
+                displayName: "Package ${{ project }}"          
+          
           - ${{ each project in parameters.projects }}:
               - pwsh: |
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
