@@ -70,7 +70,10 @@ stages:
                   
                   New-Item -ItemType Directory -Path $rawPath, $packagePath -Force
                   Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $rawPath/
-                  Copy-Item -Path "./scripts/$(scriptFolder)/*" -Destination $packagePath/
+
+                  $scriptFolderForPlatform = if ("$(target)" -match "osx-x64") { "linux" } else { $(scriptFolder) }
+                  $scriptFolderPath = "./scripts/$scriptFolderForPlatform"
+                  Copy-Item -Path "$scriptFolderPath/*" -Destination $packagePath/
                   
                   if ("$(vmImage)" -eq "windows-latest") {
                       Compress-Archive -Path $rawPath/* -DestinationPath $zipPath -Force
