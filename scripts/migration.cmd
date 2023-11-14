@@ -48,6 +48,10 @@ sc stop %ftServiceName% >NUL
 
 goto StopingService
 
+:SystemOffline
+echo System is offline
+exit /b 1
+
 :StopingServiceDelay
 timeout /t 2 /nobreak >NUL
 
