@@ -71,7 +71,9 @@ stages:
                   New-Item -ItemType Directory -Path $rawPath, $packagePath -Force
                   Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $rawPath/
 
-                  $scriptFolderForPlatform = if ("$(target)" -match "osx-x64") { "linux" } else { $(scriptFolder) }
+                  $env:SCRIPT_FOLDER = "$(scriptFolder)"
+
+                  $scriptFolderForPlatform = if ("$(target)" -match "osx-x64") { "linux" } else { $env:SCRIPT_FOLDER }
                   $scriptFolderPath = "./scripts/$scriptFolderForPlatform"
                   Copy-Item -Path "$scriptFolderPath/*" -Destination $packagePath/
                   
