@@ -72,11 +72,11 @@ stages:
                   Compress-Archive -Path $rawPath/* -DestinationPath $zipPath -Force
                   
                   $hash = Get-FileHash $zipPath -Algorithm SHA256
-                  $hashstring = [System.BitConverter]::ToString($hash.Hash).Replace("-", "").ToLower()
+                  $hashstring = [System.Convert]::ToBase64String($hash.Hash)
                   $hashFilePath = "$packagePath/fiskaltrust.Launcher-$version.zip.hash"
                   Set-Content -Path $hashFilePath -Value $hashstring
                 displayName: "Package ${{ project }}"
-
+                
           - ${{ each project in parameters.projects }}:
               - pwsh: |
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
