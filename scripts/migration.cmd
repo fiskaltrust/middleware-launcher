@@ -1,18 +1,14 @@
 @echo off
 setlocal enableextensions enabledelayedexpansion
 SET "ftServiceName="
-set "lim=;"
+set _cmd="%cd%\fiskaltrust.exe"
 for /f "skip=1 tokens=1-6 delims=, " %%A in ('wmic service get name^, PathName^') do ( 
-    echo.%%B | findstr %cd% 1> nul
-	if not errorlevel 1 (
-	    echo.%%B | findstr fiskaltrust.exe 1> nul
-		if not errorlevel 1 (
-		  	if .!ftServiceName!==. (
-				SET ftServiceName=%%A
-			) ELSE (
-				echo "More than one service is registered. This can not be migrated automatically."
-				exit /b 1
-			)
+	if %_cmd% == %%B (
+		if .!ftServiceName!==. (
+			SET ftServiceName=%%A
+		) ELSE (
+			echo "More than one service is registered. This can not be migrated automatically."
+			exit /b 1
 		)
 	)
 )
