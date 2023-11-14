@@ -68,7 +68,6 @@ stages:
                   $packagePath = "$(Build.ArtifactStagingDirectory)/package-$(target)"
                   $rawPath = "$(Build.ArtifactStagingDirectory)/raw-$(target)"
                   $zipPath = "$packagePath/fiskaltrust.Launcher-$version.zip"
-                  $tarGzPath = "$packagePath/fiskaltrust.Launcher-$version.tar.gz"
                   
                   New-Item -ItemType Directory -Path $rawPath, $packagePath -Force
                   Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $rawPath/
@@ -82,24 +81,10 @@ stages:
                   Compress-Archive -Path $rawPath/* -DestinationPath $zipPath -Force
                   $fileToHash = $zipPath
                   
-                  if (Test-Path $fileToHash) {
-                      if ((Get-Item $fileToHash).Length -gt 0) {
-                          $hashString = (Get-FileHash $fileToHash -Algorithm SHA256).Hash
-                  
-                          if (![string]::IsNullOrWhiteSpace($hashString)) {
-                              $hashbytes = $hashString -split '([A-F0-9]{2})' | Where-Object { $_ } | ForEach-Object { [System.Convert]::ToByte($_, 16) }
-                              $hashbase64 = [System.Convert]::ToBase64String($hashbytes)
-                              $hashFilePath = "$packagePath/fiskaltrust.Launcher-$version.zip.hash"
-                              Set-Content -Path $hashFilePath -Value $hashbase64
-                          } else {
-                              Write-Error "Failed to compute hash."
-                          }
-                      } else {
-                          Write-Error "File to hash is empty."
-                      }
-                  } else {
-                      Write-Error "File to hash does not exist."
-                  }
+                  $hash = Get-FileHash $fileToHash -Algorithm SHA256
+                  $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
+                  $hashstring = [System.Convert]::ToBase64String($hashbytes)
+                  $hashstring | Set-Content $hashFilePath -Path "$packagePath/fiskaltrust.Launcher-$version.zip.hash"
                 displayName: "Package ${{ project }}"
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
