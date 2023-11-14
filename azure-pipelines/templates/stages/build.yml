@@ -42,7 +42,7 @@ stages:
           - ${{ each project in parameters.projects }}:
               - pwsh: |
                   mv ./Directory.build.props ./Directory.Build.props
-                  dotnet publish ./src/${{ project }}/${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true -p:PublishReadyToRun=true
+                  dotnet publish ./src/${{ project }}/${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false /p:PublishSingleFile=true /p:PublishReadyToRun=true
                 displayName: "Publish ${{ project }}"
           - task: codesigning@2
             displayName: 'Code Signing'
@@ -62,58 +62,38 @@ stages:
             artifact: drop-$(target)
           - ${{ each project in parameters.projects }}:
               - pwsh: |
-                  # Create directories for raw and packaged artifacts
-                  New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/ -Force
-                  New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/package-$(target)/ -Force
-                  # Move published files to the raw directory
-                  Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
-                  # Extract the version number from the Directory.Build.props file
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
-                  # Path variables for zip and tar.gz files
-                  $zipPath = "$(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip"
-                  $tarGzPath = "$(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.tar.gz"
-                  # Check if the image is Windows to use zip, otherwise use tar.gz
+                  $packagePath = "$(Build.ArtifactStagingDirectory)/package-$(target)"
+                  $rawPath = "$(Build.ArtifactStagingDirectory)/raw-$(target)"
+                  $zipPath = "$packagePath/fiskaltrust.Launcher-$version.zip"
+                  $tarGzPath = "$packagePath/fiskaltrust.Launcher-$version.tar.gz"
+                  
+                  New-Item -ItemType Directory -Path $rawPath, $packagePath -Force
+                  Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $rawPath/
+                  Copy-Item -Path "./scripts/$(scriptFolder)/*" -Destination $packagePath/
+                  
                   if ("$(vmImage)" -eq "windows-latest") {
-                      Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $zipPath -Force
+                      Compress-Archive -Path $rawPath/* -DestinationPath $zipPath -Force
+                      $fileToHash = $zipPath
                   } else {
-                      tar -czf $tarGzPath -C $(Build.ArtifactStagingDirectory)/raw-$(target) .
+                      tar -czf $tarGzPath -C $rawPath .
+                      $fileToHash = $tarGzPath
                   }
-                  # Check if the file to hash exists and is not empty
-                  $fileToHash = if ("$(vmImage)" -eq "windows-latest") { $zipPath } else { $tarGzPath }
+                  
                   if (Test-Path $fileToHash) {
                       if ((Get-Item $fileToHash).Length -gt 0) {
-                          Write-Host "File to hash: $fileToHash"
-                          # Compute the file hash
-                          if ("$(vmImage)" -eq "windows-latest") {
-                              $hashResult = Get-FileHash $zipPath -Algorithm SHA256
-                              $hashString = $hashResult.Hash
+                          $hashString = if ("$(vmImage)" -eq "windows-latest") {
+                              (Get-FileHash $fileToHash -Algorithm SHA256).Hash
                           } else {
-                              # Use shasum for macOS and sha256sum for Linux
                               $hashCommand = if ("$(vmImage)" -match "macos-") { "shasum -a 256" } else { "sha256sum" }
-                              # Run hash command and capture the output
-                              $hashResult = bash -c "$hashCommand $tarGzPath"
-                              # Split the output to get just the hash value
-                              $hashString = $hashResult.Split(' ')[0]
+                              (bash -c "$hashCommand $fileToHash").Split(' ')[0]
                           }
-                          # Check if the hash string is not null or empty
+
                           if (![string]::IsNullOrWhiteSpace($hashString)) {
-                              Write-Host "Hash result: $hashString"
-                              # Convert the hash string into a byte array
                               $hashbytes = $hashString -split '([A-F0-9]{2})' | Where-Object { $_ } | ForEach-Object { [System.Convert]::ToByte($_, 16) }
-                              # Ensure the byte array is not null or empty
-                              if ($hashbytes) {
-                                  $hashstring = [System.Convert]::ToBase64String($hashbytes)
-                                  # Write the hash value to a file
-                                  $hashFilePath = if ("$(vmImage)" -eq "windows-latest") { 
-                                      "$(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash"
-                                  } else { 
-                                      "$(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.tar.gz.hash"
-                                  }
-                                  Set-Content -Path $hashFilePath -Value $hashstring
-                                  Write-Host "Hash base64 string: $hashstring"
-                              } else {
-                                  Write-Error "Hash bytes array is null or empty."
-                              }
+                              $hashbase64 = [System.Convert]::ToBase64String($hashbytes)
+                              $hashFilePath = "$packagePath/fiskaltrust.Launcher-$version.$(if ("$(vmImage)" -eq "windows-latest") { "zip" } else { "tar.gz" }).hash"
+                              Set-Content -Path $hashFilePath -Value $hashbase64
                           } else {
                               Write-Error "Failed to compute hash."
                           }
@@ -126,45 +106,3 @@ stages:
                 displayName: "Package ${{ project }}"
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
-      - job: PublishScripts
-        dependsOn: Build
-        condition: succeeded()
-        strategy:
-          matrix:
-            linux:
-              vmImage: ubuntu-latest
-              scriptFolder: linux
-            windows:
-              vmImage: windows-latest
-              scriptFolder: windows
-        pool:
-          vmImage: $(vmImage)
-        steps:
-          - checkout: self
-          - ${{ if eq(variables['Agent.OS'], 'Windows_NT') }}:
-              - pwsh: |
-                  $version = (Select-Xml -Path "./Directory.Build.props" -XPath "//Project/PropertyGroup/Version").Node.InnerText
-                  $scriptFolder = "$(scriptFolder)"
-                  New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$scriptFolder" -Force
-                  Copy-Item -Path "./scripts/$scriptFolder/*" -Destination "$(Build.ArtifactStagingDirectory)/scripts-$scriptFolder/"
-                displayName: 'Prepare Script Artifacts (Windows)'
-          - ${{ if ne(variables['Agent.OS'], 'Windows_NT') }}:
-              - bash: |
-                  version=$(xmllint --xpath 'string(//Project/PropertyGroup/Version)' ./Directory.Build.props)
-                  scriptFolder=$(scriptFolder)
-                  mkdir -p "$(Build.ArtifactStagingDirectory)/scripts-$scriptFolder"
-                  cp -R "./scripts/$scriptFolder/." "$(Build.ArtifactStagingDirectory)/scripts-$scriptFolder/"
-                displayName: 'Prepare Script Artifacts (Linux)'
-    
-          - task: ArchiveFiles@2
-            inputs:
-              rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)"
-              includeRootFolder: false
-              archiveType: 'zip'
-              archiveFile: "$(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)-$version.zip"
-              replaceExistingArchive: true
-            displayName: 'Archive Scripts'
-    
-          - publish: "$(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)-$version.zip"
-            artifact: scripts-$(scriptFolder)
-            displayName: 'Publish Scripts'
