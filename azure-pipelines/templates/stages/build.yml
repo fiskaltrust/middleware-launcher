@@ -141,11 +141,11 @@ stages:
           vmImage: $(vmImage)
         steps:
           - checkout: self
-          - pwsh: |
-              $version = [xml](Get-Content ./Directory.Build.props).Project.PropertyGroup.Version
-              $scriptFolder = "$(scriptFolder)"
-              New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$scriptFolder" -Force
-              Copy-Item -Path "./scripts/$scriptFolder/*" -Destination "$(Build.ArtifactStagingDirectory)/scripts-$scriptFolder/"
+          - script: |
+              version=$(xmllint --xpath 'string(//Project/PropertyGroup/Version)' ./Directory.Build.props)
+              scriptFolder=$(scriptFolder)
+              mkdir -p $(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)
+              cp ./scripts/$(scriptFolder)/* $(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)/
             displayName: 'Prepare Script Artifacts'
             env:
               scriptFolder: $(scriptFolder)
@@ -158,7 +158,7 @@ stages:
               archiveFile: "$(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)-$version.zip"
               replaceExistingArchive: true
             displayName: 'Archive Scripts'
-    
-          - publish: "$(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)-$version.zip"
+
+          - publish: $(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)-$version.zip
             artifact: scripts-$(scriptFolder)
             displayName: 'Publish Scripts'
