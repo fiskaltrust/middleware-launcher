@@ -42,17 +42,32 @@ stages:
                     - ${{ each target in parameters.targets }}:
                         - download: ${{ parameters.artifact }}
                           artifact: package-${{ target }}
-                          displayName: "[${{ target }}] Download artifact"
+                          displayName: "[${{ target }}] Download Package Artifact"
 
-                    - pwsh: get-childitem "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-*/*" | foreach { rename-item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
-                      displayName: Rename artifacts
+                    - ${{ each target in parameters.targets }}:
+                        - download: ${{ parameters.artifact }}
+                          artifact: scripts-${{ target }}
+                          displayName: "[${{ target }}] Download Scripts Artifact"
+
+                    - pwsh: Get-ChildItem "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
+                      displayName: Rename Package Artifacts
 
                     - ${{ each target in parameters.targets }}:
                         - task: AzureCLI@2
-                          displayName: "[${{ target }}] Publish to blob storage"
+                          displayName: "[${{ target }}] Publish Packages to Blob Storage"
                           inputs:
                             azureSubscription: ${{ stage.templateContext.serviceConnection }}
                             scriptType: ps
                             scriptLocation: inlineScript
                             inlineScript: |
                               az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}/" --pattern "*.zip*"
+
+                    - ${{ each target in parameters.targets }}:
+                        - task: AzureCLI@2
+                          displayName: "[${{ target }}] Publish Scripts to Blob Storage"
+                          inputs:
+                            azureSubscription: ${{ stage.templateContext.serviceConnection }}
+                            scriptType: ps
+                            scriptLocation: inlineScript
+                            inlineScript: |
+                              az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "scripts" --destination-path "${{ target }}/fiskaltrust.Launcher.Scripts/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-${{ target }}/" --pattern "*.zip*"

@@ -58,8 +58,6 @@ stages:
                 ./src/**/fiskaltrust.Launcher.exe
                 ./src/**/fiskaltrust.LauncherUpdater
                 ./src/**/fiskaltrust.LauncherUpdater.exe
-                ./scripts/**/*.cmd
-                ./scripts/**/*.sh
           - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
             artifact: drop-$(target)
           - ${{ each project in parameters.projects }}:
@@ -71,20 +69,25 @@ stages:
                   
                   New-Item -ItemType Directory -Path $rawPath, $packagePath -Force
                   Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $rawPath/
-
-                  $env:SCRIPT_FOLDER = "$(scriptFolder)"
-
-                  $scriptFolderForPlatform = if ("$(target)" -match "osx-x64") { "linux" } else { $env:SCRIPT_FOLDER }
-                  $scriptFolderPath = "./scripts/$scriptFolderForPlatform"
-                  Copy-Item -Path "$scriptFolderPath/*" -Destination $rawPath/                  
-                  
                   Compress-Archive -Path $rawPath/* -DestinationPath $zipPath -Force
-                  $fileToHash = $zipPath
                   
-                  $hash = Get-FileHash $fileToHash -Algorithm SHA256
-                  $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
-                  $hashstring = [System.Convert]::ToBase64String($hashbytes)
-                  $hashstring | Set-Content $hashFilePath -Path "$packagePath/fiskaltrust.Launcher-$version.zip.hash"
+                  $hash = Get-FileHash $zipPath -Algorithm SHA256
+                  $hashstring = [System.BitConverter]::ToString($hash.Hash).Replace("-", "").ToLower()
+                  $hashFilePath = "$packagePath/fiskaltrust.Launcher-$version.zip.hash"
+                  Set-Content -Path $hashFilePath -Value $hashstring
                 displayName: "Package ${{ project }}"
+
+          - ${{ each project in parameters.projects }}:
+              - pwsh: |
+                  $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
+                  $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$(target)/$version.zip"
+                  $scriptFolderPath = "./scripts/${{ parameters.scriptFolder }}"
+
+                  New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$(target)" -Force
+                  Compress-Archive -Path "$scriptFolderPath/*" -DestinationPath $scriptZipPath -Force
+                displayName: "Package Scripts for ${{ parameters.scriptFolder }}"
+
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
+          - publish: $(Build.ArtifactStagingDirectory)/scripts-$(target)
+            artifact: scripts-$(target)
