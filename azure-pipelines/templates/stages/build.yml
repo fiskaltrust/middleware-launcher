@@ -77,17 +77,18 @@ stages:
                   $hashFilePath = "$packagePath/fiskaltrust.Launcher-$version.zip.hash"
                   Set-Content -Path $hashFilePath -Value $hashBase64
                 displayName: "Package ${{ project }}"          
-          
+
           - ${{ each project in parameters.projects }}:
               - pwsh: |
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
                   $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$(target)/$version.zip"
                   $scriptFolderPath = "./scripts/${{ parameters.scriptFolder }}"
+                  $extension = if("${{ parameters.scriptFolder }}" -eq "windows") { "*.cmd" } else { "*.sh" }
 
                   New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$(target)" -Force
-                  Compress-Archive -Path "$scriptFolderPath/*" -DestinationPath $scriptZipPath -Force
-                displayName: "Package Scripts for ${{ parameters.scriptFolder }}"
-
+                  Get-ChildItem -Path "$scriptFolderPath/" -Filter $extension | Compress-Archive -DestinationPath $scriptZipPath -Force
+                displayName: "Package Scripts for ${{ parameters.scriptFolder }}"          
+          
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
           - publish: $(Build.ArtifactStagingDirectory)/scripts-$(target)
