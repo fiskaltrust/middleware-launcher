@@ -126,39 +126,45 @@ stages:
                 displayName: "Package ${{ project }}"
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
-      - job: PublishScripts
-        dependsOn: Build
-        condition: succeeded()
-        strategy:
-          matrix:
-            linux:
-              vmImage: ubuntu-latest
-              scriptFolder: linux
-            windows:
-              vmImage: windows-latest
-              scriptFolder: windows
-        pool:
-          vmImage: $(vmImage)
-        steps:
-          - checkout: self
-          - script: |
+  - job: PublishScripts
+    dependsOn: Build
+    condition: succeeded()
+    strategy:
+      matrix:
+        linux:
+          vmImage: ubuntu-latest
+          scriptFolder: linux
+        windows:
+          vmImage: windows-latest
+          scriptFolder: windows
+    pool:
+      vmImage: $(vmImage)
+    steps:
+      - checkout: self
+      - ${{ if eq(variables['Agent.OS'], 'Windows_NT') }}:
+          - pwsh: |
+              $version = (Select-Xml -Path "./Directory.Build.props" -XPath "//Project/PropertyGroup/Version").Node.InnerText
+              $scriptFolder = "$(scriptFolder)"
+              New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$scriptFolder" -Force
+              Copy-Item -Path "./scripts/$scriptFolder/*" -Destination "$(Build.ArtifactStagingDirectory)/scripts-$scriptFolder/"
+            displayName: 'Prepare Script Artifacts (Windows)'
+      - ${{ if ne(variables['Agent.OS'], 'Windows_NT') }}:
+          - bash: |
               version=$(xmllint --xpath 'string(//Project/PropertyGroup/Version)' ./Directory.Build.props)
               scriptFolder=$(scriptFolder)
-              mkdir -p $(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)
-              cp ./scripts/$(scriptFolder)/* $(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)/
-            displayName: 'Prepare Script Artifacts'
-            env:
-              scriptFolder: $(scriptFolder)
-    
-          - task: ArchiveFiles@2
-            inputs:
-              rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)"
-              includeRootFolder: false
-              archiveType: 'zip'
-              archiveFile: "$(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)-$version.zip"
-              replaceExistingArchive: true
-            displayName: 'Archive Scripts'
+              mkdir -p "$(Build.ArtifactStagingDirectory)/scripts-$scriptFolder"
+              cp -R "./scripts/$scriptFolder/." "$(Build.ArtifactStagingDirectory)/scripts-$scriptFolder/"
+            displayName: 'Prepare Script Artifacts (Linux)'
 
-          - publish: $(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)-$version.zip
-            artifact: scripts-$(scriptFolder)
-            displayName: 'Publish Scripts'
+      - task: ArchiveFiles@2
+        inputs:
+          rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)"
+          includeRootFolder: false
+          archiveType: 'zip'
+          archiveFile: "$(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)-$version.zip"
+          replaceExistingArchive: true
+        displayName: 'Archive Scripts'
+
+      - publish: "$(Build.ArtifactStagingDirectory)/scripts-$(scriptFolder)-$version.zip"
+        artifact: scripts-$(scriptFolder)
+        displayName: 'Publish Scripts'
