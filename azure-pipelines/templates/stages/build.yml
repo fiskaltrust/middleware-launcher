@@ -4,6 +4,8 @@ parameters:
     default: debug
   - name: projects
     type: object
+  - name: scriptFolder
+    type: string
 
 stages:
   - stage: Build
@@ -83,13 +85,13 @@ stages:
           - ${{ each project in parameters.projects }}:
               - pwsh: |
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
+                  $target = "${{ target }}"
                   $scriptFolder = "${{ parameters.scriptFolder }}"
-                  $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-${{ target }}/$version.zip"
+                  $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$target/$version.zip"
                   $scriptFolderPath = "./scripts/$scriptFolder"
-
                   $extension = if($scriptFolder -eq "windows") { "*.cmd" } else { "*.sh" }
 
-                  New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-${{ target }}" -Force
+                  New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$target" -Force
                   Get-ChildItem -Path $scriptFolderPath -Filter $extension -File | Compress-Archive -DestinationPath $scriptZipPath -Force
                 displayName: "Package Scripts for $scriptFolder"          
           
