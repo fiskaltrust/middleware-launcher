@@ -82,12 +82,14 @@ stages:
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
                   $target = '$(target)'
                   $scriptFolder = '$(scriptFolder)'
-                  $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$target/$version.zip"
+                  $scriptZipName = "scripts-$scriptFolder-$target-$version.zip"
+                  $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$target/$scriptZipName"
                   $scriptFolderPath = "./scripts/$scriptFolder"
                   $extension = if($scriptFolder -eq "windows") { "*.cmd" } else { "*.sh" }
+                  
                   New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$target" -Force
                   Get-ChildItem -Path $scriptFolderPath -Filter $extension -File | Compress-Archive -DestinationPath $scriptZipPath -Force
-                displayName: "Package Scripts for $scriptFolder"
+                displayName: "Package Scripts for $scriptFolder"          
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
           - publish: $(Build.ArtifactStagingDirectory)/scripts-$(target)
