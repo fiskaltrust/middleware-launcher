@@ -4,8 +4,6 @@ parameters:
     default: debug
   - name: projects
     type: object
-  - name: scriptFolder
-    type: string
 
 stages:
   - stage: Build
@@ -70,31 +68,26 @@ stages:
                   $packagePath = "$(Build.ArtifactStagingDirectory)/package-$(target)"
                   $rawPath = "$(Build.ArtifactStagingDirectory)/raw-$(target)"
                   $zipPath = "$packagePath/fiskaltrust.Launcher-$version.zip"
-
                   New-Item -ItemType Directory -Path $rawPath, $packagePath -Force
                   Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $rawPath/
                   Compress-Archive -Path $rawPath/* -DestinationPath $zipPath -Force
-
                   $hash = Get-FileHash $zipPath -Algorithm SHA256
                   $hashBytes = [System.Convert]::FromHexString($hash.Hash)
                   $hashBase64 = [System.Convert]::ToBase64String($hashBytes)
                   $hashFilePath = "$packagePath/fiskaltrust.Launcher-$version.zip.hash"
                   Set-Content -Path $hashFilePath -Value $hashBase64
-                displayName: "Package ${{ project }}"          
-
+                displayName: "Package ${{ project }}"
           - ${{ each project in parameters.projects }}:
               - pwsh: |
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
-                  $target = "${{ variables.target }}"
-                  $scriptFolder = "${{ variables.scriptFolder }}"
+                  $target = '$(target)'
+                  $scriptFolder = '$(scriptFolder)'
                   $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$target/$version.zip"
                   $scriptFolderPath = "./scripts/$scriptFolder"
                   $extension = if($scriptFolder -eq "windows") { "*.cmd" } else { "*.sh" }
-
                   New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$target" -Force
                   Get-ChildItem -Path $scriptFolderPath -Filter $extension -File | Compress-Archive -DestinationPath $scriptZipPath -Force
-                displayName: "Package Scripts for $scriptFolder"          
-          
+                displayName: "Package Scripts for $scriptFolder"
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
           - publish: $(Build.ArtifactStagingDirectory)/scripts-$(target)
