@@ -58,6 +58,8 @@ stages:
                 ./src/**/fiskaltrust.Launcher.exe
                 ./src/**/fiskaltrust.LauncherUpdater
                 ./src/**/fiskaltrust.LauncherUpdater.exe
+                ./scripts/**/*.sh
+                ./scripts/**/*.cmd
           - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
             artifact: drop-$(target)
           - ${{ each project in parameters.projects }}:
@@ -83,10 +85,15 @@ stages:
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
                   $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$(target)/$version.zip"
                   $scriptFolderPath = "./scripts/${{ parameters.scriptFolder }}"
+                  $tempScriptPath = "$(Build.ArtifactStagingDirectory)/temp-scripts"
                   $extension = if("${{ parameters.scriptFolder }}" -eq "windows") { "*.cmd" } else { "*.sh" }
 
+                  New-Item -ItemType Directory -Path $tempScriptPath -Force
+                  Get-ChildItem -Path $scriptFolderPath -Filter $extension -File | Copy-Item -Destination $tempScriptPath
+
                   New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$(target)" -Force
-                  Get-ChildItem -Path "$scriptFolderPath/" -Filter $extension | Compress-Archive -DestinationPath $scriptZipPath -Force
+                  Compress-Archive -Path "$tempScriptPath/*" -DestinationPath $scriptZipPath -Force
+
                 displayName: "Package Scripts for ${{ parameters.scriptFolder }}"          
           
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
