@@ -38,8 +38,8 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--tls-certificate-path"));
             AddOption(new Option<string?>("--tls-certificate-base64"));
             AddOption(new Option<string?>("--tls-certificate-password"));
-            AddOption(new Option<string?>("--use-http-sys-binding"));
-            AddOption(new Option<string?>("--use-legacy-data-protection"));
+            AddOption(new Option<bool>("--use-http-sys-binding"));
+            AddOption(new Option<bool>("--use-legacy-data-protection"));
         }
     }
 
