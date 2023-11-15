@@ -86,11 +86,11 @@ stages:
               - pwsh: |
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
                   $target = "${{ target }}"
-                  $scriptFolder = "${{ parameters.scriptFolder }}"
+                  $scriptFolder = "${{ scriptFolder }}"
                   $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$target/$version.zip"
                   $scriptFolderPath = "./scripts/$scriptFolder"
                   $extension = if($scriptFolder -eq "windows") { "*.cmd" } else { "*.sh" }
-
+                  
                   New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$target" -Force
                   Get-ChildItem -Path $scriptFolderPath -Filter $extension -File | Compress-Archive -DestinationPath $scriptZipPath -Force
                 displayName: "Package Scripts for $scriptFolder"          
