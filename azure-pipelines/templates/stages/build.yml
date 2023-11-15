@@ -82,7 +82,7 @@ stages:
                   $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
                   $target = '$(target)'
                   $scriptFolder = '$(scriptFolder)'
-                  $scriptZipName = "scripts-$scriptFolder-$target-$version.zip"
+                  $scriptZipName = "scripts-$target-$version.zip"
                   $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$target/$scriptZipName"
                   $scriptFolderPath = "./scripts/$scriptFolder"
                   $extension = if($scriptFolder -eq "windows") { "*.cmd" } else { "*.sh" }
