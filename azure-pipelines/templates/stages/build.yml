@@ -60,9 +60,7 @@ stages:
           ./src/**/*fiskaltrust*.exe
           ./src/**/*fiskaltrust*.dll
           ./src/**/fiskaltrust.Launcher.dll
-          ./src/**/fiskaltrust.Launcher
           ./src/**/fiskaltrust.Launcher.exe
-          ./src/**/fiskaltrust.LauncherUpdater
           ./src/**/fiskaltrust.LauncherUpdater.exe
           
     - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
