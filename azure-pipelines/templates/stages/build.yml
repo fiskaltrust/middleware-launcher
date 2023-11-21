@@ -58,8 +58,6 @@ stages:
                 ./src/**/fiskaltrust.Launcher.exe
                 ./src/**/fiskaltrust.LauncherUpdater
                 ./src/**/fiskaltrust.LauncherUpdater.exe
-                ./scripts/**/*.sh
-                ./scripts/**/*.cmd
           - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
             artifact: drop-$(target)
           - ${{ each project in parameters.projects }}:
