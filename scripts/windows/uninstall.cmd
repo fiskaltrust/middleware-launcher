@@ -1,12 +1,7 @@
 @echo off
-:: Checking for administrator privileges
-NET SESSION >nul 2>&1
-IF %ERRORLEVEL% == 0 (
-    ECHO Running with administrator privileges.
-    :: Uninstall command
-    fiskaltrust.Launcher.exe uninstall
-) ELSE (
-    ECHO Restarting with administrator privileges...
-    PowerShell -NoProfile -ExecutionPolicy Bypass -Command "& {Start-Process cmd.exe -ArgumentList '/c \"%~f0\"' -Verb RunAs}"
-    EXIT /B
-)
+cd /d "%~dp0%"
+net.exe session 1>nul 2>nul || (echo This script requires elevated rights. & exit /b 1)
+
+fiskaltrust.Launcher.exe uninstall
+
+pause
