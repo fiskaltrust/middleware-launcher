@@ -15,35 +15,44 @@ stages:
               vmImage: windows-latest
               target: win-x64
               scriptFolder: 'windows'
+
             win-x86:
               vmImage: windows-latest
               target: win-x86
               scriptFolder: 'windows'
+
             linux-x64:
               vmImage: ubuntu-latest
               target: linux-x64
               scriptFolder: 'linux'
+
             linux-arm:
               vmImage: ubuntu-latest
               target: linux-arm
               scriptFolder: 'linux'
+
             linux-arm64:
               vmImage: ubuntu-latest
               target: linux-arm64
               scriptFolder: 'linux'
+
             osx-x64:
               vmImage: macos-11
               target: osx-x64
               scriptFolder: 'linux'
+
         pool:
           vmImage: $(vmImage)
+
         steps:
           - template: ../restore.yml
+
           - ${{ each project in parameters.projects }}:
               - pwsh: |
                   mv ./Directory.build.props ./Directory.Build.props
-                  dotnet publish ./src/${{ project }}/${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false /p:PublishSingleFile=true /p:PublishReadyToRun=true
-                displayName: "Publish ${{ project }}"
+                  dotnet publish ./src/${{ project }}/${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net6.0 --self-contained true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true -p:PublishReadyToRun=true
+                displayName: "[${{ project }}] Publish"
+
           - task: codesigning@2
             displayName: 'Code Signing'
             inputs:
@@ -58,37 +67,58 @@ stages:
                 ./src/**/fiskaltrust.Launcher.exe
                 ./src/**/fiskaltrust.LauncherUpdater
                 ./src/**/fiskaltrust.LauncherUpdater.exe
+
           - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
             artifact: drop-$(target)
+
+          - pwsh: |
+              New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/
+              New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/package-$(target)/
+            displayName: Create Directories
+
           - ${{ each project in parameters.projects }}:
-              - pwsh: |
-                  $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
-                  $packagePath = "$(Build.ArtifactStagingDirectory)/package-$(target)"
-                  $rawPath = "$(Build.ArtifactStagingDirectory)/raw-$(target)"
-                  $zipPath = "$packagePath/fiskaltrust.Launcher-$version.zip"
-                  New-Item -ItemType Directory -Path $rawPath, $packagePath -Force
-                  Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $rawPath/
-                  Compress-Archive -Path $rawPath/* -DestinationPath $zipPath -Force
-                  $hash = Get-FileHash $zipPath -Algorithm SHA256
-                  $hashBytes = [System.Convert]::FromHexString($hash.Hash)
-                  $hashBase64 = [System.Convert]::ToBase64String($hashBytes)
-                  $hashFilePath = "$packagePath/fiskaltrust.Launcher-$version.zip.hash"
-                  Set-Content -Path $hashFilePath -Value $hashBase64
-                displayName: "Package ${{ project }}"
-          - ${{ each project in parameters.projects }}:
-              - pwsh: |
-                  $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
-                  $target = '$(target)'
-                  $scriptFolder = '$(scriptFolder)'
-                  $scriptZipName = "scripts-$target-$version.zip"
-                  $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$target/$scriptZipName"
-                  $scriptFolderPath = "./scripts/$scriptFolder"
-                  $extension = if($scriptFolder -eq "windows") { "*.cmd" } else { "*.sh" }
-                  
-                  New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$target" -Force
-                  Get-ChildItem -Path $scriptFolderPath -Filter $extension -File | Compress-Archive -DestinationPath $scriptZipPath -Force
-                displayName: "Package Scripts for $scriptFolder"          
+            - pwsh: |
+                Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
+              displayName: "[${{ project }}] Copy executables"
+
+          - pwsh: |
+              $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
+
+              if("$(vmImage)" -eq "windows-latest") {
+                Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip
+              } else {
+                bash -c "cd $(Build.ArtifactStagingDirectory)/raw-$(target)/`nzip -r $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip ./"
+              }
+
+              $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip -Algorithm SHA256
+              $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
+              $hashstring = [System.Convert]::ToBase64String($hashbytes)
+              $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash
+            displayName: Pagkage executables
+
+
+          - pwsh: |
+              $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
+              $target = '$(target)'
+              $scriptFolder = '$(scriptFolder)'
+              $scriptZipName = "scripts-$target-$version.zip"
+              $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$target/$scriptZipName"
+              $scriptFolderPath = "./scripts/$scriptFolder"
+              $extension = if($scriptFolder -eq "windows") { "*.cmd" } else { "*.sh" }
+
+              New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$target" -Force
+
+              if("$(vmImage)" -eq "windows-latest") {
+                Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip
+              } else {
+                bash -c "cd $(Build.ArtifactStagingDirectory)/raw-$(target)/`nzip -r $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip ./"
+              }
+
+              Get-ChildItem -Path $scriptFolderPath -Filter $extension -File | Compress-Archive -DestinationPath $scriptZipPath -Force
+            displayName: Package scripts
+
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
+
           - publish: $(Build.ArtifactStagingDirectory)/scripts-$(target)
             artifact: scripts-$(target)
