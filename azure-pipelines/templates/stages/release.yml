@@ -49,7 +49,9 @@ stages:
                           artifact: scripts-${{ target }}
                           displayName: "[${{ target }}] Download Scripts Artifact"
 
-                    - pwsh: Get-ChildItem "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
+                    - pwsh: |
+                        Get-ChildItem "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
+                        Get-ChildItem "$(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher.Scripts-", "") }
                       displayName: Rename Package Artifacts
 
                     - ${{ each target in parameters.targets }}:
