@@ -63,9 +63,7 @@ stages:
                 ./src/**/*fiskaltrust*.exe
                 ./src/**/*fiskaltrust*.dll
                 ./src/**/fiskaltrust.Launcher.dll
-                ./src/**/fiskaltrust.Launcher
                 ./src/**/fiskaltrust.Launcher.exe
-                ./src/**/fiskaltrust.LauncherUpdater
                 ./src/**/fiskaltrust.LauncherUpdater.exe
 
           - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
@@ -74,7 +72,7 @@ stages:
           - pwsh: |
               New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/
               New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/package-$(target)/
-              New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/scripts-$(target)
+              New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/scripts-$(target)/
             displayName: Create Directories
 
           - ${{ each project in parameters.projects }}:
