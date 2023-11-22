@@ -17,11 +17,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fiskaltrust.Launcher.Integr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fiskaltrust.Launcher.UnitTest", "test\fiskaltrust.Launcher.UnitTest\fiskaltrust.Launcher.UnitTest.csproj", "{68743F85-31DB-43BA-92AE-72FF634282D0}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{A8FEC919-37F1-426A-96F3-7A528AF684C9}"
-	ProjectSection(SolutionItems) = preProject
-		scripts\migration.cmd = scripts\migration.cmd
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
