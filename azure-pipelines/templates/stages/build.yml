@@ -74,6 +74,7 @@ stages:
           - pwsh: |
               New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/
               New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/package-$(target)/
+              New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/scripts-$(target)
             displayName: Create Directories
 
           - ${{ each project in parameters.projects }}:
@@ -96,25 +97,17 @@ stages:
               $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash
             displayName: Pagkage executables
 
-
           - pwsh: |
               $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
-              $target = '$(target)'
-              $scriptFolder = '$(scriptFolder)'
-              $scriptZipName = "scripts-$target-$version.zip"
-              $scriptZipPath = "$(Build.ArtifactStagingDirectory)/scripts-$target/$scriptZipName"
-              $scriptFolderPath = "./scripts/$scriptFolder"
-              $extension = if($scriptFolder -eq "windows") { "*.cmd" } else { "*.sh" }
 
-              New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)/scripts-$target" -Force
+              $scriptTargetPath = "$(Build.ArtifactStagingDirectory)/scripts-$(target)/fiskaltrust.Launcher.Scripts-$version.zip"
 
               if("$(vmImage)" -eq "windows-latest") {
-                Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip
+                Compress-Archive -Path ./scripts/$(scriptFolder)/* -DestinationPath $scriptTargetPath
               } else {
-                bash -c "cd $(Build.ArtifactStagingDirectory)/raw-$(target)/`nzip -r $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip ./"
+                bash -c "chmod +x ./scripts/$(scriptFolder)/*"
+                bash -c "cd ./scripts/$(scriptFolder)/`nzip -r $scriptTargetPath ./"
               }
-
-              Get-ChildItem -Path $scriptFolderPath -Filter $extension -File | Compress-Archive -DestinationPath $scriptZipPath -Force
             displayName: Package scripts
 
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
