@@ -78,4 +78,4 @@ copy fiskaltrust.exe.config .backup\ >nul
 
 fiskaltrust.Launcher.exe install --service-name %ftServiceName%
 
-timeout 15
+pause
