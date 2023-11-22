@@ -72,4 +72,4 @@ stages:
                             scriptType: ps
                             scriptLocation: inlineScript
                             inlineScript: |
-                              az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "scripts" --destination-path "${{ target }}/fiskaltrust.Launcher.Scripts/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-${{ target }}/" --pattern "*.zip*"
+                              az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher.Scripts/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-${{ target }}/" --pattern "*.zip*"
