@@ -86,7 +86,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 launcherConfiguration.OverwriteWith(doctorOptions.ArgsLauncherConfiguration);
 
-                var clientEcdh = await checkUp.CheckAwait("Load ECDH Curve", async () => await CommonHandler.LoadCurve(launcherConfiguration.AccessToken!, launcherConfiguration.UseOffline!.Value, dryRun: true, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value), critical: false);
+                var clientEcdh = await checkUp.CheckAwait("Load ECDH Curve", async () => await CommonHandler.LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value, dryRun: true, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value), critical: false);
                 ftCashBoxConfiguration cashboxConfiguration = new();
 
                 if (clientEcdh is null)

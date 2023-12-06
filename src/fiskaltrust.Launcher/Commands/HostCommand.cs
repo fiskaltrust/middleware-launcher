@@ -81,7 +81,7 @@ namespace fiskaltrust.Launcher.Commands
 
             var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
 
-            cashboxConfiguration.Decrypt(launcherConfiguration, await CommonHandler.LoadCurve(launcherConfiguration.AccessToken!, launcherConfiguration.UseLegacyDataProtection!.Value));
+            cashboxConfiguration.Decrypt(launcherConfiguration, await CommonHandler.LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseLegacyDataProtection!.Value));
 
             var packageConfiguration = (plebeianConfiguration.PackageType switch
             {

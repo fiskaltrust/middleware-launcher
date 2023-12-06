@@ -149,7 +149,7 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Error(e, "Could not create cashbox-configuration-file folder.");
             }
 
-            var clientEcdh = await LoadCurve(launcherConfiguration.AccessToken!, launcherConfiguration.UseOffline!.Value);
+            var clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
 
             try
             {
@@ -228,11 +228,12 @@ namespace fiskaltrust.Launcher.Commands
             return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
         }
 
-        public static async Task<ECDiffieHellman> LoadCurve(string accessToken, bool useOffline = false, bool dryRun = false, bool useFallback = false)
+        public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder, bool useOffline = false, bool dryRun = false, bool useFallback = false)
         {
             Log.Verbose("Loading Curve.");
             var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
-            var clientEcdhPath = Path.Combine(Common.Constants.Paths.CommonFolder, "fiskaltrust.Launcher", "client.ecdh");
+            var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
+
             if (File.Exists(clientEcdhPath))
             {
                 return ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
