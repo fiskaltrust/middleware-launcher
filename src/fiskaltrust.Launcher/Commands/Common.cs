@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Security.Cryptography;
+using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Constants;
 using fiskaltrust.Launcher.Common.Extensions;
@@ -149,10 +150,10 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Error(e, "Could not create cashbox-configuration-file folder.");
             }
 
-            var clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
-
+            ECDiffieHellman? clientEcdh = null;
             try
             {
+                clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
                 using var downloader = new ConfigurationDownloader(launcherConfiguration);
                 var exists = await downloader.DownloadConfigurationAsync(clientEcdh);
                 if (launcherConfiguration.UseOffline!.Value && !exists)
