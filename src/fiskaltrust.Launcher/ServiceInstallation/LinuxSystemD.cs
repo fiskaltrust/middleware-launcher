@@ -7,6 +7,8 @@ namespace fiskaltrust.Launcher.ServiceInstallation
     {
         private static readonly string _servicePath = "/etc/systemd/system/";
         private readonly string _serviceName = "fiskaltrustLauncher";
+        private readonly string _serviceUser = "user"; 
+        private readonly string _requiredDirectory = "/var/lib/fiskaltrust";
 
         public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath) : base(launcherExecutablePath)
         {
@@ -19,17 +21,29 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             {
                 return -1;
             }
+
+            // Creating a directory if does not exist
+            if (!Directory.Exists(_requiredDirectory))
+            {
+                Directory.CreateDirectory(_requiredDirectory);
+
+                // Change of directory owner
+                await RunProcess("chown", new[] { _serviceUser, _requiredDirectory });
+
+                // Changing directory permissions
+                await RunProcess("chmod", new[] { "700", _requiredDirectory });
+            }
+
             Log.Information("Installing service via systemd.");
             var serviceFileContent = GetServiceFileContent(displayName ?? "Service installation of fiskaltrust launcher.", commandArgs);
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
-            await File.AppendAllLinesAsync(serviceFilePath, serviceFileContent).ConfigureAwait(false);
+            await File.WriteAllTextAsync(serviceFilePath, string.Join("\n", serviceFileContent)).ConfigureAwait(false);
             await RunProcess("systemctl", new[] { "daemon-reload" });
             Log.Information("Starting service.");
             await RunProcess("systemctl", new[] { "start", _serviceName });
             Log.Information("Enable service.");
             return (await RunProcess("systemctl", new[] { "enable", _serviceName, "-q" })).exitCode;
         }
-
         public override async Task<int> UninstallService()
         {
             if (!await IsSystemd())
