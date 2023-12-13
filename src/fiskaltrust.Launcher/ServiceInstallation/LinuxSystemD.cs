@@ -7,12 +7,14 @@ namespace fiskaltrust.Launcher.ServiceInstallation
     {
         private static readonly string _servicePath = "/etc/systemd/system/";
         private readonly string _serviceName = "fiskaltrustLauncher";
-        private readonly string _serviceUser = "user"; 
+        private readonly string _serviceUser;
         private readonly string _requiredDirectory = "/var/lib/fiskaltrust";
-
-        public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath) : base(launcherExecutablePath)
+        
+        public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath)
+            : base(launcherExecutablePath)
         {
-            _serviceName = serviceName ?? _serviceName;
+            _serviceName = serviceName ?? "fiskaltrustLauncher";
+            _serviceUser = Environment.GetEnvironmentVariable("USER") ?? "defaultUser";
         }
 
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
