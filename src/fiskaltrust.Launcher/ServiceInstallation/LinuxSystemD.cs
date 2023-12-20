@@ -16,7 +16,13 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         {
             _serviceName = serviceName ?? "fiskaltrustLauncher";
             _serviceUser = Environment.GetEnvironmentVariable("USER");
-            _requiredDirectory = configuration.ServiceFolder;
+
+            if (string.IsNullOrEmpty(_serviceUser))
+            {
+                Log.Warning("Service user name is not set. Owner of the service directory will not be changed.");
+            }
+
+            _requiredDirectory = configuration.ServiceFolder ?? throw new ArgumentNullException(nameof(configuration.ServiceFolder), "Service directory path must be provided in configuration.");
         }
 
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
