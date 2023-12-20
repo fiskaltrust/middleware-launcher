@@ -1,4 +1,5 @@
-﻿using fiskaltrust.Launcher.Helpers;
+﻿using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Helpers;
 using Serilog;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
@@ -8,13 +9,14 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         private static readonly string _servicePath = "/etc/systemd/system/";
         private readonly string _serviceName = "fiskaltrustLauncher";
         private readonly string _serviceUser;
-        private readonly string _requiredDirectory = "/var/lib/fiskaltrust";
+        private readonly string _requiredDirectory;
         
-        public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath)
+        public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath, LauncherConfiguration configuration)
             : base(launcherExecutablePath)
         {
             _serviceName = serviceName ?? "fiskaltrustLauncher";
-            _serviceUser = Environment.GetEnvironmentVariable("USER") ?? "defaultUser";
+            _serviceUser = Environment.GetEnvironmentVariable("USER");
+            _requiredDirectory = configuration.ServiceFolder;
         }
 
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
