@@ -66,7 +66,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                 DownloadRetry = 3,
                 DownloadTimeoutSec = 1,
                 CashboxConfigurationFile = "config.json",
-                ConfigurationUrl = new Uri("http://localhost:5000/"),
+                ConfigurationUrl = new Uri("http://localhost:6000/"),
                 CashboxId = Guid.NewGuid(),
                 AccessToken = "test_token",
             };
