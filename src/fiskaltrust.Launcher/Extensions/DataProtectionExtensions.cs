@@ -68,7 +68,7 @@ namespace fiskaltrust.Launcher.Extensions
 
                 if (keyId < 0)
                 {
-                    throw new Exception($"Could not save key in linux keyring: errno {Marshal.GetLastPInvokeError()}");
+                    throw new Exception($"Could not save key in linux keyring: errno {Marshal.GetLastPInvokeError()} type {type} description {description} payload {payload}");
                 }
 
                 return keyId;
