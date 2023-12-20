@@ -161,7 +161,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private bool? _useLegacyDataProtection;
         [JsonPropertyName("useLegacyDataProtection")]
-        public bool? UseLegacyDataProtection { get => WithDefault(_useLegacyDataProtection, false); set => _useLegacyDataProtection = value; }
+        public bool? UseLegacyDataProtection { get => WithDefault(_useLegacyDataProtection, true); set => _useLegacyDataProtection = value; }
 
         private SemanticVersioning.Range? _launcherVersion = null;
         [JsonPropertyName("launcherVersion")]
