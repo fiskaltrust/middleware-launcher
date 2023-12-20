@@ -79,7 +79,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                     ItExpr.IsAny<CancellationToken>())
                 .Returns(() =>
                 {
-                    return Task.Delay(TimeSpan.FromSeconds(2))
+                    return Task.Delay(TimeSpan.FromSeconds(4))
                         .ContinueWith(_ => new HttpResponseMessage(HttpStatusCode.OK));
                 });
 
