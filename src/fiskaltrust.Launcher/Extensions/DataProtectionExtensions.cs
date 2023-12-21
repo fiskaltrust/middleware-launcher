@@ -78,13 +78,13 @@ namespace fiskaltrust.Launcher.Extensions
 
     class KeyringXmlEncryptor : IXmlEncryptor
     {
-        public const int KEY_SPEC_USER_KEYRING = -4;
+        public const int KEY_SPEC_USER_KEYRING = -6;
 
         public EncryptedXmlInfo Encrypt(XElement plaintextElement)
         {
             var keyringId = KeyUtils.GetKeyringId(KEY_SPEC_USER_KEYRING, false);
 
-            var keySerial = KeyUtils.AddKey("user", "fiskaltrust.Launcher DataProtection Key", Encoding.Unicode.GetBytes(plaintextElement.ToString()), keyringId);
+            var keySerial = KeyUtils.AddKey("user", "fiskaltrustLauncher DataProtection Key", Encoding.Unicode.GetBytes(plaintextElement.ToString()), keyringId);
 
             var encryptedElement = new XElement("key_serial", keySerial.ToString());
 
