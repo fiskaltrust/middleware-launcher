@@ -7,14 +7,15 @@ namespace fiskaltrust.Launcher.ServiceInstallation
     public class LinuxSystemD : ServiceInstaller
     {
         private static readonly string _servicePath = "/etc/systemd/system/";
-        private readonly string _serviceName = "fiskaltrustLauncher";
+        private const string DefaultServiceName = "fiskaltrustLauncher";
+        private readonly string _serviceName;
         private readonly string _serviceUser;
         private readonly string _requiredDirectory;
         
         public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath, LauncherConfiguration configuration)
             : base(launcherExecutablePath)
         {
-            _serviceName = serviceName ?? "fiskaltrustLauncher";
+            _serviceName = serviceName ?? DefaultServiceName;
             _serviceUser = Environment.GetEnvironmentVariable("USER");
 
             if (string.IsNullOrEmpty(_serviceUser))
