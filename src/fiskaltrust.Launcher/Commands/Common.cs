@@ -237,7 +237,17 @@ namespace fiskaltrust.Launcher.Commands
 
             if (File.Exists(clientEcdhPath))
             {
-                return ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
+                ECDiffieHellman temp=null;
+                try
+                {
+                    temp = ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
+                    
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, $"clientEcdhPath {clientEcdhPath} can not Unprotect");
+                }
+                return temp;
             }
             else
             {
