@@ -176,6 +176,7 @@ namespace fiskaltrust.Launcher.Extensions
         public static IDataProtectionBuilder ProtectKeysCustom(this IDataProtectionBuilder builder, string? accessToken = null, bool useFallback = false)
         {
             Log.Verbose("Called IDataProtectionProvider.ProtectKeysCustom");
+            Log.Verbose($"accessToken: {accessToken}");
 
             if (accessToken is not null)
             {
