@@ -118,7 +118,6 @@ namespace fiskaltrust.Launcher.Extensions
         {
             Log.Verbose("Called LegacyXmlEncryptor constructor");
             accessToken = services.BuildServiceProvider().GetRequiredService<AccessTokenForEncryption>();
-            Log.Verbose("Found AccessTokenServicd");
         }
 
         public EncryptedXmlInfo Encrypt(XElement plaintextElement)
@@ -211,6 +210,7 @@ namespace fiskaltrust.Launcher.Extensions
 
             Log.Debug("Fallback config encryption mechanism used.");
             builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new LegacyXmlEncryptor(builder.Services));
+            Log.Verbose("config KeyManagementOptions");
             return builder;
         }
     }

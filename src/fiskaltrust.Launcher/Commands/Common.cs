@@ -216,7 +216,7 @@ namespace fiskaltrust.Launcher.Commands
 
 
             var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
-
+            Log.Verbose($"dataProtectionProvider is null: {dataProtectionProvider == null}");
             try
             {
                 launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
@@ -225,6 +225,7 @@ namespace fiskaltrust.Launcher.Commands
             {
                 Log.Warning(e, "Error decrypring launcher configuration file.");
             }
+            Log.Verbose($"finished handler");
 
             return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
         }
