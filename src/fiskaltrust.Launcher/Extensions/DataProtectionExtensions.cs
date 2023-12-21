@@ -118,6 +118,7 @@ namespace fiskaltrust.Launcher.Extensions
         {
             Log.Verbose("Called LegacyXmlEncryptor constructor");
             accessToken = services.BuildServiceProvider().GetRequiredService<AccessTokenForEncryption>();
+            Log.Verbose("Found AccessTokenServicd");
         }
 
         public EncryptedXmlInfo Encrypt(XElement plaintextElement)
@@ -176,7 +177,6 @@ namespace fiskaltrust.Launcher.Extensions
         public static IDataProtectionBuilder ProtectKeysCustom(this IDataProtectionBuilder builder, string? accessToken = null, bool useFallback = false)
         {
             Log.Verbose("Called IDataProtectionProvider.ProtectKeysCustom");
-            Log.Verbose($"accessToken: {accessToken}");
 
             if (accessToken is not null)
             {
