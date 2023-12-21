@@ -78,7 +78,7 @@ namespace fiskaltrust.Launcher.Extensions
 
     class KeyringXmlEncryptor : IXmlEncryptor
     {
-        public const int KEY_SPEC_USER_KEYRING = -6;
+        public const int KEY_SPEC_USER_KEYRING = -5;
 
         public EncryptedXmlInfo Encrypt(XElement plaintextElement)
         {
