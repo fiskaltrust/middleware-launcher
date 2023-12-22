@@ -219,7 +219,10 @@ namespace fiskaltrust.Launcher.Commands
             Log.Verbose($"dataProtectionProvider is null: {dataProtectionProvider == null}");
             try
             {
-                launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
+                if (!launcherConfiguration.UseLegacyDataProtection!.Value)
+                {
+                    launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
+                }
             }
             catch (Exception e)
             {

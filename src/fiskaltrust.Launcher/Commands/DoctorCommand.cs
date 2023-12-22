@@ -124,7 +124,7 @@ namespace fiskaltrust.Launcher.Commands
                 }
 
                 var dataProtectionProvider = checkUp.Check("Setup data protection", () => DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value));
-                if (dataProtectionProvider is not null)
+                if (dataProtectionProvider is not null && !launcherConfiguration.UseLegacyDataProtection!.Value)
                 {
                     checkUp.Check("Decrypt launcher configuration", () => launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE)));
                 }
