@@ -84,7 +84,7 @@ namespace fiskaltrust.Launcher.Extensions
         {
             var keyringId = KeyUtils.GetKeyringId(KEY_SPEC_USER_KEYRING, false);
 
-            var keySerial = KeyUtils.AddKey("user", "fiskaltrustLauncher DataProtection Key", Encoding.Unicode.GetBytes(plaintextElement.ToString()), keyringId);
+            var keySerial = KeyUtils.AddKey("user", "fiskaltrust.Launcher DataProtection Key", Encoding.Unicode.GetBytes(plaintextElement.ToString()), keyringId);
 
             var encryptedElement = new XElement("key_serial", keySerial.ToString());
 
@@ -182,9 +182,9 @@ namespace fiskaltrust.Launcher.Extensions
                 builder.Services.AddSingleton(new AccessTokenForEncryption(accessToken));
                 AccessTokenForEncryption = new AccessTokenForEncryption(accessToken);
             }
-
+            //DateTime.MaxValue - DateTime.Now - TimeSpan.FromDays(1)
             builder
-                .SetDefaultKeyLifetime(DateTime.MaxValue - DateTime.Now - TimeSpan.FromDays(1)) // Encryption fails if we use TimeStamp.MaxValue because that results in a DateTime exceeding its MaxValue ¯\_(ツ)_/¯
+                .SetDefaultKeyLifetime(TimeSpan.FromDays(180)) // Encryption fails if we use TimeStamp.MaxValue because that results in a DateTime exceeding its MaxValue ¯\_(ツ)_/¯
                 .SetApplicationName(DATA_PROTECTION_APPLICATION_NAME);
 
             if (!useFallback)
