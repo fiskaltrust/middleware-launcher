@@ -18,7 +18,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         public abstract Task<int> UninstallService();
 
-        protected static async Task<(int exitCode, string output)> RunProcess(string fileName, IEnumerable<string> arguments)
+        public static async Task<(int exitCode, string output)> RunProcess(string fileName, IEnumerable<string> arguments)
         {
             var process = new Process();
             process.StartInfo.UseShellExecute = false;

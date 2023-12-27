@@ -9,21 +9,11 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         private static readonly string _servicePath = "/etc/systemd/system/";
         private const string DefaultServiceName = "fiskaltrustLauncher";
         private readonly string _serviceName;
-        private readonly string _serviceUser;
-        private readonly string _requiredDirectory;
         
         public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath, LauncherConfiguration configuration)
             : base(launcherExecutablePath)
         {
             _serviceName = serviceName ?? DefaultServiceName;
-            _serviceUser = Environment.GetEnvironmentVariable("USER");
-
-            if (string.IsNullOrEmpty(_serviceUser))
-            {
-                Log.Warning("Service user name is not set. Owner of the service directory will not be changed.");
-            }
-
-            _requiredDirectory = configuration.ServiceFolder ?? throw new ArgumentNullException(nameof(configuration.ServiceFolder), "Service directory path must be provided in configuration.");
         }
 
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
@@ -31,18 +21,6 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             if (!await IsSystemd())
             {
                 return -1;
-            }
-
-            // Creating a directory if does not exist
-            if (!Directory.Exists(_requiredDirectory))
-            {
-                Directory.CreateDirectory(_requiredDirectory);
-
-                // Change of directory owner
-                await RunProcess("chown", new[] { _serviceUser, _requiredDirectory });
-
-                // Changing directory permissions
-                await RunProcess("chmod", new[] { "700", _requiredDirectory });
             }
 
             Log.Information("Installing service via systemd.");
@@ -55,40 +33,35 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             Log.Information("Enable service.");
             return (await RunProcess("systemctl", new[] { "enable", _serviceName, "-q" })).exitCode;
         }
+
         public override async Task<int> UninstallService()
         {
             if (!await IsSystemd())
             {
                 return -1;
             }
-            Log.Information("Stop service on systemd.");
-            await RunProcess("systemctl", new[] { "stop ", _serviceName });
-            Log.Information("Disable service.");
-            await RunProcess("systemctl", new[] { "disable ", _serviceName, "-q" });
-            Log.Information("Remove service.");
+            Log.Information("Stopping service on systemd.");
+            await RunProcess("systemctl", new[] { "stop", _serviceName });
+            Log.Information("Disabling service.");
+            await RunProcess("systemctl", new[] { "disable", _serviceName, "-q" });
+            Log.Information("Removing service.");
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
             await RunProcess("rm", new[] { serviceFilePath });
-            Log.Information("Reload daemon.");
+            Log.Information("Reloading daemon.");
             await RunProcess("systemctl", new[] { "daemon-reload" });
-            Log.Information("Reset failed.");
+            Log.Information("Resetting failed state.");
             return (await RunProcess("systemctl", new[] { "reset-failed" })).exitCode;
         }
 
         private static async Task<bool> IsSystemd()
         {
             var (exitCode, output) = await RunProcess("ps", new[] { "--no-headers", "-o", "comm", "1" });
-            if (exitCode != 0 && output.Contains("systemd"))
-            {
-                Log.Error("Service installation works only for systemd setup.");
-                return false;
-            }
-            return true;
+            return exitCode == 0 && output.Contains("systemd");
         }
 
         private string[] GetServiceFileContent(string serviceDescription, string commandArgs)
         {
             var processPath = _launcherExecutablePath.Path;
-
             var command = $"{processPath} {commandArgs}";
             return new[]
             {

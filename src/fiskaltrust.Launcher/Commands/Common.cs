@@ -10,6 +10,7 @@ using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.Logging;
+using fiskaltrust.Launcher.ServiceInstallation;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.DataProtection;
 using Serilog;
@@ -131,6 +132,7 @@ namespace fiskaltrust.Launcher.Commands
 
             Log.Verbose("Merging launcher cli args.");
             launcherConfiguration.OverwriteWith(options.ArgsLauncherConfiguration);
+            await EnsureServiceDirectoryExists(launcherConfiguration);
 
             if (!launcherConfiguration.UseOffline!.Value && (launcherConfiguration.CashboxId is null || launcherConfiguration.AccessToken is null))
             {
@@ -228,7 +230,25 @@ namespace fiskaltrust.Launcher.Commands
 
             return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
         }
+        private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
+        {
+            var serviceDirectory = config.ServiceFolder;
+            if (!Directory.Exists(serviceDirectory))
+            {
+                Directory.CreateDirectory(serviceDirectory);
 
+                var user = Environment.GetEnvironmentVariable("USER");
+                if (!string.IsNullOrEmpty(user))
+                {
+                    await ServiceInstaller.RunProcess("chown", new[] { user, serviceDirectory });
+                    await ServiceInstaller.RunProcess("chmod", new[] { "774", serviceDirectory });
+                }
+                else
+                {
+                    Log.Warning("Service user name is not set. Owner of the service directory will not be changed.");
+                }
+            }
+        }
         public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder, bool useOffline = false, bool dryRun = false, bool useFallback = false)
         {
             Log.Verbose("Loading Curve.");
