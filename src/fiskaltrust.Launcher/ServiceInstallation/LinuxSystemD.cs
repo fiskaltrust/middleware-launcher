@@ -20,7 +20,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 return -1;
             }
             Log.Information("Installing service via systemd.");
-            var serviceFileContent = GetServiceFileContent(displayName ?? "Service installation of fiskaltrust launcher.", commandArgs);
+            var serviceFileContent = GetServiceFileContent(displayName ?? "Test-rc9:Service installation of fiskaltrust launcher.", commandArgs);
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
             await File.AppendAllLinesAsync(serviceFilePath, serviceFileContent).ConfigureAwait(false);
             await RunProcess("systemctl", new[] { "daemon-reload" });
