@@ -153,7 +153,7 @@ namespace fiskaltrust.Launcher.Commands
             ECDiffieHellman? clientEcdh = null;
             try
             {
-                clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
+                clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value,useFallback:launcherConfiguration.UseLegacyDataProtection!.Value);
                 using var downloader = new ConfigurationDownloader(launcherConfiguration);
                 var exists = await downloader.DownloadConfigurationAsync(clientEcdh);
                 if (launcherConfiguration.UseOffline!.Value && !exists)
