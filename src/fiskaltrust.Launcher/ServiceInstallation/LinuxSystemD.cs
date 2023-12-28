@@ -64,7 +64,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         {
             var processPath = _launcherExecutablePath.Path;
 
-            var command = $"{processPath} {commandArgs}";
+            var command = $"sudo {processPath} {commandArgs}";
             return new[]
             {
                 "[Unit]",
