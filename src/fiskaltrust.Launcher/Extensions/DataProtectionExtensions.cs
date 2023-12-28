@@ -138,7 +138,10 @@ namespace fiskaltrust.Launcher.Extensions
         public LegacyXmlDecryptor(IServiceCollection? services)
         {
             Log.Verbose("Called LegacyXmlDecryptor constructor");
+            var service = services?.BuildServiceProvider()?.GetService<AccessTokenForEncryption>();
+            Log.Verbose($"AccessTokenForEncryption == null: {service == null}");
             accessToken = services?.BuildServiceProvider()?.GetService<AccessTokenForEncryption>() ?? DataProtectionExtensions.AccessTokenForEncryption!;
+            Log.Verbose($"accessToken == null: {accessToken == null}");
         }
 
         public LegacyXmlDecryptor()
