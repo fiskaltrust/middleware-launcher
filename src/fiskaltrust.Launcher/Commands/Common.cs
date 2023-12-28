@@ -82,10 +82,13 @@ namespace fiskaltrust.Launcher.Commands
             IHost host,
             Func<CommonOptions, CommonProperties, O, S, Task<int>> handler) where S : notnull
         {
+            Log.Verbose("call CommonHandler HandleAsync");
+            /*
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(collectionSink)
                 .CreateLogger();
+            */
 
             var launcherConfiguration = new LauncherConfiguration();
 

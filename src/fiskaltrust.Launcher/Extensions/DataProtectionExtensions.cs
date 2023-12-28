@@ -118,7 +118,6 @@ namespace fiskaltrust.Launcher.Extensions
         {
             Log.Verbose("Called LegacyXmlEncryptor constructor");
             accessToken = services.BuildServiceProvider().GetRequiredService<AccessTokenForEncryption>();
-            Log.Verbose($"accessToken: {accessToken.AccessToken}");
         }
 
         public EncryptedXmlInfo Encrypt(XElement plaintextElement)
