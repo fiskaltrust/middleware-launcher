@@ -72,7 +72,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 "",
                 "[Service]",
                 "Type=simple",
-                $"ExecStart={command}",
+                $"ExecStart=sudo {command}",
                 "",
                 "[Install]",
                 "WantedBy = multi-user.target"
