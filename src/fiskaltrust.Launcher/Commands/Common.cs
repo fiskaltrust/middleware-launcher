@@ -203,6 +203,7 @@ namespace fiskaltrust.Launcher.Commands
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
+            /*
             foreach (var logEvent in collectionSink.Events)
             {
                 Log.Write(logEvent);
@@ -211,7 +212,7 @@ namespace fiskaltrust.Launcher.Commands
             if (collectionSink.Events.Where(e => e.Level == LogEventLevel.Fatal).Any())
             {
                 return 1;
-            }
+            }*/
 
             Log.Debug("Launcher Configuration File: {LauncherConfigurationFile}", options.LauncherConfigurationFile);
             Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", launcherConfiguration.CashboxConfigurationFile);
