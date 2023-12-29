@@ -64,7 +64,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         {
             var processPath = _launcherExecutablePath.Path;
 
-            var command = $"{processPath} {commandArgs}";
+            var command = $"sudo {processPath} {commandArgs}";
             return new[]
             {
                 "[Unit]",
@@ -72,7 +72,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 "",
                 "[Service]",
                 "Type=simple",
-                $"ExecStart=\"{command}\"",
+                $"ExecStart={command}",
                 "",
                 "[Install]",
                 "WantedBy = multi-user.target"
