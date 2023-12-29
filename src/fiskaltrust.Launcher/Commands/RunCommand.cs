@@ -84,19 +84,22 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => runServices.LauncherExecutablePath);
                 });
 
+            Log.Verbose($"RunHandler builder.Host");
             builder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{commonProperties.LauncherConfiguration.LauncherPort}"), protocols: HttpProtocols.Http2);
 
             builder.Services.AddCodeFirstGrpc();
 
             var app = builder.Build();
-
+            Log.Verbose($"RunHandler builder.Build");
             app.UseRouting();
 #pragma warning disable ASP0014
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 #pragma warning restore ASP0014
-
-            await runServices.SelfUpdater.PrepareSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, app.Services.GetRequiredService<PackageDownloader>());
-
+            Log.Verbose($"RunHandler PrepareSelfUpdate.call");
+            try { 
+                await runServices.SelfUpdater.PrepareSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, app.Services.GetRequiredService<PackageDownloader>()); 
+            } catch (Exception e) { Log.Error(e, "An unhandled exception occured."); return 1;}
+           Log.Verbose($"RunHandler PrepareSelfUpdate.end");
             try
             {
                 await app.RunAsync(runServices.Lifetime.ApplicationLifetime.ApplicationStopping);
@@ -112,7 +115,7 @@ namespace fiskaltrust.Launcher.Commands
             {
                 Log.CloseAndFlush();
             }
-
+            Log.Verbose($"RunHandler end");
             return 0;
         }
     }
