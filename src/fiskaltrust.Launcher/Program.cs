@@ -52,7 +52,7 @@ return await new CommandLineBuilder(command)
           host.UseCustomHostLifetime();
 
           host.ConfigureServices(services => services
-            .Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(45))
+            //.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(45))
             .AddSingleton(_ => subArguments)
             .AddSingleton(_ => new LauncherProcessId(Environment.ProcessId))
             .AddSingleton(_ => new LauncherExecutablePath
