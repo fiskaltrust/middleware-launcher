@@ -55,7 +55,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public HostServices(LauncherExecutablePath launcherExecutablePath, IHostApplicationLifetime lifetime)
         {
-            CancellationToken = lifetime.ApplicationStopping;
+            CancellationToken = new CancellationToken();
             LauncherExecutablePath = launcherExecutablePath;
         }
 

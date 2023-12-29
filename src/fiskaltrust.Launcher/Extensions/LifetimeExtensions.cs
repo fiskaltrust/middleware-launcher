@@ -31,8 +31,8 @@ namespace fiskaltrust.Launcher.Extensions
             else
             {
                 Console.OutputEncoding = Encoding.UTF8;
-                builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
-                builder.UseConsoleLifetime();
+                //builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
+                //builder.UseConsoleLifetime();
                 return builder;
             }
         }
