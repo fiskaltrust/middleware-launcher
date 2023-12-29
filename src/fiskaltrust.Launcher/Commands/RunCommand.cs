@@ -68,14 +68,14 @@ namespace fiskaltrust.Launcher.Commands
         {
             Log.Verbose($"RunHandler call");
             var builder = WebApplication.CreateBuilder();
-
+            Log.Verbose($"RunHandler CreateBuilder");
             builder.Host
                 .UseSerilog()
                 .ConfigureServices((_, services) =>
                 {
                     services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => commonProperties.LauncherConfiguration);
-                    services.AddSingleton(_ => runServices.Lifetime);
+                    //services.AddSingleton(_ => runServices.Lifetime);
                     services.AddSingleton(_ => commonProperties.CashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, IProcessHostMonarch>());
                     services.AddSingleton<PackageDownloader>();
