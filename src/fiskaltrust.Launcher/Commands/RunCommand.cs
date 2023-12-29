@@ -66,6 +66,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public static async Task<int> HandleAsync(CommonOptions commonOptions, CommonProperties commonProperties, RunOptions _, RunServices runServices)
         {
+            Log.Verbose($"RunHandler call");
             var builder = WebApplication.CreateBuilder();
 
             builder.Host
