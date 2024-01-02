@@ -55,6 +55,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            await base.StartAsync(cancellationToken);
             //_lifetime.ApplicationLifetime.ApplicationStopping.Register(() => _logger.LogInformation("Shutting down launcher."));
             cancellationToken.Register(() => _kestrelReady.TrySetCanceled());
 
