@@ -19,6 +19,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             {
                 return -1;
             }
+            commandArgs += " --is-systemd-service true";
             Log.Information("Installing service via systemd.");
             var serviceFileContent = GetServiceFileContent(displayName ?? "Service installation of fiskaltrust launcher.", commandArgs);
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
@@ -71,7 +72,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 $"Description=\"{serviceDescription}\"",
                 "",
                 "[Service]",
-                "Type=simple",
+                "Type=notify    ",
                 $"ExecStart={command}",
                 "",
                 "[Install]",

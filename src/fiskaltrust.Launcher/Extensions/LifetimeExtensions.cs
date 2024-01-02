@@ -7,8 +7,10 @@ namespace fiskaltrust.Launcher.Extensions
 {
     static class LifetimeExtensions
     {
-        public static IHostBuilder UseCustomHostLifetime(this IHostBuilder builder)
+        public static IHostBuilder UseCustomHostLifetime(this IHostBuilder builder, string[] args)
         {
+            var isSystemd = args.Contains("--is-systemd-service true");
+
             if (WindowsServiceHelpers.IsWindowsService())
             {
                 builder.UseWindowsService();
@@ -27,12 +29,18 @@ namespace fiskaltrust.Launcher.Extensions
                     services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
 #pragma warning restore CA1416
                 });
+            }else if (isSystemd)
+            {
+                Console.OutputEncoding = Encoding.UTF8;
+                builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
+                builder.UseSystemd();
+                return builder;
             }
             else
             {
                 Console.OutputEncoding = Encoding.UTF8;
-                //builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
-                //builder.UseConsoleLifetime();
+                builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
+                builder.UseConsoleLifetime();
                 return builder;
             }
         }

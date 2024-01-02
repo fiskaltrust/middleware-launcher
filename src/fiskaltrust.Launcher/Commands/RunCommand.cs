@@ -40,6 +40,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--tls-certificate-password"));
             AddOption(new Option<bool>("--use-http-sys-binding"));
             AddOption(new Option<bool>("--use-legacy-data-protection"));
+            AddOption(new Option<bool>("--is-systemd-service"));
         }
     }
 
@@ -75,7 +76,7 @@ namespace fiskaltrust.Launcher.Commands
                 {
                     services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => commonProperties.LauncherConfiguration);
-                    //services.AddSingleton(_ => runServices.Lifetime);
+                    services.AddSingleton(_ => runServices.Lifetime);
                     services.AddSingleton(_ => commonProperties.CashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, IProcessHostMonarch>());
                     services.AddSingleton<PackageDownloader>();
@@ -102,7 +103,7 @@ namespace fiskaltrust.Launcher.Commands
            Log.Verbose($"RunHandler PrepareSelfUpdate.end");
             try
             {
-                await app.RunAsync();
+                await app.RunAsync(runServices.Lifetime.ApplicationLifetime.ApplicationStopping);
 
                 await runServices.SelfUpdater.StartSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, commonOptions.LauncherConfigurationFile);
             }
