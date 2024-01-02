@@ -46,13 +46,13 @@ namespace fiskaltrust.Launcher.Commands
 
     public class DoctorServices
     {
-        public DoctorServices(ILifetime lifetime, LauncherExecutablePath launcherExecutablePath)
+        public DoctorServices( LauncherExecutablePath launcherExecutablePath)
         {
-            Lifetime = lifetime;
+            //Lifetime = lifetime;
             LauncherExecutablePath = launcherExecutablePath;
         }
 
-        public readonly ILifetime Lifetime;
+        //public readonly ILifetime Lifetime;
         public readonly LauncherExecutablePath LauncherExecutablePath;
     }
 
@@ -141,7 +141,7 @@ namespace fiskaltrust.Launcher.Commands
                         {
                             services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                             services.AddSingleton(_ => launcherConfiguration);
-                            services.AddSingleton(_ => doctorServices.Lifetime);
+                            //services.AddSingleton(_ => doctorServices.Lifetime);
                             services.AddSingleton(_ => cashboxConfiguration);
                             services.AddSingleton(_ => new Dictionary<Guid, IProcessHostMonarch>() {
                             {
@@ -168,7 +168,7 @@ namespace fiskaltrust.Launcher.Commands
                 monarchApp.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 #pragma warning restore ASP0014
 
-                await checkUp.CheckAwait("Start monarch WebApplication", async () => await WithTimeout(async () => await monarchApp.StartAsync(doctorServices.Lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)), throws: true);
+                await checkUp.CheckAwait("Start monarch WebApplication", async () => await WithTimeout(async () => await monarchApp.StartAsync(), TimeSpan.FromSeconds(5)), throws: true);
 
                 var plebeianConfiguration = new PlebeianConfiguration
                 {
@@ -226,13 +226,13 @@ namespace fiskaltrust.Launcher.Commands
 
                 var plebeianApp = checkUp.Check("Build plebeian Host", plebeianBuilder.Build, throws: true)!;
 
-                await checkUp.CheckAwait("Start plebeian Host", async () => await WithTimeout(async () => await plebeianApp.StartAsync(doctorServices.Lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)));
+                await checkUp.CheckAwait("Start plebeian Host", async () => await WithTimeout(async () => await plebeianApp.StartAsync(), TimeSpan.FromSeconds(5)));
 
                 await doctorProcessHostMonarch.IsStarted.Task;
 
                 await checkUp.CheckAwait("Shutdown launcher gracefully", async () => await WithTimeout(async () =>
                     {
-                        await doctorServices.Lifetime.StopAsync(new CancellationToken());
+                        //await doctorServices.Lifetime.StopAsync(new CancellationToken());
 
                         await monarchApp.StopAsync();
                         await monarchApp.WaitForShutdownAsync();

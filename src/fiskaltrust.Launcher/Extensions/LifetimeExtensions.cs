@@ -32,7 +32,7 @@ namespace fiskaltrust.Launcher.Extensions
             }else if (isSystemd)
             {
                 Console.OutputEncoding = Encoding.UTF8;
-                builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
+                //builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
                 builder.UseSystemd();
                 return builder;
             }
@@ -50,7 +50,7 @@ namespace fiskaltrust.Launcher.Extensions
     {
         public IHostApplicationLifetime ApplicationLifetime { get; init; }
 
-        public void ServiceStartupCompleted();
+        //public void ServiceStartupCompleted();
     }
 
 
