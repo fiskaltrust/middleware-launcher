@@ -1,5 +1,7 @@
 using System.Runtime.Versioning;
 using System.Text;
+using System.Web.Services.Description;
+using Microsoft.Extensions.Hosting.Systemd;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Options;
 
@@ -29,12 +31,24 @@ namespace fiskaltrust.Launcher.Extensions
                     services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
 #pragma warning restore CA1416
                 });
-            }else if (isSystemd)
+            }
+            else if (isSystemd)
             {
                 Console.OutputEncoding = Encoding.UTF8;
-                //builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
-                builder.UseSystemd();
-                return builder;
+                return builder.ConfigureServices(services =>
+                {
+                    var lifetime = services.FirstOrDefault(s => s.ImplementationType == typeof(SystemdLifetime));
+
+                    if (lifetime != null)
+                    {
+                        services.Remove(lifetime);
+                    }
+
+#pragma warning disable CA1416
+                    services.AddSingleton<ILifetime, CustomSystemdServiceLifetime>();
+                    services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
+#pragma warning restore CA1416
+                });
             }
             else
             {
@@ -50,7 +64,7 @@ namespace fiskaltrust.Launcher.Extensions
     {
         public IHostApplicationLifetime ApplicationLifetime { get; init; }
 
-        //public void ServiceStartupCompleted();
+        public void ServiceStartupCompleted();
     }
 
 
@@ -140,5 +154,39 @@ namespace fiskaltrust.Launcher.Extensions
 
             base.Dispose(disposing);
         }
+    }
+
+    [SupportedOSPlatform("linux")]
+    public class CustomSystemdServiceLifetime : SystemdLifetime, ILifetime
+    {
+        private readonly CancellationTokenSource _starting = new();
+        private readonly ManualResetEventSlim _started = new();
+
+        public IHostApplicationLifetime ApplicationLifetime { get; init; }
+
+        public CustomSystemdServiceLifetime(
+            IHostEnvironment environment,
+            IHostApplicationLifetime applicationLifetime,
+            ILoggerFactory loggerFactory)
+            : base(environment, applicationLifetime, new SystemdNotifier(), loggerFactory)
+        {
+            ApplicationLifetime = applicationLifetime;
+        }
+
+        public void ServiceStartupCompleted()
+        {
+            ApplicationLifetime.ApplicationStarted.Register(() => _started.Set());
+        }
+
+        public new async Task WaitForStartAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(_starting.Token, cancellationToken);
+                await base.WaitForStartAsync(cts.Token);
+            }
+            catch (OperationCanceledException) when (_starting.IsCancellationRequested) { }
+        }
+
     }
 }

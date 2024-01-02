@@ -23,11 +23,11 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly PackageDownloader _downloader;
         private readonly ILogger _logger;
         private readonly ILoggerFactory _loggerFactory;
-        //private readonly ILifetime _lifetime;
+        private readonly ILifetime _lifetime;
         private readonly LauncherExecutablePath _launcherExecutablePath;
         private readonly TaskCompletionSource<Uri> _kestrelReady;
 
-        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, IProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, LauncherExecutablePath launcherExecutablePath, IHostApplicationLifetime hostApplicationLifetime, IServer server)
+        public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, IProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, ILifetime lifetime, LauncherExecutablePath launcherExecutablePath, IHostApplicationLifetime hostApplicationLifetime, IServer server)
         {
             _loggerFactory = loggerFactory;
             _logger = logger;
@@ -35,7 +35,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             _launcherConfiguration = launcherConfiguration;
             _cashBoxConfiguration = cashBoxConfiguration;
             _downloader = downloader;
-            //_lifetime = lifetime;
+            _lifetime = lifetime;
             _launcherExecutablePath = launcherExecutablePath;
             _kestrelReady = new TaskCompletionSource<Uri>();
 
@@ -55,8 +55,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            await base.StartAsync(cancellationToken);
-            //_lifetime.ApplicationLifetime.ApplicationStopping.Register(() => _logger.LogInformation("Shutting down launcher."));
+            _lifetime.ApplicationLifetime.ApplicationStopping.Register(() => _logger.LogInformation("Shutting down launcher."));
             cancellationToken.Register(() => _kestrelReady.TrySetCanceled());
 
             StartupLogging();
@@ -99,7 +98,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             catch (Exception e)
             {
                 if (e is not AlreadyLoggedException) { _logger.LogError(e, "Error Starting Monarchs"); }
-                //_lifetime.ApplicationLifetime.StopApplication();
+                _lifetime.ApplicationLifetime.StopApplication();
                 return;
             }
 
@@ -110,7 +109,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 {
                     _logger.LogInformation("Press CTRL+C to exit.");
                 }
-                //_lifetime.ServiceStartupCompleted();
+                _lifetime.ServiceStartupCompleted();
             }
 
             if (_hosts.Count == 0)
@@ -136,7 +135,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                     _logger.LogWarning(failed.Exception, "ProcessHost {Id} had crashed.", failed.Key);
                 }
             }
-            //_lifetime.ApplicationLifetime.StopApplication();
+            _lifetime.ApplicationLifetime.StopApplication();
         }
 
         private async Task StartProcessHostMonarch(PackageConfiguration configuration, PackageType packageType, CancellationToken cancellationToken)

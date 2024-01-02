@@ -51,14 +51,14 @@ namespace fiskaltrust.Launcher.Commands
 
     public class RunServices
     {
-        public RunServices(SelfUpdater selfUpdater, LauncherExecutablePath launcherExecutablePath)
+        public RunServices(ILifetime lifetime, SelfUpdater selfUpdater, LauncherExecutablePath launcherExecutablePath)
         {
-            //Lifetime = lifetime;
+            Lifetime = lifetime;
             SelfUpdater = selfUpdater;
             LauncherExecutablePath = launcherExecutablePath;
         }
 
-        //public readonly ILifetime Lifetime;
+        public readonly ILifetime Lifetime;
         public readonly SelfUpdater SelfUpdater;
         public readonly LauncherExecutablePath LauncherExecutablePath;
     }
@@ -76,7 +76,7 @@ namespace fiskaltrust.Launcher.Commands
                 {
                     services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => commonProperties.LauncherConfiguration);
-                    //services.AddSingleton(_ => runServices.Lifetime);
+                    services.AddSingleton(_ => runServices.Lifetime);
                     services.AddSingleton(_ => commonProperties.CashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, IProcessHostMonarch>());
                     services.AddSingleton<PackageDownloader>();
@@ -103,7 +103,7 @@ namespace fiskaltrust.Launcher.Commands
            Log.Verbose($"RunHandler PrepareSelfUpdate.end");
             try
             {
-                await app.RunAsync();
+                await app.RunAsync(runServices.Lifetime.ApplicationLifetime.ApplicationStopping);
 
                 await runServices.SelfUpdater.StartSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, commonOptions.LauncherConfigurationFile);
             }

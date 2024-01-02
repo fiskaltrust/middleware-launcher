@@ -72,7 +72,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 $"Description=\"{serviceDescription}\"",
                 "",
                 "[Service]",
-                "Type=notify    ",
+                "Type=notify",
                 $"ExecStart={command}",
                 "",
                 "[Install]",
