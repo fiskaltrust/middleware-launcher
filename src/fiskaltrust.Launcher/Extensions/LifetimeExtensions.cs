@@ -34,8 +34,10 @@ namespace fiskaltrust.Launcher.Extensions
             }
             else if (isSystemd)
             {
-                Console.OutputEncoding = Encoding.UTF8;
                 builder.UseSystemd();
+                builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
+                return builder;
+                /*
                 return builder.ConfigureServices(services =>
                 {
                     var lifetime = services.FirstOrDefault(s => s.ImplementationType == typeof(SystemdLifetime));
@@ -49,7 +51,7 @@ namespace fiskaltrust.Launcher.Extensions
                     services.AddSingleton<ILifetime, CustomSystemdServiceLifetime>();
                     services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
 #pragma warning restore CA1416
-                });
+                });*/
             }
             else
             {
