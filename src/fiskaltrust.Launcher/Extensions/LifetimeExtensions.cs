@@ -35,6 +35,7 @@ namespace fiskaltrust.Launcher.Extensions
             else if (isSystemd)
             {
                 Console.OutputEncoding = Encoding.UTF8;
+                builder.UseSystemd();
                 return builder.ConfigureServices(services =>
                 {
                     var lifetime = services.FirstOrDefault(s => s.ImplementationType == typeof(SystemdLifetime));
