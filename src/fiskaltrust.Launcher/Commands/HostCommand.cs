@@ -32,10 +32,6 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<bool>("--debugging"));
             AddOption(new Option<string>("--launcher-configuration"));
             AddOption(new Option<bool>("--no-process-host-service", getDefaultValue: () => false));
-            AddOption(new Option<bool>("--use-domain-sockets"));
-            AddOption(new Option<string>("--domain-socket-path"));
-            AddOption(new Option<bool>("--use-named-pipes"));
-            AddOption(new Option<string?>("--named-pipe-name"));
         }
 
         public class HostOptions
@@ -98,18 +94,7 @@ namespace fiskaltrust.Launcher.Commands
                 };
 
                 var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
-                if (launcherConfiguration.CashboxId.HasValue)
-                {
-                    cashboxConfiguration.Decrypt(launcherConfiguration, await CommonHandler.LoadCurve(
-                        launcherConfiguration.CashboxId.Value, 
-                        launcherConfiguration.AccessToken!, 
-                        launcherConfiguration.ServiceFolder!
-                    ));
-                }
-                else
-                {
-                    throw new InvalidOperationException("CashboxId is required but was not provided.");
-                }
+                cashboxConfiguration.Decrypt(launcherConfiguration, await CommonHandler.LoadCurve(launcherConfiguration.CashboxId.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!));
                 
                 var packageConfiguration = (plebeianConfiguration.PackageType switch
                 {
@@ -175,7 +160,7 @@ namespace fiskaltrust.Launcher.Commands
                         }
                         catch (Exception e)
                         {
-                            Log.Error(e, "Could not load {Type}", nameof(IMiddlewareBootstrapper));
+                            Log.Error(e, "Could not load {Type}.", nameof(IMiddlewareBootstrapper));
                             throw;
                         }
                     });
@@ -187,7 +172,7 @@ namespace fiskaltrust.Launcher.Commands
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "An unhandled exception occured");
+                    Log.Error(e, "An unhandled exception occured.");
                     throw;
                 }
                 finally
