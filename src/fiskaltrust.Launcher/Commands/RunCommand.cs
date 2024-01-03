@@ -69,6 +69,7 @@ namespace fiskaltrust.Launcher.Commands
         {
             Log.Verbose($"RunHandler call");
             var builder = WebApplication.CreateBuilder();
+            builder.Host.UseSystemd();
             Log.Verbose($"RunHandler CreateBuilder");
             builder.Host
                 .UseSerilog()
