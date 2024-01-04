@@ -35,7 +35,7 @@ The `install.cmd` or `install.sh` script can be used to install the Launcher as 
 
 The `uninstall.cmd` or `uninstall.sh` script can be used to uninstall the Launcher as a service.
 
-The `migrate.cmd` script can be used to from migrate the Launcher 1.3.x to the Launcher 2.0 (See [Migration Script](#automatic-migration-using-the-migration-script) for more information).
+The `migrate.cmd` script can be used to from migrate the Launcher 1.3 to the Launcher 2.0 (See [Migration Script](#automatic-migration-using-the-migration-script) for more information).
 
 Alternatively you can start the Launcher via the command line:
 
@@ -79,7 +79,7 @@ sudo apt install fiskaltrust-middleware-launcher
 
 ## Migration guide
 
-Before switching from a 1.3.x Launcher to a Launcher 2.0, please update the Queues, SCUs and Helpers to the latest packages.
+Before switching from a 1.3 Launcher to a Launcher 2.0, please update the Queues, SCUs and Helpers to the latest packages.
 
 Then download the new launcher from the Portal or the [GitHub release page](https://github.com/fiskaltrust/middleware-launcher/releases).
 
@@ -93,9 +93,9 @@ To check that the switch was successful, e.g. try sending receipt to the middlew
 
 ### Automatic Migration using the Migration Script
 
-On Windows we provide a `migration.cmd` script that can be used to migrate the Launcher 1.3.x to the Launcher 2.0.
+On Windows we provide a `migrate.cmd` script that can be used to migrate the Launcher 1.3 to the Launcher 2.0.
 
-This script will migrate an existing service installation of the Launcher 1.3.x to the Launcher 2.0.
+This script will migrate an existing service installation of the Launcher 1.3 to the Launcher 2.0.
 
 To run this script unzip the downloaded Launcher 2.0 files into the folder containing the old Launcher 1.3.
 
@@ -104,11 +104,11 @@ To run this script unzip the downloaded Launcher 2.0 files into the folder conta
 > .
 > ├─ fiskaltrust.Launcher.exe
 > ├─ launcher.configuration.json
-> ├─ migration.cmd
+> ├─ migrate.cmd
 > └─ fiskaltrust.exe
 > ```
 
-And then run the `migration.cmd` script.
+And then run the `migrate.cmd` script.
 
 The script will do the following:
 
