@@ -230,6 +230,7 @@ namespace fiskaltrust.Launcher.Commands
 
             return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
         }
+
         private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
         {
             var serviceDirectory = config.ServiceFolder;
@@ -240,8 +241,17 @@ namespace fiskaltrust.Launcher.Commands
                 var user = Environment.GetEnvironmentVariable("USER");
                 if (!string.IsNullOrEmpty(user))
                 {
-                    await ServiceInstaller.RunProcess("chown", new[] { user, serviceDirectory });
-                    await ServiceInstaller.RunProcess("chmod", new[] { "774", serviceDirectory });
+                    var chownResult = await ProcessHelper.RunProcess("chown", new[] { user, serviceDirectory }, LogEventLevel.Debug);
+                    if (chownResult.exitCode != 0)
+                    {
+                        Log.Warning("Failed to change owner of the service directory.");
+                    }
+
+                    var chmodResult = await ProcessHelper.RunProcess("chmod", new[] { "774", serviceDirectory }, LogEventLevel.Debug);
+                    if (chmodResult.exitCode != 0)
+                    {
+                        Log.Warning("Failed to change permissions of the service directory.");
+                    }
                 }
                 else
                 {
@@ -249,6 +259,7 @@ namespace fiskaltrust.Launcher.Commands
                 }
             }
         }
+
         public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder, bool useOffline = false, bool dryRun = false, bool useFallback = false)
         {
             Log.Verbose("Loading Curve.");
