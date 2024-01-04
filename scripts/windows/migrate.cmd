@@ -2,14 +2,23 @@
 setlocal enableextensions
 cd /d "%~dp0%"
 net.exe session 1>nul 2>nul || (echo This script requires elevated rights. & exit /b 1)
+
+if not exist fiskaltrust.exe (
+	echo The file fiskaltrust.exe does not exist in the current folder.
+	echo See http://link.fiskaltrust.cloud/launcher/migration-script for more information on how to use the script.
+	pause
+	exit /b 1
+)
+
 set _cmd="%cd%\fiskaltrust.exe"
 for /f "skip=1 tokens=1-6 delims=, " %%A in ('wmic service get name^, PathName^') do ( 
 	if %_cmd% == %%B (
 		if not defined ftServiceName (
 			set ftServiceName=%%A
 		) else (
-			echo More than one service is registered. This can not be migrated automatically.
-			timeout 15
+			echo More than one service is registered for fiskaltrust.exe. This installation can not be migrated automatically.
+			echo See http://link.fiskaltrust.cloud/launcher/migration-script for more information on how to use the script.
+			pause
 			exit /b 1
 		)
 	)
@@ -17,7 +26,7 @@ for /f "skip=1 tokens=1-6 delims=, " %%A in ('wmic service get name^, PathName^'
 echo
 if exist .backup\ (
 	echo The Backup folder: '.backup' already exists. Rename this folder to not loose data.
-	timeout 15
+	pause
 	exit /b 1
 )
 if defined ftServiceName (
@@ -25,8 +34,9 @@ if defined ftServiceName (
 )
 
 if not defined ftServiceName (
-	echo No service installed
-	timeout 15
+	echo No installed service was found for fiskaltrust.exe. This installation can not be migrated automatically.
+	echo See http://link.fiskaltrust.cloud/launcher/migration-script for more information on how to use the script.
+	pause
 	exit /b 1
 )
 
