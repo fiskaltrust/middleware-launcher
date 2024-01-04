@@ -95,6 +95,8 @@ To check that the switch was successful, e.g. try sending receipt to the middlew
 
 On Windows we provide a `migration.cmd` script that can be used to migrate the Launcher 1.3.x to the Launcher 2.0.
 
+This script will migrate an existing service installation of the Launcher 1.3.x to the Launcher 2.0.
+
 To run this script unzip the downloaded Launcher 2.0 files into the folder containing the old Launcher 1.3.
 
 > _The folder should now contain at least the following files:_
