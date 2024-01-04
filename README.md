@@ -19,8 +19,6 @@ Below, we illustrate a minimal sample configuration with the international SQLit
 
 ## Getting Started
 
-> warning: This beta version  of the Launcher 2.0 is for test purpose only and should be used with our German sandbox.
-
 Download the latest release from GitHub. We always recommend using the latest release to benefit from the newest improvements.
 Unzip the downloaded release.
 
@@ -28,14 +26,11 @@ You can also download the Launcher from the fiskaltrust Portal (only sandbox at 
 
 The download will contain the `fiskaltrust.Launcher` executable and `test`, `install`, `uninstall` `.cmd` or `.sh` scripts and a `migrate.cmd` script on Windows.
 
-The `test.cmd` or `test.sh` script can be used to test the Launcher.
-It will start the Launcher with `--log-level` parameter set to debug.
-
-The `install.cmd` or `install.sh` script can be used to install the Launcher as a service.
-
-The `uninstall.cmd` or `uninstall.sh` script can be used to uninstall the Launcher as a service.
-
-The `migrate.cmd` script can be used to from migrate the Launcher 1.3 to the Launcher 2.0 (See [Migration Script](#automatic-migration-using-the-migration-script) for more information).
+* The `test.cmd` or `test.sh` script can be used to test the Launcher.
+  It will start the Launcher with `--log-level` parameter set to debug.
+* The `install.cmd` or `install.sh` script can be used to install the Launcher as a service.
+* The `uninstall.cmd` or `uninstall.sh` script can be used to uninstall the Launcher as a service.
+* The `migrate.cmd` script can be used to from migrate the Launcher 1.3 to the Launcher 2.0 (See [Migration Script](#automatic-migration-using-the-migration-script) for more information).
 
 Alternatively you can start the Launcher via the command line:
 
