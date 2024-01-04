@@ -1,5 +1,4 @@
-﻿using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.Launcher.Helpers;
+﻿using fiskaltrust.Launcher.Helpers;
 using Serilog;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
@@ -7,13 +6,11 @@ namespace fiskaltrust.Launcher.ServiceInstallation
     public class LinuxSystemD : ServiceInstaller
     {
         private static readonly string _servicePath = "/etc/systemd/system/";
-        private const string DefaultServiceName = "fiskaltrustLauncher";
-        private readonly string _serviceName;
-        
-        public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath, LauncherConfiguration configuration)
-            : base(launcherExecutablePath)
+        private readonly string _serviceName = "fiskaltrustLauncher";
+
+        public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath) : base(launcherExecutablePath)
         {
-            _serviceName = serviceName ?? DefaultServiceName;
+            _serviceName = serviceName ?? _serviceName;
         }
 
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
@@ -22,11 +19,10 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             {
                 return -1;
             }
-
             Log.Information("Installing service via systemd.");
             var serviceFileContent = GetServiceFileContent(displayName ?? "Service installation of fiskaltrust launcher.", commandArgs);
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
-            await File.WriteAllTextAsync(serviceFilePath, string.Join("\n", serviceFileContent)).ConfigureAwait(false);
+            await File.AppendAllLinesAsync(serviceFilePath, serviceFileContent).ConfigureAwait(false);
             await RunProcess("systemctl", new[] { "daemon-reload" });
             Log.Information("Starting service.");
             await RunProcess("systemctl", new[] { "start", _serviceName });
@@ -40,28 +36,34 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             {
                 return -1;
             }
-            Log.Information("Stopping service on systemd.");
-            await RunProcess("systemctl", new[] { "stop", _serviceName });
-            Log.Information("Disabling service.");
-            await RunProcess("systemctl", new[] { "disable", _serviceName, "-q" });
-            Log.Information("Removing service.");
+            Log.Information("Stop service on systemd.");
+            await RunProcess("systemctl", new[] { "stop ", _serviceName });
+            Log.Information("Disable service.");
+            await RunProcess("systemctl", new[] { "disable ", _serviceName, "-q" });
+            Log.Information("Remove service.");
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
             await RunProcess("rm", new[] { serviceFilePath });
-            Log.Information("Reloading daemon.");
+            Log.Information("Reload daemon.");
             await RunProcess("systemctl", new[] { "daemon-reload" });
-            Log.Information("Resetting failed state.");
+            Log.Information("Reset failed.");
             return (await RunProcess("systemctl", new[] { "reset-failed" })).exitCode;
         }
 
         private static async Task<bool> IsSystemd()
         {
             var (exitCode, output) = await RunProcess("ps", new[] { "--no-headers", "-o", "comm", "1" });
-            return exitCode == 0 && output.Contains("systemd");
+            if (exitCode != 0 && output.Contains("systemd"))
+            {
+                Log.Error("Service installation works only for systemd setup.");
+                return false;
+            }
+            return true;
         }
 
         private string[] GetServiceFileContent(string serviceDescription, string commandArgs)
         {
             var processPath = _launcherExecutablePath.Path;
+
             var command = $"{processPath} {commandArgs}";
             return new[]
             {
