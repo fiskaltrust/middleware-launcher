@@ -69,9 +69,8 @@ namespace fiskaltrust.Launcher.Commands
         {
             Log.Verbose($"RunHandler call");
             var builder = WebApplication.CreateBuilder();
-            builder.Host.UseSystemd();
-            Log.Verbose($"RunHandler CreateBuilder");
             builder.Host
+                .UseSystemd()
                 .UseSerilog()
                 .ConfigureServices((_, services) =>
                 {
@@ -104,7 +103,7 @@ namespace fiskaltrust.Launcher.Commands
            Log.Verbose($"RunHandler PrepareSelfUpdate.end");
             try
             {
-                await app.RunAsync(runServices.Lifetime.ApplicationLifetime.ApplicationStopping);
+                await app.StartAsync(runServices.Lifetime.ApplicationLifetime.ApplicationStopping);
 
                 await runServices.SelfUpdater.StartSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, commonOptions.LauncherConfigurationFile);
             }
