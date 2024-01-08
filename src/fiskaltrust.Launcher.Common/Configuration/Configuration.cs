@@ -88,6 +88,12 @@ namespace fiskaltrust.Launcher.Common.Configuration
         private bool? _sandbox;
         [JsonPropertyName("sandbox")]
         public bool? Sandbox { get => WithDefault(_sandbox, false); set => _sandbox = value; }
+        
+        [JsonPropertyName("domainSocket")]
+        public LauncherConfiguration.DomainSocketConfig DomainSocket { get; init; } = new();
+
+        [JsonPropertyName("namedPipe")]
+        public LauncherConfiguration.NamedPipeConfig NamedPipe { get; init; } = new();
 
         private bool? _useOffline;
         [JsonPropertyName("useOffline")]
@@ -327,12 +333,20 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
             return null;
         }
-        public bool UseDomainSockets { get; init; }
-        public string? DomainSocketPath { get; init; }
-        public bool UseNamedPipes { get; init; }
-        public string? NamedPipeName { get; init; }
-    }
+        
+        public record DomainSocketConfig
+        {
+            public bool Enabled { get; init; }
+            public string? Path { get; init; }
+        }
 
+        public record NamedPipeConfig
+        {
+            public bool Enabled { get; init; }
+            public string? Name { get; init; }
+        }
+    }
+    
     public record LauncherConfigurationInCashBoxConfiguration
     {
         [JsonPropertyName("launcher")]

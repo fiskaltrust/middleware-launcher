@@ -247,11 +247,11 @@ namespace fiskaltrust.Launcher.Services
             }
 
             // Support for domain sockets/namespots
-            if (_launcherConfiguration.UseDomainSockets)
+            if (_launcherConfiguration.DomainSocket.Enabled)
             {
                 builder.WebHost.UseKestrel(options =>
                 {
-                    options.ListenUnixSocket(_launcherConfiguration.DomainSocketPath!, listenOptions =>
+                    options.ListenUnixSocket(_launcherConfiguration.DomainSocket.Path!, listenOptions =>
                     {
                         listenOptions.Protocols = HttpProtocols.Http2;
                         ConfigureTls(listenOptions);

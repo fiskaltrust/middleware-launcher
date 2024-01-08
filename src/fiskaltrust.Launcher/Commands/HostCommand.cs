@@ -36,28 +36,23 @@ namespace fiskaltrust.Launcher.Commands
 
         public class HostOptions
         {
-            public HostOptions(string launcherConfiguration, string plebeianConfiguration, bool noProcessHostService, bool debugging, string? namedPipeName, bool useNamedPipes, string? domainSocketPath, bool useDomainSockets)
+            public HostOptions(string launcherConfiguration, string plebeianConfiguration, bool noProcessHostService,
+                bool debugging, string? namedPipeName, bool useNamedPipes, string? domainSocketPath,
+                bool useDomainSockets)
             {
                 LauncherConfiguration = launcherConfiguration;
                 PlebeianConfiguration = plebeianConfiguration;
                 NoProcessHostService = noProcessHostService;
                 Debugging = debugging;
-                NamedPipeName = namedPipeName;
-                UseNamedPipes = useNamedPipes;
-                DomainSocketPath = domainSocketPath;
-                UseDomainSockets = useDomainSockets;
+
             }
 
             public readonly string LauncherConfiguration;
             public readonly string PlebeianConfiguration;
             public readonly bool NoProcessHostService;
             public readonly bool Debugging;
-            public readonly bool UseDomainSockets;
-            public readonly string? DomainSocketPath;
-            public readonly bool UseNamedPipes;
-            public readonly string? NamedPipeName;
         }
-
+        
         public class HostServices
         {
             public HostServices(LauncherExecutablePath launcherExecutablePath, IHostApplicationLifetime lifetime)
@@ -85,17 +80,9 @@ namespace fiskaltrust.Launcher.Commands
                 var launcherConfiguration = LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.LauncherConfiguration)));
                 var plebeianConfiguration = PlebeianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.PlebeianConfiguration)));
                 
-                launcherConfiguration = launcherConfiguration with 
-                {
-                    UseDomainSockets = hostOptions.UseDomainSockets,
-                    DomainSocketPath = hostOptions.DomainSocketPath,
-                    UseNamedPipes = hostOptions.UseNamedPipes,
-                    NamedPipeName = hostOptions.NamedPipeName
-                };
-
                 var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
                 cashboxConfiguration.Decrypt(launcherConfiguration, await CommonHandler.LoadCurve(launcherConfiguration.CashboxId.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!));
-                
+
                 var packageConfiguration = (plebeianConfiguration.PackageType switch
                 {
                     PackageType.Queue => cashboxConfiguration.ftQueues,
@@ -109,7 +96,7 @@ namespace fiskaltrust.Launcher.Commands
                 IProcessHostService? processHostService = null;
                 if (!hostOptions.NoProcessHostService)
                 {
-                    string grpcAddress = launcherConfiguration.UseDomainSockets ? "http://unix/" : $"http://localhost:{launcherConfiguration.LauncherPort}";
+                    string grpcAddress = launcherConfiguration.DomainSocket.Enabled ? $"http://{launcherConfiguration.DomainSocket.Path}" : $"http://localhost:{launcherConfiguration.LauncherPort}";
                     processHostService = GrpcChannel.ForAddress(grpcAddress).CreateGrpcService<IProcessHostService>();
                 }
 
