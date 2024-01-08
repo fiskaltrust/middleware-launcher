@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
@@ -234,29 +235,44 @@ namespace fiskaltrust.Launcher.Commands
         private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
         {
             var serviceDirectory = config.ServiceFolder;
-            if (!Directory.Exists(serviceDirectory))
+            try
             {
-                Directory.CreateDirectory(serviceDirectory);
-
-                var user = Environment.GetEnvironmentVariable("USER");
-                if (!string.IsNullOrEmpty(user))
+                if (!Directory.Exists(serviceDirectory))
                 {
-                    var chownResult = await ProcessHelper.RunProcess("chown", new[] { user, serviceDirectory }, LogEventLevel.Debug);
-                    if (chownResult.exitCode != 0)
-                    {
-                        Log.Warning("Failed to change owner of the service directory.");
-                    }
+                    Directory.CreateDirectory(serviceDirectory);
 
-                    var chmodResult = await ProcessHelper.RunProcess("chmod", new[] { "774", serviceDirectory }, LogEventLevel.Debug);
-                    if (chmodResult.exitCode != 0)
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     {
-                        Log.Warning("Failed to change permissions of the service directory.");
+                        var user = Environment.GetEnvironmentVariable("USER");
+                        if (!string.IsNullOrEmpty(user))
+                        {
+                            var chownResult = await ProcessHelper.RunProcess("chown", new[] { user, serviceDirectory }, LogEventLevel.Debug);
+                            if (chownResult.exitCode != 0)
+                            {
+                                Log.Warning("Failed to change owner of the service directory.");
+                            }
+
+                            var chmodResult = await ProcessHelper.RunProcess("chmod", new[] { "774", serviceDirectory }, LogEventLevel.Debug);
+                            if (chmodResult.exitCode != 0)
+                            {
+                                Log.Warning("Failed to change permissions of the service directory.");
+                            }
+                        }
+                        else
+                        {
+                            Log.Warning("Service user name is not set. Owner of the service directory will not be changed.");
+                        }
+                    }
+                    else
+                    {
+                        Log.Debug("Changing owner and permissions is skipped on non-Unix operating systems.");
                     }
                 }
-                else
-                {
-                    Log.Warning("Service user name is not set. Owner of the service directory will not be changed.");
-                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Log.Error("Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.", serviceDirectory);
+                throw;
             }
         }
 
