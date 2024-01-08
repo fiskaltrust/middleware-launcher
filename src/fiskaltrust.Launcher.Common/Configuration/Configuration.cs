@@ -111,7 +111,15 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("logLevel")]
         [AlternateName("verbosity")]
         public LogLevel? LogLevel { get => WithDefault(_logLevel, Microsoft.Extensions.Logging.LogLevel.Information); set => _logLevel = value; }
-
+        
+        private Uri? _grpcServiceUrl;
+        [JsonPropertyName("grpcServiceUrl")]
+        public Uri? GrpcServiceUrl
+        {
+            get => _grpcServiceUrl;
+            set => _grpcServiceUrl = value;
+        }
+        
         private Uri? _packagesUrl;
         [JsonPropertyName("packagesUrl")]
         public Uri? PackagesUrl { get => WithDefault(_packagesUrl, () => new Uri(Sandbox!.Value ? "https://packages-2-0-sandbox.fiskaltrust.cloud" : "https://packages-2-0.fiskaltrust.cloud")); set => _packagesUrl = value; }
