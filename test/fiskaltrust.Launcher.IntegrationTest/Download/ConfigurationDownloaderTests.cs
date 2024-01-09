@@ -66,7 +66,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                 DownloadRetry = 3,
                 DownloadTimeoutSec = 1,
                 CashboxConfigurationFile = "config.json",
-                ConfigurationUrl = new Uri("http://localhost:5000/"),
+                ConfigurationUrl = new Uri("http://localhost:6000/"),
                 CashboxId = Guid.NewGuid(),
                 AccessToken = "test_token",
             };
@@ -79,7 +79,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
                     ItExpr.IsAny<CancellationToken>())
                 .Returns(() =>
                 {
-                    return Task.Delay(TimeSpan.FromSeconds(2))
+                    return Task.Delay(TimeSpan.FromSeconds(4))
                         .ContinueWith(_ => new HttpResponseMessage(HttpStatusCode.OK));
                 });
 
@@ -87,7 +87,6 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
             var downloader = new ConfigurationDownloader(config, httpClient);
 
             var clientCurve = ECDiffieHellman.Create();
-
             await Assert.ThrowsAsync<TimeoutRejectedException>(() => downloader.DownloadConfigurationAsync(clientCurve));
         }
     }
