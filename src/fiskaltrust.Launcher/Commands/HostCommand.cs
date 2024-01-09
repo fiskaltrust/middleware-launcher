@@ -96,8 +96,9 @@ namespace fiskaltrust.Launcher.Commands
                 IProcessHostService? processHostService = null;
                 if (!hostOptions.NoProcessHostService)
                 {
-                    string grpcAddress = launcherConfiguration.GrpcServiceUrl?.ToString() ?? $"http://localhost:{launcherConfiguration.LauncherPort}";
+                    string grpcAddress = launcherConfiguration.LauncherServiceUri?.ToString();
                     processHostService = GrpcChannel.ForAddress(grpcAddress).CreateGrpcService<IProcessHostService>();
+
                 }
 
                 Log.Logger = new LoggerConfiguration()

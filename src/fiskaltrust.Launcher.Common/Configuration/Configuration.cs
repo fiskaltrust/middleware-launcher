@@ -32,7 +32,13 @@ namespace fiskaltrust.Launcher.Common.Configuration
         private readonly object _rawAccessLock = new();
 
         [JsonConstructor]
-        public LauncherConfiguration() { _rawAccess = false; }
+        public LauncherConfiguration()
+        { 
+            _rawAccess = false;
+            _launcherServiceUri = OperatingSystem.IsWindows()
+                ? $"net.pipe://localhost/fiskaltrust-{_cashboxId}" 
+                : $"/tmp/fiskaltrust-{_cashboxId}.sock";
+        }
 
         public T Raw<T>(System.Linq.Expressions.Expression<Func<LauncherConfiguration, T>> accessor)
         {
@@ -77,9 +83,9 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("accessToken")]
         public string? AccessToken { get => _accessToken; set => _accessToken = value; }
 
-        private int? _launcherPort;
-        [JsonPropertyName("launcherPort")]
-        public int? LauncherPort { get => WithDefault(_launcherPort, 0); set => _launcherPort = value; }
+        private string? _launcherServiceUri;
+        [JsonPropertyName("launcherServiceUri")]
+        public string? LauncherServiceUri { get => _launcherServiceUri; set => _launcherServiceUri = value; }
 
         private string? _serviceFolder;
         [JsonPropertyName("serviceFolder")]
@@ -111,14 +117,6 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("logLevel")]
         [AlternateName("verbosity")]
         public LogLevel? LogLevel { get => WithDefault(_logLevel, Microsoft.Extensions.Logging.LogLevel.Information); set => _logLevel = value; }
-        
-        private Uri? _grpcServiceUrl;
-        [JsonPropertyName("grpcServiceUrl")]
-        public Uri? GrpcServiceUrl
-        {
-            get => _grpcServiceUrl;
-            set => _grpcServiceUrl = value;
-        }
         
         private Uri? _packagesUrl;
         [JsonPropertyName("packagesUrl")]

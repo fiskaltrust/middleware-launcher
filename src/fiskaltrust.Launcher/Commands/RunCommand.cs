@@ -83,7 +83,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => runServices.LauncherExecutablePath);
                 });
 
-            builder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{commonProperties.LauncherConfiguration.LauncherPort}"), protocols: HttpProtocols.Http2);
+            builder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{commonProperties.LauncherConfiguration.LauncherServiceUri}"), protocols: HttpProtocols.Http2);
 
             builder.Services.AddCodeFirstGrpc();
 

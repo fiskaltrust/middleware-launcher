@@ -7,6 +7,7 @@ using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Hosting.WindowsServices;
 
 namespace fiskaltrust.Launcher.ProcessHost
@@ -26,6 +27,7 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly ILifetime _lifetime;
         private readonly LauncherExecutablePath _launcherExecutablePath;
         private readonly TaskCompletionSource<Uri> _kestrelReady;
+        private readonly WebApplicationBuilder _webHostBuilder;
 
         public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, IProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, ILifetime lifetime, LauncherExecutablePath launcherExecutablePath, IHostApplicationLifetime hostApplicationLifetime, IServer server)
         {
@@ -38,6 +40,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             _lifetime = lifetime;
             _launcherExecutablePath = launcherExecutablePath;
             _kestrelReady = new TaskCompletionSource<Uri>();
+            _webHostBuilder = WebApplication.CreateBuilder();
 
             hostApplicationLifetime.ApplicationStarted.Register(() =>
             {
@@ -51,8 +54,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 }
             });
         }
-
-
+        
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             _lifetime.ApplicationLifetime.ApplicationStopping.Register(() => _logger.LogInformation("Shutting down launcher."));
@@ -60,13 +62,13 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             StartupLogging();
 
-            if (_launcherConfiguration.LauncherPort == 0)
+            if (string.IsNullOrEmpty(_launcherConfiguration.LauncherServiceUri))
             {
                 try
                 {
-                    var url = await _kestrelReady.Task.ConfigureAwait(false);
-                    _launcherConfiguration.LauncherPort = url.Port;
-                    _logger.LogInformation("ProcessHostService running on {url}", url);
+                    var uri = new Uri(_launcherConfiguration.LauncherServiceUri);
+                    ConfigureKestrel(uri, _webHostBuilder);
+                    _logger.LogInformation("ProcessHostService running on {uri}", uri);
                 }
                 catch (Exception e)
                 {
@@ -136,6 +138,24 @@ namespace fiskaltrust.Launcher.ProcessHost
                 }
             }
             _lifetime.ApplicationLifetime.StopApplication();
+        }
+
+        private void ConfigureKestrel(Uri launcherServiceUri, WebApplicationBuilder builder)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                builder.WebHost.UseKestrel(serverOptions =>
+                {
+                    serverOptions.ListenNamedPipe(launcherServiceUri.ToString());
+                });
+            }
+            else
+            {
+                builder.WebHost.UseKestrel(serverOptions =>
+                {
+                    serverOptions.ListenUnixSocket(launcherServiceUri.ToString());
+                });
+            }
         }
 
         private async Task StartProcessHostMonarch(PackageConfiguration configuration, PackageType packageType, CancellationToken cancellationToken)
