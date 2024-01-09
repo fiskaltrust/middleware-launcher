@@ -39,11 +39,14 @@ namespace fiskaltrust.Launcher.UnitTest.Configuration
                     .RuleForType(typeof(Uri), f => new Uri(f.Internet.Url()).OrNull(f))
                     .Generate();
 
-                var serialized = configuration.Serialize();
+                // Reset LauncherServiceUri to null for testing purposes
+                configuration.LauncherServiceUri = null;
 
+                var serialized = configuration.Serialize();
                 var deserialized = LauncherConfiguration.Deserialize(serialized);
 
-                deserialized.Raw(d => configuration.Raw(c => d.Should().BeEquivalentTo(c, "")));
+                // Exclude LauncherServiceUri from comparison as it has a default value now
+                deserialized.Raw(d => configuration.Raw(c => d.Should().BeEquivalentTo(c, options => options.Excluding(cfg => cfg.LauncherServiceUri))));
                 deserialized.Should().BeEquivalentTo(deserialized);
             }
         }
