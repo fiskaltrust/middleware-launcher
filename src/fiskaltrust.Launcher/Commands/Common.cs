@@ -183,6 +183,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
+                // will exit with non-zero exit code later.
                 Log.Fatal(e, "Could not read Cashbox configuration file.");
             }
 
@@ -194,6 +195,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
+                // will exit with non-zero exit code later.
                 Log.Fatal(e, "Could not parse Cashbox configuration.");
             }
 
@@ -208,6 +210,9 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Write(logEvent);
             }
 
+            // If any critical errors occured, we exit with a non-zero exit code.
+            // In many cases we don't want to immediately exit the application,
+            // but we want to log the error and continue and see what else is going on before we exit.
             if (collectionSink.Events.Where(e => e.Level == LogEventLevel.Fatal).Any())
             {
                 return 1;
@@ -269,10 +274,10 @@ namespace fiskaltrust.Launcher.Commands
                     }
                 }
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException e)
             {
-                Log.Error("Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.", serviceDirectory);
-                throw;
+                // will exit with non-zero exit code later.
+                Log.Fatal(e, "Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.", serviceDirectory);
             }
         }
 
