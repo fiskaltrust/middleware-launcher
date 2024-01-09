@@ -199,8 +199,8 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Fatal(e, "Could not parse Cashbox configuration.");
             }
 
-            Log.Logger = new LoggerConfiguration()
             // Previous log messages will be logged here using this logger.
+            Log.Logger = new LoggerConfiguration()
                 .AddLoggingConfiguration(launcherConfiguration)
                 .AddFileLoggingConfiguration(launcherConfiguration, new[] { "fiskaltrust.Launcher", launcherConfiguration.CashboxId?.ToString() })
                 .Enrich.FromLogContext()
