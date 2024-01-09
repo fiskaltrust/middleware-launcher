@@ -84,6 +84,7 @@ namespace fiskaltrust.Launcher.Commands
             IHost host,
             Func<CommonOptions, CommonProperties, O, S, Task<int>> handler) where S : notnull
         {
+            // Log messages will be save here and logged later when we have the configuration options to create the logger.
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(collectionSink)
