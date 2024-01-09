@@ -200,6 +200,7 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             Log.Logger = new LoggerConfiguration()
+            // Previous log messages will be logged here using this logger.
                 .AddLoggingConfiguration(launcherConfiguration)
                 .AddFileLoggingConfiguration(launcherConfiguration, new[] { "fiskaltrust.Launcher", launcherConfiguration.CashboxId?.ToString() })
                 .Enrich.FromLogContext()
