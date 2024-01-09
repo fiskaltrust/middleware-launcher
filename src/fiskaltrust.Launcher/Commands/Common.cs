@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
@@ -10,6 +11,7 @@ using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.Logging;
+using fiskaltrust.Launcher.ServiceInstallation;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.DataProtection;
 using Serilog;
@@ -82,6 +84,7 @@ namespace fiskaltrust.Launcher.Commands
             IHost host,
             Func<CommonOptions, CommonProperties, O, S, Task<int>> handler) where S : notnull
         {
+            // Log messages will be save here and logged later when we have the configuration options to create the logger.
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(collectionSink)
@@ -131,6 +134,7 @@ namespace fiskaltrust.Launcher.Commands
 
             Log.Verbose("Merging launcher cli args.");
             launcherConfiguration.OverwriteWith(options.ArgsLauncherConfiguration);
+            await EnsureServiceDirectoryExists(launcherConfiguration);
 
             if (!launcherConfiguration.UseOffline!.Value && (launcherConfiguration.CashboxId is null || launcherConfiguration.AccessToken is null))
             {
@@ -180,6 +184,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
+                // will exit with non-zero exit code later.
                 Log.Fatal(e, "Could not read Cashbox configuration file.");
             }
 
@@ -191,9 +196,11 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
+                // will exit with non-zero exit code later.
                 Log.Fatal(e, "Could not parse Cashbox configuration.");
             }
 
+            // Previous log messages will be logged here using this logger.
             Log.Logger = new LoggerConfiguration()
                 .AddLoggingConfiguration(launcherConfiguration)
                 .AddFileLoggingConfiguration(launcherConfiguration, new[] { "fiskaltrust.Launcher", launcherConfiguration.CashboxId?.ToString() })
@@ -205,6 +212,9 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Write(logEvent);
             }
 
+            // If any critical errors occured, we exit with a non-zero exit code.
+            // In many cases we don't want to immediately exit the application,
+            // but we want to log the error and continue and see what else is going on before we exit.
             if (collectionSink.Events.Where(e => e.Level == LogEventLevel.Fatal).Any())
             {
                 return 1;
@@ -227,6 +237,50 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
+        }
+
+        private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
+        {
+            var serviceDirectory = config.ServiceFolder;
+            try
+            {
+                if (!Directory.Exists(serviceDirectory))
+                {
+                    Directory.CreateDirectory(serviceDirectory);
+
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    {
+                        var user = Environment.GetEnvironmentVariable("USER");
+                        if (!string.IsNullOrEmpty(user))
+                        {
+                            var chownResult = await ProcessHelper.RunProcess("chown", new[] { user, serviceDirectory }, LogEventLevel.Debug);
+                            if (chownResult.exitCode != 0)
+                            {
+                                Log.Warning("Failed to change owner of the service directory.");
+                            }
+
+                            var chmodResult = await ProcessHelper.RunProcess("chmod", new[] { "774", serviceDirectory }, LogEventLevel.Debug);
+                            if (chmodResult.exitCode != 0)
+                            {
+                                Log.Warning("Failed to change permissions of the service directory.");
+                            }
+                        }
+                        else
+                        {
+                            Log.Warning("Service user name is not set. Owner of the service directory will not be changed.");
+                        }
+                    }
+                    else
+                    {
+                        Log.Debug("Changing owner and permissions is skipped on non-Unix operating systems.");
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                // will exit with non-zero exit code later.
+                Log.Fatal(e, "Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.", serviceDirectory);
+            }
         }
 
         public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder, bool useOffline = false, bool dryRun = false, bool useFallback = false)
