@@ -70,6 +70,7 @@ namespace fiskaltrust.Launcher.Commands
             Log.Verbose($"RunHandler call");
             Log.Verbose($"runServices.LauncherExecutablePath {runServices.LauncherExecutablePath.Path}");
             var builder = WebApplication.CreateBuilder();
+            Log.Verbose($"WebApplication.CreateBuilder()");
             builder.Host
                 .UseSystemd()
                 .UseSerilog()
