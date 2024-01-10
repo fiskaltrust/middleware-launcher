@@ -75,6 +75,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 "Type=notify",
                 $"ExecStart={command}",
                 "TimeoutStartSec=180",
+                $"WorkingDirectory={Path.GetDirectoryName(_launcherExecutablePath.Path)}",
                 "",
                 "[Install]",
                 "WantedBy = multi-user.target"
