@@ -107,6 +107,7 @@ namespace fiskaltrust.Launcher.Commands
             System.Text.Encoding.RegisterProvider(new LauncherEncodingProvider());
 
             var builder = Host.CreateDefaultBuilder()
+                .UseSystemd()
                 .UseSerilog()
                 .ConfigureServices(services =>
                 {
