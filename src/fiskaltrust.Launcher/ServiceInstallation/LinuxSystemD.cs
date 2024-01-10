@@ -72,7 +72,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 $"Description=\"{serviceDescription}\"",
                 "",
                 "[Service]",
-                "Type=notify",
+                "Type=forking",
                 $"ExecStart={command}",
                 "TimeoutStartSec=180",
                 $"WorkingDirectory={Path.GetDirectoryName(_launcherExecutablePath.Path)}",
