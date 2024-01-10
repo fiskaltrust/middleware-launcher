@@ -105,7 +105,7 @@ namespace fiskaltrust.Launcher.Commands
            Log.Verbose($"RunHandler PrepareSelfUpdate.end");
             try
             {
-                await app.StartAsync(runServices.Lifetime.ApplicationLifetime.ApplicationStopping);
+                await app.RunAsync(runServices.Lifetime.ApplicationLifetime.ApplicationStopping);
 
                 await runServices.SelfUpdater.StartSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, commonOptions.LauncherConfigurationFile);
             }
