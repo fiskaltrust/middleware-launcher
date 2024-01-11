@@ -200,7 +200,7 @@ namespace fiskaltrust.Launcher.Extensions
                 }
                 else if (OperatingSystem.IsLinux())
                 {
-                    Log.Warning("Fallback config encryption mechanism used.");
+                    Log.Warning("Fallback config encryption mechanism is used on linux.");
                 }
                 else if (OperatingSystem.IsMacOS())
                 {
@@ -210,7 +210,6 @@ namespace fiskaltrust.Launcher.Extensions
 
             Log.Debug("Fallback config encryption mechanism used.");
             builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new LegacyXmlEncryptor(builder.Services));
-            Log.Verbose("config KeyManagementOptions");
             return builder;
         }
     }

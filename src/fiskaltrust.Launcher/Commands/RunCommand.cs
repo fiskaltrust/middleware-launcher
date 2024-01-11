@@ -67,10 +67,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public static async Task<int> HandleAsync(CommonOptions commonOptions, CommonProperties commonProperties, RunOptions _, RunServices runServices)
         {
-            Log.Verbose($"RunHandler call");
-            Log.Verbose($"runServices.LauncherExecutablePath {runServices.LauncherExecutablePath.Path}");
             var builder = WebApplication.CreateBuilder();
-            Log.Verbose($"WebApplication.CreateBuilder()");
             builder.Host
                 .UseSystemd()
                 .UseSerilog()
@@ -87,7 +84,6 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => runServices.LauncherExecutablePath);
                 });
 
-            Log.Verbose($"RunHandler builder.Host");
             builder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{commonProperties.LauncherConfiguration.LauncherPort}"), protocols: HttpProtocols.Http2);
 
             builder.Services.AddCodeFirstGrpc();
@@ -98,11 +94,9 @@ namespace fiskaltrust.Launcher.Commands
 #pragma warning disable ASP0014
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 #pragma warning restore ASP0014
-            Log.Verbose($"RunHandler PrepareSelfUpdate.call");
-            try { 
-                await runServices.SelfUpdater.PrepareSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, app.Services.GetRequiredService<PackageDownloader>()); 
-            } catch (Exception e) { Log.Error(e, "An unhandled exception occured."); return 1;}
-           Log.Verbose($"RunHandler PrepareSelfUpdate.end");
+
+            await runServices.SelfUpdater.PrepareSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, app.Services.GetRequiredService<PackageDownloader>()); 
+
             try
             {
                 await app.RunAsync(runServices.Lifetime.ApplicationLifetime.ApplicationStopping);
@@ -118,7 +112,6 @@ namespace fiskaltrust.Launcher.Commands
             {
                 Log.CloseAndFlush();
             }
-            Log.Verbose($"RunHandler end");
             return 0;
         }
     }

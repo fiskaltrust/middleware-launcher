@@ -146,7 +146,6 @@ namespace fiskaltrust.Launcher.Download
 
                             return request;
                         });
-                        _logger?.LogInformation("response1");
                         response.EnsureSuccessStatusCode();
 
                         await using var fileStream = new FileStream(sourcePath, FileMode.Create, FileAccess.Write, FileShare.None);
@@ -163,7 +162,6 @@ namespace fiskaltrust.Launcher.Download
 
                             return request;
                         });
-                        _logger?.LogInformation("response2");
                         response.EnsureSuccessStatusCode();
                         await File.WriteAllTextAsync($"{sourcePath}.hash", await response.Content.ReadAsStringAsync());
                     }

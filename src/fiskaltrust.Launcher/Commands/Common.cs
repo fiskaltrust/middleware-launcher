@@ -83,12 +83,11 @@ namespace fiskaltrust.Launcher.Commands
             Func<CommonOptions, CommonProperties, O, S, Task<int>> handler) where S : notnull
         {
             Log.Verbose("call CommonHandler HandleAsync");
-            /*
+            
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(collectionSink)
                 .CreateLogger();
-            */
 
             var launcherConfiguration = new LauncherConfiguration();
 
@@ -203,7 +202,6 @@ namespace fiskaltrust.Launcher.Commands
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
-            /*
             foreach (var logEvent in collectionSink.Events)
             {
                 Log.Write(logEvent);
@@ -212,7 +210,7 @@ namespace fiskaltrust.Launcher.Commands
             if (collectionSink.Events.Where(e => e.Level == LogEventLevel.Fatal).Any())
             {
                 return 1;
-            }*/
+            }
 
             Log.Debug("Launcher Configuration File: {LauncherConfigurationFile}", options.LauncherConfigurationFile);
             Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", launcherConfiguration.CashboxConfigurationFile);
@@ -220,19 +218,14 @@ namespace fiskaltrust.Launcher.Commands
 
 
             var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
-            Log.Verbose($"dataProtectionProvider is null: {dataProtectionProvider == null}");
             try
             {
-                if (!launcherConfiguration.UseLegacyDataProtection!.Value)
-                {
-                    launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
-                }
+                launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
             }
             catch (Exception e)
             {
                 Log.Warning(e, "Error decrypring launcher configuration file.");
             }
-            Log.Verbose($"finished handler");
 
             return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
         }
