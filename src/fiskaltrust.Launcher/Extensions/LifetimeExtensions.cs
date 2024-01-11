@@ -1,6 +1,5 @@
 using System.Runtime.Versioning;
 using System.Text;
-using System.Web.Services.Description;
 using Microsoft.Extensions.Hosting.Systemd;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Options;
@@ -11,8 +10,6 @@ namespace fiskaltrust.Launcher.Extensions
     {
         public static IHostBuilder UseCustomHostLifetime(this IHostBuilder builder, string[] args)
         {
-            var isSystemd = args.Contains("--is-systemd-service true");
-
             if (WindowsServiceHelpers.IsWindowsService())
             {
                 builder.UseWindowsService();
@@ -32,12 +29,8 @@ namespace fiskaltrust.Launcher.Extensions
 #pragma warning restore CA1416
                 });
             }
-            else if (isSystemd)
+            else if (SystemdHelpers.IsSystemdService())
             {
-                builder.UseSystemd();
-                builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
-                return builder;
-                /*
                 return builder.ConfigureServices(services =>
                 {
                     var lifetime = services.FirstOrDefault(s => s.ImplementationType == typeof(SystemdLifetime));
@@ -51,7 +44,7 @@ namespace fiskaltrust.Launcher.Extensions
                     services.AddSingleton<ILifetime, CustomSystemdServiceLifetime>();
                     services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
 #pragma warning restore CA1416
-                });*/
+                });
             }
             else
             {

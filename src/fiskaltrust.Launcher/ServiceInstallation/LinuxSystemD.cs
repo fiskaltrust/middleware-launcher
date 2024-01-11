@@ -1,4 +1,5 @@
 ﻿using fiskaltrust.Launcher.Helpers;
+using Microsoft.Extensions.Hosting.Systemd;
 using Serilog;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
@@ -15,11 +16,10 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
         {
-            if (!await IsSystemd())
+            if (!SystemdHelpers.IsSystemdService())
             {
                 return -1;
             }
-            commandArgs += " --is-systemd-service true";
             Log.Information("Installing service via systemd.");
             var serviceFileContent = GetServiceFileContent(displayName ?? "Service installation of fiskaltrust launcher.", commandArgs);
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
@@ -33,7 +33,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         public override async Task<int> UninstallService()
         {
-            if (!await IsSystemd())
+            if (!SystemdHelpers.IsSystemdService())
             {
                 return -1;
             }
@@ -50,16 +50,6 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             return (await ProcessHelper.RunProcess("systemctl", new[] { "reset-failed" })).exitCode;
         }
 
-        private static async Task<bool> IsSystemd()
-        {
-            var (exitCode, output) = await ProcessHelper.RunProcess("ps", new[] { "--no-headers", "-o", "comm", "1" });
-            if (exitCode != 0 && output.Contains("systemd"))
-            {
-                Log.Error("Service installation works only for systemd setup.");
-                return false;
-            }
-            return true;
-        }
 
         private string[] GetServiceFileContent(string serviceDescription, string commandArgs)
         {
