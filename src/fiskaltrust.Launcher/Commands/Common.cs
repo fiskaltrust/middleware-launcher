@@ -234,12 +234,12 @@ namespace fiskaltrust.Launcher.Commands
 
             try
             {
-                launcherConfiguration.Decrypt(
-                    dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
+                launcherConfiguration.Decrypt
+                    (dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
             }
             catch (Exception e)
             {
-                Log.Warning(e, "Error decrypting launcher configuration. Attempting to regenerate and redownload.");
+                Log.Warning(e, "Error decrypting launcher configuration. Please check your configuration settings. If necessary, use 'config set' command to update your configuration.");
 
                 var serviceFolder = launcherConfiguration.ServiceFolder!;
                 var cashboxId = launcherConfiguration.CashboxId!.Value; 

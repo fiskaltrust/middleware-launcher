@@ -319,7 +319,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 }
                 catch (Exception e)
                 {
-                    Log.Warning($"Failed to decrypt field: {e.Message}");
+                    Log.Warning($"Failed to decrypt field: {e.Message}. Consider using 'config set' to reset.");
                     return null;
                 }
             });
