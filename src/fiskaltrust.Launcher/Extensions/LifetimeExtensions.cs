@@ -31,6 +31,7 @@ namespace fiskaltrust.Launcher.Extensions
             }
             else if (SystemdHelpers.IsSystemdService())
             {
+                builder.UseSystemd();
                 return builder.ConfigureServices(services =>
                 {
                     var lifetime = services.FirstOrDefault(s => s.ImplementationType == typeof(SystemdLifetime));
