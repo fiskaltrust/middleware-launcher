@@ -42,7 +42,9 @@ namespace fiskaltrust.Launcher.UnitTest.Configuration
                 var serialized = configuration.Serialize();
                 var deserialized = LauncherConfiguration.Deserialize(serialized);
 
-                deserialized.Should().BeEquivalentTo(configuration, options => options.Excluding(cfg => cfg.LauncherServiceUri));
+                deserialized.Raw(d => configuration.Raw(c => d.Should().BeEquivalentTo(c, "")));
+
+                deserialized.Should().BeEquivalentTo(deserialized);
             }
         }
 

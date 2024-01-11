@@ -82,9 +82,23 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => Log.Logger);
                     services.AddSingleton(_ => runServices.LauncherExecutablePath);
                 });
-
-            builder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{commonProperties.LauncherConfiguration.LauncherServiceUri}"), protocols: HttpProtocols.Http2);
-
+            
+            //Configure Kestrel
+            if (OperatingSystem.IsWindows())
+            {
+                builder.WebHost.UseKestrel(serverOptions =>
+                {
+                    serverOptions.ListenNamedPipe(commonProperties.LauncherConfiguration.LauncherServiceUri!);
+                });
+            }
+            else
+            {
+                builder.WebHost.UseKestrel(serverOptions =>
+                {
+                    serverOptions.ListenUnixSocket(commonProperties.LauncherConfiguration.LauncherServiceUri!);
+                });
+            }
+            
             builder.Services.AddCodeFirstGrpc();
 
             var app = builder.Build();

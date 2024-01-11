@@ -35,9 +35,6 @@ namespace fiskaltrust.Launcher.Common.Configuration
         public LauncherConfiguration()
         { 
             _rawAccess = false;
-            _launcherServiceUri = OperatingSystem.IsWindows()
-                ? $"net.pipe://localhost/fiskaltrust-{_cashboxId}" 
-                : $"/tmp/fiskaltrust-{_cashboxId}.sock";
         }
 
         public T Raw<T>(System.Linq.Expressions.Expression<Func<LauncherConfiguration, T>> accessor)
@@ -85,7 +82,15 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private string? _launcherServiceUri;
         [JsonPropertyName("launcherServiceUri")]
-        public string? LauncherServiceUri { get => _launcherServiceUri; set => _launcherServiceUri = value; }
+        public string? LauncherServiceUri {
+            get => WithDefault(
+                _launcherServiceUri,
+                OperatingSystem.IsWindows()
+                    ? $"net.pipe://localhost/fiskaltrust-{_cashboxId}" 
+                    : $"/tmp/fiskaltrust-{_cashboxId}.sock"
+            );
+            set => _launcherServiceUri = value;
+        }
 
         private string? _serviceFolder;
         [JsonPropertyName("serviceFolder")]
@@ -95,12 +100,6 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("sandbox")]
         public bool? Sandbox { get => WithDefault(_sandbox, false); set => _sandbox = value; }
         
-        [JsonPropertyName("domainSocket")]
-        public LauncherConfiguration.DomainSocketConfig DomainSocket { get; init; } = new();
-
-        [JsonPropertyName("namedPipe")]
-        public LauncherConfiguration.NamedPipeConfig NamedPipe { get; init; } = new();
-
         private bool? _useOffline;
         [JsonPropertyName("useOffline")]
         public bool? UseOffline { get => WithDefault(_useOffline, false); set => _useOffline = value; }
@@ -340,17 +339,6 @@ namespace fiskaltrust.Launcher.Common.Configuration
             return null;
         }
         
-        public record DomainSocketConfig
-        {
-            public bool Enabled { get; init; }
-            public string? Path { get; init; }
-        }
-
-        public record NamedPipeConfig
-        {
-            public bool Enabled { get; init; }
-            public string? Name { get; init; }
-        }
     }
     
     public record LauncherConfigurationInCashBoxConfiguration

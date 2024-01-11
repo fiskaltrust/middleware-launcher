@@ -14,6 +14,10 @@ using ProtoBuf.Grpc.Client;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Constants;
 using System.Diagnostics;
+using System.IO.Pipes;
+using System.Net;
+using System.Net.Sockets;
+using System.Security.Principal;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Configuration;
@@ -36,9 +40,7 @@ namespace fiskaltrust.Launcher.Commands
 
         public class HostOptions
         {
-            public HostOptions(string launcherConfiguration, string plebeianConfiguration, bool noProcessHostService,
-                bool debugging, string? namedPipeName, bool useNamedPipes, string? domainSocketPath,
-                bool useDomainSockets)
+            public HostOptions(string launcherConfiguration, string plebeianConfiguration, bool noProcessHostService, bool debugging)
             {
                 LauncherConfiguration = launcherConfiguration;
                 PlebeianConfiguration = plebeianConfiguration;
@@ -81,7 +83,7 @@ namespace fiskaltrust.Launcher.Commands
                 var plebeianConfiguration = PlebeianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.PlebeianConfiguration)));
                 
                 var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
-                cashboxConfiguration.Decrypt(launcherConfiguration, await CommonHandler.LoadCurve(launcherConfiguration.CashboxId.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!));
+                cashboxConfiguration.Decrypt(launcherConfiguration, await CommonHandler.LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!));
 
                 var packageConfiguration = (plebeianConfiguration.PackageType switch
                 {
@@ -96,9 +98,22 @@ namespace fiskaltrust.Launcher.Commands
                 IProcessHostService? processHostService = null;
                 if (!hostOptions.NoProcessHostService)
                 {
-                    string grpcAddress = launcherConfiguration.LauncherServiceUri?.ToString();
-                    processHostService = GrpcChannel.ForAddress(grpcAddress).CreateGrpcService<IProcessHostService>();
-
+                    var grpcAddress = launcherConfiguration.LauncherServiceUri;
+                    if (OperatingSystem.IsWindows())
+                    {
+                        var pipeName = new Uri(grpcAddress!).LocalPath.TrimStart('/');
+                        var factory = new NamedPipesConnectionFactory(pipeName);
+                        var handler = new SocketsHttpHandler { ConnectCallback = factory.ConnectAsync };
+                        processHostService = GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = handler }).CreateGrpcService<IProcessHostService>();
+                    }
+                    else // Unix
+                    {
+                        var socketPath = grpcAddress;
+                        var udsEndPoint = new UnixDomainSocketEndPoint(socketPath!);
+                        var factory = new UnixDomainSocketsConnectionFactory(udsEndPoint);
+                        var handler = new SocketsHttpHandler { ConnectCallback = factory.ConnectAsync };
+                        processHostService = GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = handler }).CreateGrpcService<IProcessHostService>();
+                    }
                 }
 
                 Log.Logger = new LoggerConfiguration()
@@ -148,7 +163,7 @@ namespace fiskaltrust.Launcher.Commands
                         }
                         catch (Exception e)
                         {
-                            Log.Error(e, "Could not load {Type}.", nameof(IMiddlewareBootstrapper));
+                            Log.Error(e, "Could not load {Type}", nameof(IMiddlewareBootstrapper));
                             throw;
                         }
                     });
@@ -160,7 +175,7 @@ namespace fiskaltrust.Launcher.Commands
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "An unhandled exception occured.");
+                    Log.Error(e, "An unhandled exception occured");
                     throw;
                 }
                 finally
@@ -169,6 +184,40 @@ namespace fiskaltrust.Launcher.Commands
                 }
 
                 return 0;
+            }
+            
+            public class NamedPipesConnectionFactory
+            {
+                private readonly string _pipeName;
+
+                public NamedPipesConnectionFactory(string pipeName)
+                {
+                    _pipeName = pipeName;
+                }
+
+                public async ValueTask<Stream> ConnectAsync(SocketsHttpConnectionContext _, CancellationToken cancellationToken)
+                {
+                    var clientStream = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut, PipeOptions.WriteThrough | PipeOptions.Asynchronous, TokenImpersonationLevel.Anonymous);
+                    await clientStream.ConnectAsync(cancellationToken).ConfigureAwait(false);
+                    return clientStream;
+                }
+            }
+            
+            public class UnixDomainSocketsConnectionFactory
+            {
+                private readonly EndPoint _endPoint;
+
+                public UnixDomainSocketsConnectionFactory(EndPoint endPoint)
+                {
+                    _endPoint = endPoint;
+                }
+
+                public async ValueTask<Stream> ConnectAsync(SocketsHttpConnectionContext _, CancellationToken cancellationToken)
+                {
+                    var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+                    await socket.ConnectAsync(_endPoint, cancellationToken).ConfigureAwait(false);
+                    return new NetworkStream(socket, ownsSocket: true);
+                }
             }
 
             private static Dictionary<string, object> ProcessPackageConfiguration(Dictionary<string, object> configuration, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashboxConfiguration)

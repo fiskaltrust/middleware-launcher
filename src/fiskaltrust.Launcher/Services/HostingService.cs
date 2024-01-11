@@ -246,28 +246,15 @@ namespace fiskaltrust.Launcher.Services
                 _logger.LogWarning($"{nameof(_launcherConfiguration.UseHttpSysBinding)} is not supported for grpc.");
             }
 
-            // Support for domain sockets/namespots
-            if (_launcherConfiguration.DomainSocket.Enabled)
-            {
-                builder.WebHost.UseKestrel(options =>
-                {
-                    options.ListenUnixSocket(_launcherConfiguration.DomainSocket.Path!, listenOptions =>
-                    {
-                        listenOptions.Protocols = HttpProtocols.Http2;
-                        ConfigureTls(listenOptions);
-                    });
-                });
-            }
-            else
-            {
-                builder.WebHost.BindKestrel(uri, listenOptions => ConfigureTls(listenOptions), false, HttpProtocols.Http2);
-            }
-
+            builder.WebHost.BindKestrel(uri, listenOptions => ConfigureTls(listenOptions), false, HttpProtocols.Http2);
             builder.Services.AddCodeFirstGrpc(options => options.EnableDetailedErrors = true);
             builder.Services.AddSingleton(instance);
 
             var app = builder.Build();
-            if (!OperatingSystem.IsWindows() || _launcherConfiguration.UseHttpSysBinding!.Value == false) { app.UsePathBase(uri.AbsolutePath); }
+            if (!OperatingSystem.IsWindows() || _launcherConfiguration.UseHttpSysBinding!.Value == false)
+            {
+                app.UsePathBase(uri.AbsolutePath);
+            }
 
             app.UseRouting();
 #pragma warning disable ASP0014
