@@ -87,7 +87,7 @@ namespace fiskaltrust.Launcher.Commands
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 #pragma warning restore ASP0014
 
-            await runServices.SelfUpdater.PrepareSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, app.Services.GetRequiredService<PackageDownloader>()); 
+            await runServices.SelfUpdater.PrepareSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, app.Services.GetRequiredService<PackageDownloader>());
 
             try
             {

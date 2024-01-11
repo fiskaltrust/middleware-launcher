@@ -8,7 +8,7 @@ namespace fiskaltrust.Launcher.Extensions
 {
     static class LifetimeExtensions
     {
-        public static IHostBuilder UseCustomHostLifetime(this IHostBuilder builder, string[] args)
+        public static IHostBuilder UseCustomHostLifetime(this IHostBuilder builder)
         {
             if (WindowsServiceHelpers.IsWindowsService())
             {
