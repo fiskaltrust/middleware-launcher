@@ -24,11 +24,11 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             var serviceFileContent = GetServiceFileContent(displayName ?? "Service installation of fiskaltrust launcher.", commandArgs);
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
             await File.AppendAllLinesAsync(serviceFilePath, serviceFileContent).ConfigureAwait(false);
-            await RunProcess("systemctl", new[] { "daemon-reload" });
+            await ProcessHelper.RunProcess("systemctl", new[] { "daemon-reload" });
             Log.Information("Starting service.");
-            await RunProcess("systemctl", new[] { "start", _serviceName });
+            await ProcessHelper.RunProcess("systemctl", new[] { "start", _serviceName });
             Log.Information("Enable service.");
-            return (await RunProcess("systemctl", new[] { "enable", _serviceName, "-q" })).exitCode;
+            return (await ProcessHelper.RunProcess("systemctl", new[] { "enable", _serviceName, "-q" })).exitCode;
         }
 
         public override async Task<int> UninstallService()
@@ -38,21 +38,21 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 return -1;
             }
             Log.Information("Stop service on systemd.");
-            await RunProcess("systemctl", new[] { "stop ", _serviceName });
+            await ProcessHelper.RunProcess("systemctl", new[] { "stop ", _serviceName });
             Log.Information("Disable service.");
-            await RunProcess("systemctl", new[] { "disable ", _serviceName, "-q" });
+            await ProcessHelper.RunProcess("systemctl", new[] { "disable ", _serviceName, "-q" });
             Log.Information("Remove service.");
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
-            await RunProcess("rm", new[] { serviceFilePath });
+            await ProcessHelper.RunProcess("rm", new[] { serviceFilePath });
             Log.Information("Reload daemon.");
-            await RunProcess("systemctl", new[] { "daemon-reload" });
+            await ProcessHelper.RunProcess("systemctl", new[] { "daemon-reload" });
             Log.Information("Reset failed.");
-            return (await RunProcess("systemctl", new[] { "reset-failed" })).exitCode;
+            return (await ProcessHelper.RunProcess("systemctl", new[] { "reset-failed" })).exitCode;
         }
 
         private static async Task<bool> IsSystemd()
         {
-            var (exitCode, output) = await RunProcess("ps", new[] { "--no-headers", "-o", "comm", "1" });
+            var (exitCode, output) = await ProcessHelper.RunProcess("ps", new[] { "--no-headers", "-o", "comm", "1" });
             if (exitCode != 0 && output.Contains("systemd"))
             {
                 Log.Error("Service installation works only for systemd setup.");
