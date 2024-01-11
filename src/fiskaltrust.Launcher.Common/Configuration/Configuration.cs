@@ -312,9 +312,16 @@ namespace fiskaltrust.Launcher.Common.Configuration
         {
             MapFieldsWithAttribute<EncryptAttribute>((value) =>
             {
-                if (value is null) { return null; }
-
-                return dataProtector.Unprotect((string)value);
+                try
+                {
+                    if (value is null) return null;
+                    return dataProtector.Unprotect((string)value);
+                }
+                catch (Exception e)
+                {
+                    Log.Warning($"Failed to decrypt field: {e.Message}");
+                    return null;
+                }
             });
         }
 
