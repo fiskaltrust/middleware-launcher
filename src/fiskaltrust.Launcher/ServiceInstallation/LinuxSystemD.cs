@@ -74,6 +74,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 "[Service]",
                 "Type=notify",
                 $"ExecStart={command}",
+                "TimeoutStartSec=infinit",
                 $"WorkingDirectory={Path.GetDirectoryName(_launcherExecutablePath.Path)}",
                 "TimeoutStartUSec=infinity",
                 "",
