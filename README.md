@@ -103,7 +103,7 @@ To run this script unzip the downloaded Launcher 2.0 files into the folder conta
 > └─ fiskaltrust.exe
 > ```
 
-And then run the `migrate.cmd` script.
+And then run the `migrate.cmd` script as an administrator.
 
 The script will do the following:
 
