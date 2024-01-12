@@ -200,16 +200,7 @@ namespace fiskaltrust.Launcher.Extensions
                 }
                 else if (OperatingSystem.IsLinux())
                 {
-                    try
-                    {
-                        Marshal.PrelinkAll(typeof(KeyUtils));
-                        builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new KeyringXmlEncryptor());
-                        return builder;
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Warning(e, "Fallback config encryption mechanism used.");
-                    }
+                    Log.Warning("Fallback config encryption mechanism is used on linux.");
                 }
                 else if (OperatingSystem.IsMacOS())
                 {

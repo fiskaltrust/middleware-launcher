@@ -108,6 +108,7 @@ namespace fiskaltrust.Launcher.Commands
 
             var builder = Host.CreateDefaultBuilder()
                 .UseSerilog()
+                .UseSystemd()
                 .ConfigureServices(services =>
                 {
                     services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts =>

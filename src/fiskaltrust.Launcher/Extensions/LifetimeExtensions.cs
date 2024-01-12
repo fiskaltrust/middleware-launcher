@@ -1,5 +1,6 @@
 using System.Runtime.Versioning;
 using System.Text;
+using Microsoft.Extensions.Hosting.Systemd;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Options;
 
@@ -27,6 +28,12 @@ namespace fiskaltrust.Launcher.Extensions
                     services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
 #pragma warning restore CA1416
                 });
+            }
+            else if (SystemdHelpers.IsSystemdService())
+            {
+                builder.UseSystemd();
+                builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
+                return builder;
             }
             else
             {

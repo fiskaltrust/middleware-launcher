@@ -1,4 +1,5 @@
 ﻿using fiskaltrust.Launcher.Helpers;
+using Microsoft.Extensions.Hosting.Systemd;
 using Serilog;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
@@ -15,7 +16,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
         {
-            if (!await IsSystemd())
+            if (!SystemdHelpers.IsSystemdService())
             {
                 return -1;
             }
@@ -32,7 +33,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         public override async Task<int> UninstallService()
         {
-            if (!await IsSystemd())
+            if (!SystemdHelpers.IsSystemdService())
             {
                 return -1;
             }
@@ -49,30 +50,21 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             return (await ProcessHelper.RunProcess("systemctl", new[] { "reset-failed" })).exitCode;
         }
 
-        private static async Task<bool> IsSystemd()
-        {
-            var (exitCode, output) = await ProcessHelper.RunProcess("ps", new[] { "--no-headers", "-o", "comm", "1" });
-            if (exitCode != 0 && output.Contains("systemd"))
-            {
-                Log.Error("Service installation works only for systemd setup.");
-                return false;
-            }
-            return true;
-        }
-
         private string[] GetServiceFileContent(string serviceDescription, string commandArgs)
         {
             var processPath = _launcherExecutablePath.Path;
 
-            var command = $"{processPath} {commandArgs}";
+            var command = $"sudo {processPath} {commandArgs}";
             return new[]
             {
                 "[Unit]",
                 $"Description=\"{serviceDescription}\"",
                 "",
                 "[Service]",
-                "Type=simple",
-                $"ExecStart=\"{command}\"",
+                "Type=notify",
+                $"ExecStart={command}",
+                "TimeoutSec=0",
+                $"WorkingDirectory={Path.GetDirectoryName(_launcherExecutablePath.Path)}",
                 "",
                 "[Install]",
                 "WantedBy = multi-user.target"

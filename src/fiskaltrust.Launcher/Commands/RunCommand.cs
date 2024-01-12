@@ -70,6 +70,7 @@ namespace fiskaltrust.Launcher.Commands
 
             builder.Host
                 .UseSerilog()
+                .UseSystemd()
                 .ConfigureServices((_, services) =>
                 {
                     services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
