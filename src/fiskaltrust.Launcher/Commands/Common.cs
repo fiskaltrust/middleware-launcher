@@ -35,8 +35,10 @@ namespace fiskaltrust.Launcher.Commands
 
             if (addCliOnlyParameters)
             {
-                AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => Paths.LauncherConfigurationFileName));
-                AddOption(new Option<string>("--legacy-configuration-file", getDefaultValue: () => Paths.LegacyConfigurationFileName));
+                AddOption(new Option<string>("--launcher-configuration-file",
+                    getDefaultValue: () => Paths.LauncherConfigurationFileName));
+                AddOption(new Option<string>("--legacy-configuration-file",
+                    getDefaultValue: () => Paths.LegacyConfigurationFileName));
                 AddOption(new Option<bool>("--merge-legacy-config-if-exists", getDefaultValue: () => true));
             }
         }
@@ -44,7 +46,8 @@ namespace fiskaltrust.Launcher.Commands
 
     public class CommonOptions
     {
-        public CommonOptions(LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile, string legacyConfigurationFile, bool mergeLegacyConfigIfExists)
+        public CommonOptions(LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile,
+            string legacyConfigurationFile, bool mergeLegacyConfigIfExists)
         {
             ArgsLauncherConfiguration = argsLauncherConfiguration;
             LauncherConfigurationFile = launcherConfigurationFile;
@@ -60,7 +63,9 @@ namespace fiskaltrust.Launcher.Commands
 
     public record CommonProperties
     {
-        public CommonProperties(LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashboxConfiguration, ECDiffieHellman clientEcdh, IDataProtectionProvider dataProtectionProvider)
+        public CommonProperties(LauncherConfiguration launcherConfiguration,
+            ftCashBoxConfiguration cashboxConfiguration, ECDiffieHellman clientEcdh,
+            IDataProtectionProvider dataProtectionProvider)
         {
             LauncherConfiguration = launcherConfiguration;
             CashboxConfiguration = cashboxConfiguration;
@@ -239,12 +244,14 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                Log.Warning(e, "Error decrypting launcher configuration. Please check your configuration settings. If necessary, use 'config set' command to update your configuration.");
+                Log.Warning(e,
+                    "Error decrypting launcher configuration. Please check your configuration settings. If necessary, use 'config set' command to update your configuration.");
 
                 var serviceFolder = launcherConfiguration.ServiceFolder!;
-                var cashboxId = launcherConfiguration.CashboxId!.Value; 
+                var cashboxId = launcherConfiguration.CashboxId!.Value;
 
-                var dataProtector = dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+                var dataProtector =
+                    dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
 
                 clientEcdh = CashboxConfigEncryption.CreateCurve();
                 var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
@@ -257,7 +264,9 @@ namespace fiskaltrust.Launcher.Commands
                     throw new InvalidOperationException("Failed to download cashbox configuration.");
                 }
 
-                cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
+                cashboxConfiguration =
+                    CashBoxConfigurationExt.Deserialize(
+                        await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
                 cashboxConfiguration.Decrypt(launcherConfiguration, clientEcdh);
             }
 
@@ -266,42 +275,50 @@ namespace fiskaltrust.Launcher.Commands
                 specificOptions, host.Services.GetRequiredService<S>());
         }
 
-        public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder, bool useOffline = false, bool dryRun = false, bool useFallback = false)
+        public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder,
+            bool useOffline = false, bool dryRun = false, bool useFallback = false)
         {
             Log.Verbose("Loading Curve.");
-            var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
+            var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback)
+                .CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
             var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
 
-            if (File.Exists(clientEcdhPath))
+            try
             {
-                return ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
+                if (File.Exists(clientEcdhPath))
+                {
+                    return ECDiffieHellmanExt.Deserialize(
+                        dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
+                }
             }
-            else
+            catch (Exception e)
             {
-                const string offlineClientEcdhPath = "/client.ecdh";
-                ECDiffieHellman clientEcdh;
+                Log.Warning($"Error loading or decrypting ECDH curve: {e.Message}. Regenerating new curve.");
+            }
 
-                if (!dryRun && useOffline && File.Exists(offlineClientEcdhPath))
+            const string offlineClientEcdhPath = "/client.ecdh";
+            if (!dryRun && useOffline && File.Exists(offlineClientEcdhPath))
+            {
+                var clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
+                try
                 {
-                    clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
-                    try
-                    {
-                        File.Delete(offlineClientEcdhPath);
-                    }
-                    catch { }
+                    File.Delete(offlineClientEcdhPath);
                 }
-                else
+                catch
                 {
-                    clientEcdh = CashboxConfigEncryption.CreateCurve();
-                }
-
-                if (!dryRun)
-                {
-                    await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize()));
                 }
 
                 return clientEcdh;
             }
+
+            // Regenerating the curve if it's not loaded or in case of an error
+            var newClientEcdh = CashboxConfigEncryption.CreateCurve();
+            if (!dryRun)
+            {
+                await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(newClientEcdh.Serialize()));
+            }
+
+            return newClientEcdh;
         }
     }
 }
