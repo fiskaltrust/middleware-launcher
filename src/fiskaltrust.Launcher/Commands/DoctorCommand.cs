@@ -90,7 +90,9 @@ namespace fiskaltrust.Launcher.Commands
                 ftCashBoxConfiguration cashboxConfiguration = new();
 
                 if (clientEcdh is null)
-                { }
+                {
+                    Log.Warning("Failed to load ECDH curve. Unable to proceed with Doctor checks.");
+                }
                 else
                 {
                     using var downloader = new ConfigurationDownloader(launcherConfiguration);
