@@ -16,7 +16,6 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
         {
-            Log.Information($"SystemdHelpers.IsSystemdService() {SystemdHelpers.IsSystemdService()}");
             if (!await IsSystemd())
             {
                 return -1;
