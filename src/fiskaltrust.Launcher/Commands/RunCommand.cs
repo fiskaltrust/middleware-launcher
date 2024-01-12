@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using fiskaltrust.Launcher.ProcessHost;
 using fiskaltrust.Launcher.Services;
 using Serilog;
@@ -8,12 +7,6 @@ using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.storage.serialization.V0;
-using System.Security.Cryptography;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 
 
 namespace fiskaltrust.Launcher.Commands
@@ -66,9 +59,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public static async Task<int> HandleAsync(CommonOptions commonOptions, CommonProperties commonProperties, RunOptions _, RunServices runServices)
         {
-            Log.Debug("RunHandler");
             var builder = WebApplication.CreateBuilder();
-            Log.Debug("WebApplication.CreateBuilde");
 
             builder.Host
                 .UseSerilog()

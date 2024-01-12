@@ -32,8 +32,21 @@ namespace fiskaltrust.Launcher.Extensions
             else if (SystemdHelpers.IsSystemdService())
             {
                 builder.UseSystemd();
-                builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
-                return builder;
+
+                return builder.ConfigureServices(services =>
+                {
+                    var lifetime = services.FirstOrDefault(s => s.ImplementationType == typeof(SystemdLifetime));
+
+                    if (lifetime != null)
+                    {
+                        services.Remove(lifetime);
+                    }
+
+#pragma warning disable CA1416
+                    services.AddSingleton<ILifetime, CustomSystemDServiceLifetime>();
+                    services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
+#pragma warning restore CA1416
+                });
             }
             else
             {
@@ -138,6 +151,39 @@ namespace fiskaltrust.Launcher.Extensions
             }
 
             base.Dispose(disposing);
+        }
+    }
+    [SupportedOSPlatform("linux")]
+    public class CustomSystemDServiceLifetime : SystemdLifetime, ILifetime
+    {
+        private readonly CancellationTokenSource _starting = new();
+        private readonly ManualResetEventSlim _started = new();
+
+        public IHostApplicationLifetime ApplicationLifetime { get; init; }
+
+        public CustomSystemDServiceLifetime(
+            IHostEnvironment environment,
+            IHostApplicationLifetime applicationLifetime,
+            ILoggerFactory loggerFactory,
+            ISystemdNotifier systemdNotifier)
+            : base(environment, applicationLifetime, systemdNotifier, loggerFactory)
+        {
+            ApplicationLifetime = applicationLifetime;
+        }
+
+        public void ServiceStartupCompleted()
+        {
+            ApplicationLifetime.ApplicationStarted.Register(() => _started.Set());
+        }
+
+        public new async Task WaitForStartAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(_starting.Token, cancellationToken);
+                await base.WaitForStartAsync(cts.Token);
+            }
+            catch (OperationCanceledException) when (_starting.IsCancellationRequested) { }
         }
     }
 }
