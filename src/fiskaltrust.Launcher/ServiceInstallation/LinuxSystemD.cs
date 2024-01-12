@@ -17,7 +17,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
         {
             Log.Information($"SystemdHelpers.IsSystemdService() {SystemdHelpers.IsSystemdService()}");
-            if (!SystemdHelpers.IsSystemdService())
+            if (!await IsSystemd())
             {
                 return -1;
             }
@@ -34,7 +34,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         public override async Task<int> UninstallService()
         {
-            if (!SystemdHelpers.IsSystemdService())
+            if (!await IsSystemd())
             {
                 return -1;
             }
@@ -71,5 +71,17 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 "WantedBy = multi-user.target"
             };
         }
+
+        private static async Task<bool> IsSystemd()
+        {
+            var (exitCode, output) = await ProcessHelper.RunProcess("ps", new[] { "--no-headers", "-o", "comm", "1" });
+            if (exitCode != 0 && output.Contains("systemd"))
+            {
+                Log.Error("Service installation works only for systemd setup.");
+                return false;
+            }
+            return true;
+        }
+
     }
 }
