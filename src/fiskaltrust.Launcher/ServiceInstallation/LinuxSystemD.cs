@@ -101,7 +101,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         private static async Task<bool> IsSystemdServiceInstalled(string serviceName)
         {
-            var (exitCode, output) = await ProcessHelper.RunProcess("systemctl", new[] { $"list-unit-files --type service | grep -F \"{serviceName}.service\"" });
+            var (exitCode, output) = await ProcessHelper.RunProcess("/usr/bin/systemctl", new[] { $"list-unit-files --type service | grep -F \"{serviceName}.service\"" });
             Log.Information($"exitCode: {exitCode}, output: {output}");
             if (exitCode != 0 && !output.Contains("serviceName"))
             {
