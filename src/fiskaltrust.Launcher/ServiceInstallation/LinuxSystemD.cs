@@ -1,6 +1,7 @@
 ﻿using fiskaltrust.Launcher.Helpers;
 using Microsoft.Extensions.Hosting.Systemd;
 using Serilog;
+using System.CommandLine;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
 {
@@ -89,6 +90,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         private static async Task<bool> IsSystemd()
         {
             var (exitCode, output) = await ProcessHelper.RunProcess("ps", new[] { "--no-headers", "-o", "comm", "1" });
+
             if (exitCode != 0 && output.Contains("systemd"))
             {
                 Log.Error("Service installation works only for systemd setup.");
@@ -99,7 +101,9 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         private static async Task<bool> IsSystemdServiceInstalled(string serviceName)
         {
-            var (exitCode, output) = await ProcessHelper.RunProcess("systemctl", new[] { $"list -unit-files", "--type service", $" | grep -F \"{serviceName}.service\"" });
+            Log.Information($"systemctl list-unit-files --type service | grep -F \"{serviceName}.service\"");
+            var (exitCode, output) = await ProcessHelper.RunProcess("systemctl", new[] { $"systemctl list-unit-files --type service | grep -F \"{serviceName}.service\"" });
+            Log.Information($"exitCode: {exitCode}, output: {output}");
             if (exitCode != 0 && !output.Contains("serviceName"))
             {
                 return false;
