@@ -25,7 +25,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
             if(await IsSystemdServiceInstalled(_serviceName))
             {
-                Log.Error("Service is already installed and cannot be installed twice to one cashbox.");
+                Log.Error("Service is already installed and cannot be installed twice for one cashbox.");
                 return -1;
             }
             Log.Information("Installing service via systemd.");
