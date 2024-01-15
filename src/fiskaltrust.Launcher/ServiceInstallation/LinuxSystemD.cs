@@ -103,7 +103,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         {
             var (exitCode, output) = await ProcessHelper.RunProcess("systemctl", new[] { $"status {serviceName}" });
             Log.Information($"exitCode: {exitCode}, output: {output}");
-            if (exitCode != 0 && !output.Contains("serviceName"))
+            if (exitCode != 4)
             {
                 return false;
             }
