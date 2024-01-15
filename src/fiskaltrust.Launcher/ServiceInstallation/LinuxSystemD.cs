@@ -18,6 +18,13 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         {
             if (!await IsSystemd())
             {
+                Log.Error("No SystemD on this machine. No service installation possible.");
+                return -1;
+            }
+
+            if(await IsSystemdServiceInstalled(_serviceName))
+            {
+                Log.Error("Service is already installed and cannot be installed twice to one cashbox.");
                 return -1;
             }
             Log.Information("Installing service via systemd.");
@@ -35,8 +42,16 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         {
             if (!await IsSystemd())
             {
+                Log.Error("No SystemD on this machine. No service uninstallation possible.");
                 return -1;
             }
+
+            if (!await IsSystemdServiceInstalled(_serviceName))
+            {
+                Log.Error("Service is not installed!");
+                return -1;
+            }
+
             Log.Information("Stop service on systemd.");
             await ProcessHelper.RunProcess("systemctl", new[] { "stop ", _serviceName });
             Log.Information("Disable service.");
@@ -82,5 +97,14 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             return true;
         }
 
+        private static async Task<bool> IsSystemdServiceInstalled(string serviceName)
+        {
+            var (exitCode, output) = await ProcessHelper.RunProcess("systemctl", new[] { $"list -unit-files", "--type service", $" | grep -F \"{serviceName}.service\"" });
+            if (exitCode != 0 && !output.Contains("serviceName"))
+            {
+                return false;
+            }
+            return true;
+        }   
     }
 }
