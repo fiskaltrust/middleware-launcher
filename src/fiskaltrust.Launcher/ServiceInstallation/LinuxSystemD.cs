@@ -23,7 +23,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 return -1;
             }
 
-            if(await IsSystemdServiceInstalled(_serviceName))
+            if (await IsSystemdServiceInstalled(_serviceName))
             {
                 Log.Error("Service is already installed and cannot be installed twice for one cashbox.");
                 return -1;
@@ -79,7 +79,6 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 "[Service]",
                 "Type=notify",
                 $"ExecStart={command}",
-                "TimeoutSec=0",
                 $"WorkingDirectory={Path.GetDirectoryName(_launcherExecutablePath.Path)}",
                 "",
                 "[Install]",
@@ -108,6 +107,6 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 return false;
             }
             return true;
-        }   
+        }
     }
 }
