@@ -6,6 +6,15 @@ using Microsoft.Extensions.Options;
 
 namespace fiskaltrust.Launcher.Extensions
 {
+    public record ServiceType(ServiceTypes Type);
+
+    public enum ServiceTypes
+    {
+        WindowsService,
+        SystemdService,
+        ConsoleApplication
+    }
+
     static class LifetimeExtensions
     {
         public static IHostBuilder UseCustomHostLifetime(this IHostBuilder builder)
@@ -16,6 +25,7 @@ namespace fiskaltrust.Launcher.Extensions
 
                 return builder.ConfigureServices(services =>
                 {
+                    services.AddSingleton(new ServiceType(ServiceTypes.WindowsService));
                     var lifetime = services.FirstOrDefault(s => s.ImplementationType == typeof(WindowsServiceLifetime));
 
                     if (lifetime != null)
@@ -35,6 +45,7 @@ namespace fiskaltrust.Launcher.Extensions
 
                 return builder.ConfigureServices(services =>
                 {
+                    services.AddSingleton(new ServiceType(ServiceTypes.SystemdService));
                     var lifetime = services.FirstOrDefault(s => s.ImplementationType == typeof(SystemdLifetime));
 
                     if (lifetime != null)
@@ -51,7 +62,10 @@ namespace fiskaltrust.Launcher.Extensions
             else
             {
                 Console.OutputEncoding = Encoding.UTF8;
-                builder.ConfigureServices(services => services.AddSingleton<ILifetime, Lifetime>());
+                builder.ConfigureServices(services => services
+                    .AddSingleton<ILifetime, Lifetime>()
+                    .AddSingleton(new ServiceType(ServiceTypes.ConsoleApplication)));
+
                 builder.UseConsoleLifetime();
                 return builder;
             }

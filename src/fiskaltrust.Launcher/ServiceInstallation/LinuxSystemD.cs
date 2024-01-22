@@ -23,7 +23,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 return -1;
             }
 
-            if(await IsSystemdServiceInstalled(_serviceName))
+            if (await IsSystemdServiceInstalled(_serviceName))
             {
                 Log.Error("Service is already installed and cannot be installed twice for one cashbox.");
                 return -1;
@@ -33,9 +33,9 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
             await File.AppendAllLinesAsync(serviceFilePath, serviceFileContent).ConfigureAwait(false);
             await ProcessHelper.RunProcess("systemctl", new[] { "daemon-reload" });
-            Log.Information("Starting service.");
+            Log.Information("Starting systemd service.");
             await ProcessHelper.RunProcess("systemctl", new[] { "start", _serviceName });
-            Log.Information("Enable service.");
+            Log.Information("Enabling systemd service.");
             return (await ProcessHelper.RunProcess("systemctl", new[] { "enable", _serviceName, "-q" })).exitCode;
         }
 
@@ -53,17 +53,17 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 return -1;
             }
 
-            Log.Information("Stop service on systemd.");
-            await ProcessHelper.RunProcess("systemctl", new[] { "stop ", _serviceName });
-            Log.Information("Disable service.");
-            await ProcessHelper.RunProcess("systemctl", new[] { "disable ", _serviceName, "-q" });
-            Log.Information("Remove service.");
+            Log.Information("Stoppig systemd service.");
+            await ProcessHelper.RunProcess("systemctl", ["stop ", _serviceName]);
+            Log.Information("Disabling systemd service.");
+            await ProcessHelper.RunProcess("systemctl", ["disable ", _serviceName, "-q"]);
+            Log.Information("Removing systemd service.");
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
-            await ProcessHelper.RunProcess("rm", new[] { serviceFilePath });
-            Log.Information("Reload daemon.");
-            await ProcessHelper.RunProcess("systemctl", new[] { "daemon-reload" });
-            Log.Information("Reset failed.");
-            return (await ProcessHelper.RunProcess("systemctl", new[] { "reset-failed" })).exitCode;
+            await ProcessHelper.RunProcess("rm", [serviceFilePath]);
+            Log.Information("Reloading systemd daemon.");
+            await ProcessHelper.RunProcess("systemctl", ["daemon-reload"]);
+            Log.Information("Reseting state for failed systemd units.");
+            return (await ProcessHelper.RunProcess("systemctl", ["reset-failed"])).exitCode;
         }
 
         private string[] GetServiceFileContent(string serviceDescription, string commandArgs)
@@ -108,6 +108,6 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 return false;
             }
             return true;
-        }   
+        }
     }
 }
