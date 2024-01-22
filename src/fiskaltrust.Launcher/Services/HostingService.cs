@@ -186,6 +186,9 @@ namespace fiskaltrust.Launcher.Services
                     case "net.tcp":
                         builder.AddServiceEndpoint(instance.GetType(), typeof(T), CreateNetTcpBinding(), uri, null);
                         break;
+                    case "net.pipe":
+                        _logger.LogWarning("net.pipe url support will be added in an upcomming version of the launcher 2.0.");
+                        break;
                     default:
                         throw new Exception();
                 };
