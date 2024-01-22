@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
@@ -10,6 +11,7 @@ using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.Launcher.Logging;
+using fiskaltrust.Launcher.ServiceInstallation;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.DataProtection;
 using Serilog;
@@ -35,10 +37,8 @@ namespace fiskaltrust.Launcher.Commands
 
             if (addCliOnlyParameters)
             {
-                AddOption(new Option<string>("--launcher-configuration-file",
-                    getDefaultValue: () => Paths.LauncherConfigurationFileName));
-                AddOption(new Option<string>("--legacy-configuration-file",
-                    getDefaultValue: () => Paths.LegacyConfigurationFileName));
+                AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => Paths.LauncherConfigurationFileName));
+                AddOption(new Option<string>("--legacy-configuration-file", getDefaultValue: () => Paths.LegacyConfigurationFileName));
                 AddOption(new Option<bool>("--merge-legacy-config-if-exists", getDefaultValue: () => true));
             }
         }
@@ -46,8 +46,7 @@ namespace fiskaltrust.Launcher.Commands
 
     public class CommonOptions
     {
-        public CommonOptions(LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile,
-            string legacyConfigurationFile, bool mergeLegacyConfigIfExists)
+        public CommonOptions(LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile, string legacyConfigurationFile, bool mergeLegacyConfigIfExists)
         {
             ArgsLauncherConfiguration = argsLauncherConfiguration;
             LauncherConfigurationFile = launcherConfigurationFile;
@@ -63,9 +62,7 @@ namespace fiskaltrust.Launcher.Commands
 
     public record CommonProperties
     {
-        public CommonProperties(LauncherConfiguration launcherConfiguration,
-            ftCashBoxConfiguration cashboxConfiguration, ECDiffieHellman clientEcdh,
-            IDataProtectionProvider dataProtectionProvider)
+        public CommonProperties(LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashboxConfiguration, ECDiffieHellman clientEcdh, IDataProtectionProvider dataProtectionProvider)
         {
             LauncherConfiguration = launcherConfiguration;
             CashboxConfiguration = cashboxConfiguration;
@@ -87,6 +84,7 @@ namespace fiskaltrust.Launcher.Commands
             IHost host,
             Func<CommonOptions, CommonProperties, O, S, Task<int>> handler) where S : notnull
         {
+            // Log messages will be save here and logged later when we have the configuration options to create the logger.
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(collectionSink)
@@ -98,8 +96,7 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 options.LauncherConfigurationFile = Path.GetFullPath(options.LauncherConfigurationFile);
-                launcherConfiguration =
-                    LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(options.LauncherConfigurationFile));
+                launcherConfiguration = LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(options.LauncherConfigurationFile));
             }
             catch (Exception e)
             {
@@ -107,19 +104,15 @@ namespace fiskaltrust.Launcher.Commands
                 {
                     if (File.Exists(options.LauncherConfigurationFile))
                     {
-                        Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".",
-                            options.LauncherConfigurationFile);
+                        Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".", options.LauncherConfigurationFile);
                     }
                     else
                     {
-                        Log.Warning("Launcher configuration file \"{LauncherConfigurationFile}\" does not exist.",
-                            options.LauncherConfigurationFile);
+                        Log.Warning("Launcher configuration file \"{LauncherConfigurationFile}\" does not exist.", options.LauncherConfigurationFile);
                     }
-
                     Log.Warning("Using command line parameters only.", options.LauncherConfigurationFile);
                 }
             }
-
             Log.Verbose("Merging legacy launcher config file.");
             if (options.MergeLegacyConfigIfExists && File.Exists(options.LegacyConfigurationFile))
             {
@@ -141,9 +134,9 @@ namespace fiskaltrust.Launcher.Commands
 
             Log.Verbose("Merging launcher cli args.");
             launcherConfiguration.OverwriteWith(options.ArgsLauncherConfiguration);
+            await EnsureServiceDirectoryExists(launcherConfiguration);
 
-            if (!launcherConfiguration.UseOffline!.Value &&
-                (launcherConfiguration.CashboxId is null || launcherConfiguration.AccessToken is null))
+            if (!launcherConfiguration.UseOffline!.Value && (launcherConfiguration.CashboxId is null || launcherConfiguration.AccessToken is null))
             {
                 Log.Error("CashBoxId and AccessToken are not provided.");
             }
@@ -164,8 +157,7 @@ namespace fiskaltrust.Launcher.Commands
             ECDiffieHellman? clientEcdh = null;
             try
             {
-                clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!,
-                    launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
+                clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value,  useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
                 using var downloader = new ConfigurationDownloader(launcherConfiguration);
                 var exists = await downloader.DownloadConfigurationAsync(clientEcdh);
                 if (launcherConfiguration.UseOffline!.Value && !exists)
@@ -176,13 +168,11 @@ namespace fiskaltrust.Launcher.Commands
             catch (Exception e)
             {
                 var message = "Could not download Cashbox configuration. ";
-                message +=
-                    $"(Launcher is running in {(launcherConfiguration.Sandbox!.Value ? "sandbox" : "production")} mode.";
+                message += $"(Launcher is running in {(launcherConfiguration.Sandbox!.Value ? "sandbox" : "production")} mode.";
                 if (!launcherConfiguration.Sandbox!.Value)
                 {
                     message += " Did you forget the --sandbox flag?";
                 }
-
                 message += ")";
                 Log.Error(e, message);
             }
@@ -190,32 +180,30 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 var cashboxConfigurationFile = launcherConfiguration.CashboxConfigurationFile!;
-                launcherConfiguration.OverwriteWith(
-                    LauncherConfigurationInCashBoxConfiguration.Deserialize(
-                        await File.ReadAllTextAsync(cashboxConfigurationFile)));
+                launcherConfiguration.OverwriteWith(LauncherConfigurationInCashBoxConfiguration.Deserialize(await File.ReadAllTextAsync(cashboxConfigurationFile)));
             }
             catch (Exception e)
             {
+                // will exit with non-zero exit code later.
                 Log.Fatal(e, "Could not read Cashbox configuration file.");
             }
 
             var cashboxConfiguration = new ftCashBoxConfiguration();
             try
             {
-                cashboxConfiguration =
-                    CashBoxConfigurationExt.Deserialize(
-                        await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
+                cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
                 cashboxConfiguration.Decrypt(launcherConfiguration, clientEcdh);
             }
             catch (Exception e)
             {
+                // will exit with non-zero exit code later.
                 Log.Fatal(e, "Could not parse Cashbox configuration.");
             }
 
+            // Previous log messages will be logged here using this logger.
             Log.Logger = new LoggerConfiguration()
                 .AddLoggingConfiguration(launcherConfiguration)
-                .AddFileLoggingConfiguration(launcherConfiguration,
-                    new[] { "fiskaltrust.Launcher", launcherConfiguration.CashboxId?.ToString() })
+                .AddFileLoggingConfiguration(launcherConfiguration, new[] { "fiskaltrust.Launcher", launcherConfiguration.CashboxId?.ToString() })
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
@@ -224,101 +212,113 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Write(logEvent);
             }
 
+            // If any critical errors occured, we exit with a non-zero exit code.
+            // In many cases we don't want to immediately exit the application,
+            // but we want to log the error and continue and see what else is going on before we exit.
             if (collectionSink.Events.Where(e => e.Level == LogEventLevel.Fatal).Any())
             {
                 return 1;
             }
 
             Log.Debug("Launcher Configuration File: {LauncherConfigurationFile}", options.LauncherConfigurationFile);
-            Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}",
-                launcherConfiguration.CashboxConfigurationFile);
+            Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", launcherConfiguration.CashboxConfigurationFile);
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", launcherConfiguration.Redacted());
 
-            var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken,
-                useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
+
+            var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
 
             try
             {
-                launcherConfiguration.Decrypt
-                    (dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
+                launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
             }
             catch (Exception e)
             {
-                Log.Warning(e,
-                    "Error decrypting launcher configuration. Please check your configuration settings. If necessary, use 'config set' command to update your configuration.");
-
-                var serviceFolder = launcherConfiguration.ServiceFolder!;
-                var cashboxId = launcherConfiguration.CashboxId!.Value;
-
-                var dataProtector =
-                    dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
-
-                clientEcdh = CashboxConfigEncryption.CreateCurve();
-                var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
-                await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize()));
-
-                using var downloader = new ConfigurationDownloader(launcherConfiguration);
-                var exists = await downloader.DownloadConfigurationAsync(clientEcdh);
-                if (!exists)
-                {
-                    throw new InvalidOperationException("Failed to download cashbox configuration.");
-                }
-
-                cashboxConfiguration =
-                    CashBoxConfigurationExt.Deserialize(
-                        await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
-                cashboxConfiguration.Decrypt(launcherConfiguration, clientEcdh);
+                Log.Warning(e, "Error decrypring launcher configuration file.");
             }
 
-            return await handler(options,
-                new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh, dataProtectionProvider),
-                specificOptions, host.Services.GetRequiredService<S>());
+            return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
         }
 
-        public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder,
-            bool useOffline = false, bool dryRun = false, bool useFallback = false)
+        private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
         {
-            Log.Verbose("Loading Curve.");
-            var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback)
-                .CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
-            var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
-
+            var serviceDirectory = config.ServiceFolder;
             try
             {
-                if (File.Exists(clientEcdhPath))
+                if (!Directory.Exists(serviceDirectory))
                 {
-                    return ECDiffieHellmanExt.Deserialize(
-                        dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Warning($"Error loading or decrypting ECDH curve: {e.Message}. Regenerating new curve.");
-            }
+                    Directory.CreateDirectory(serviceDirectory);
 
-            const string offlineClientEcdhPath = "/client.ecdh";
-            if (!dryRun && useOffline && File.Exists(offlineClientEcdhPath))
-            {
-                var clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
-                try
-                {
-                    File.Delete(offlineClientEcdhPath);
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    {
+                        var user = Environment.GetEnvironmentVariable("USER");
+                        if (!string.IsNullOrEmpty(user))
+                        {
+                            var chownResult = await ProcessHelper.RunProcess("chown", new[] { user, serviceDirectory }, LogEventLevel.Debug);
+                            if (chownResult.exitCode != 0)
+                            {
+                                Log.Warning("Failed to change owner of the service directory.");
+                            }
+
+                            var chmodResult = await ProcessHelper.RunProcess("chmod", new[] { "774", serviceDirectory }, LogEventLevel.Debug);
+                            if (chmodResult.exitCode != 0)
+                            {
+                                Log.Warning("Failed to change permissions of the service directory.");
+                            }
+                        }
+                        else
+                        {
+                            Log.Warning("Service user name is not set. Owner of the service directory will not be changed.");
+                        }
+                    }
+                    else
+                    {
+                        Log.Debug("Changing owner and permissions is skipped on non-Unix operating systems.");
+                    }
                 }
-                catch
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                // will exit with non-zero exit code later.
+                Log.Fatal(e, "Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.", serviceDirectory);
+            }
+        }
+
+        public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder, bool useOffline = false, bool dryRun = false, bool useFallback = false)
+        {
+            Log.Verbose("Loading Curve.");
+            var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
+            var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
+
+            if (File.Exists(clientEcdhPath))
+            {
+                return ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
+            }
+            else
+            {
+                const string offlineClientEcdhPath = "/client.ecdh";
+                ECDiffieHellman clientEcdh;
+
+                if (!dryRun && useOffline && File.Exists(offlineClientEcdhPath))
                 {
+                    clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
+                    try
+                    {
+                        File.Delete(offlineClientEcdhPath);
+                    }
+                    catch { }
+                }
+                else
+                {
+                    clientEcdh = CashboxConfigEncryption.CreateCurve();
+                }
+
+                if (!dryRun)
+                {
+                    await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize()));
                 }
 
                 return clientEcdh;
             }
-
-            // Regenerating the curve if it's not loaded or in case of an error
-            var newClientEcdh = CashboxConfigEncryption.CreateCurve();
-            if (!dryRun)
-            {
-                await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(newClientEcdh.Serialize()));
-            }
-
-            return newClientEcdh;
         }
     }
 }
