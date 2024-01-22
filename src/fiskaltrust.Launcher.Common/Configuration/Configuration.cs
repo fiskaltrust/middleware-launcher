@@ -84,7 +84,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             get => WithDefault(
                 _launcherServiceUri,
                 OperatingSystem.IsWindows()
-                    ? $"net.pipe://localhost/fiskaltrust-{_cashboxId}"
+                    ? $"fiskaltrust-{_cashboxId}"
                     : $"/tmp/fiskaltrust-{_cashboxId}.sock"
             );
             set => _launcherServiceUri = value;
