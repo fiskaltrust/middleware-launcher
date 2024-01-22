@@ -88,14 +88,20 @@ namespace fiskaltrust.Launcher.Commands
             {
                 builder.WebHost.UseKestrel(serverOptions =>
                 {
-                    serverOptions.ListenNamedPipe(commonProperties.LauncherConfiguration.LauncherServiceUri!);
+                    serverOptions.ListenNamedPipe(commonProperties.LauncherConfiguration.LauncherServiceUri!, listenOptions =>
+                    {
+                        listenOptions.Protocols = HttpProtocols.Http2;
+                    });
                 });
             }
             else
             {
                 builder.WebHost.UseKestrel(serverOptions =>
                 {
-                    serverOptions.ListenUnixSocket(commonProperties.LauncherConfiguration.LauncherServiceUri!);
+                    serverOptions.ListenUnixSocket(commonProperties.LauncherConfiguration.LauncherServiceUri!, listenOptions =>
+                    {
+                        listenOptions.Protocols = HttpProtocols.Http2;
+                    });
                 });
             }
 
