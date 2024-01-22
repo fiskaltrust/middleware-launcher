@@ -77,9 +77,18 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("accessToken")]
         public string? AccessToken { get => _accessToken; set => _accessToken = value; }
 
-        private int? _launcherPort;
-        [JsonPropertyName("launcherPort")]
-        public int? LauncherPort { get => WithDefault(_launcherPort, 0); set => _launcherPort = value; }
+        private string? _launcherServiceUri;
+        [JsonPropertyName("launcherServiceUri")]
+        public string? LauncherServiceUri
+        {
+            get => WithDefault(
+                _launcherServiceUri,
+                OperatingSystem.IsWindows()
+                    ? $"fiskaltrust-{_cashboxId}"
+                    : $"/tmp/fiskaltrust-{_cashboxId}.sock"
+            );
+            set => _launcherServiceUri = value;
+        }
 
         private string? _serviceFolder;
         [JsonPropertyName("serviceFolder")]

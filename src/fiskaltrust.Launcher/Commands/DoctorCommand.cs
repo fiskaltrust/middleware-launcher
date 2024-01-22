@@ -156,7 +156,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 checkUp.Check("Setup monarch ProcessHostService", () =>
                 {
-                    monarchBuilder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{launcherConfiguration.LauncherPort}"), protocols: HttpProtocols.Http2);
+                    monarchBuilder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{launcherConfiguration.LauncherServiceUri}"), protocols: HttpProtocols.Http2);
 
                     monarchBuilder.Services.AddCodeFirstGrpc();
                 }, throws: true);
@@ -185,7 +185,7 @@ namespace fiskaltrust.Launcher.Commands
                     Version = "1.0.0"
                 };
 
-                IProcessHostService? processHostService = checkUp.Check("Start plebeian processhostservice client", () => GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>());
+                IProcessHostService? processHostService = checkUp.Check("Start plebeian processhostservice client", () => GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherServiceUri}").CreateGrpcService<IProcessHostService>());
 
                 var plebeianBuilder = Host.CreateDefaultBuilder()
                     .UseSerilog(new LoggerConfiguration().CreateLogger())

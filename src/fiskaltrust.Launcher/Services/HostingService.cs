@@ -54,11 +54,13 @@ namespace fiskaltrust.Launcher.Services
         {
             var builder = WebApplication.CreateBuilder();
 
+            // Configure Serilog for logging
             builder.Host.UseSerilog((_, __, loggerConfiguration) =>
                 loggerConfiguration
                     .AddLoggingConfiguration(_launcherConfiguration, aspLogging: true)
                     .WriteTo.GrpcSink(_packageConfiguration, _processHostService));
 
+            // Add HTTP logging if the log level is set to Debug or lower
             if (_launcherConfiguration.LogLevel <= LogLevel.Debug)
             {
                 builder.Services.AddHttpLogging(options =>
@@ -71,9 +73,10 @@ namespace fiskaltrust.Launcher.Services
                     HttpLoggingFields.ResponseStatusCode |
                     HttpLoggingFields.ResponseBody);
             }
+
             WebApplication app;
 
-
+            // Check if UseHttpSysBinding is enabled and log warnings if necessary
             if (_launcherConfiguration.UseHttpSysBinding!.Value)
             {
                 const string message = $"The configuration parameter {{parametername}} will be ignored because {nameof(_launcherConfiguration.UseHttpSysBinding)} is enabled.";
@@ -98,6 +101,7 @@ namespace fiskaltrust.Launcher.Services
                 }
             }
 
+            // Create the appropriate host based on the hosting type
             switch (hostingType)
             {
                 case HostingType.REST:
@@ -117,6 +121,7 @@ namespace fiskaltrust.Launcher.Services
                     throw new NotImplementedException();
             }
 
+            // Use HTTP logging if the log level is set to Debug or lower
             if (_launcherConfiguration.LogLevel <= LogLevel.Debug)
             {
                 app.UseHttpLogging();
@@ -130,6 +135,7 @@ namespace fiskaltrust.Launcher.Services
 
         private WebApplication CreateRestHost<T>(WebApplicationBuilder builder, Uri uri, T instance, Action<WebApplication> addEndpoints)
         {
+            // Configure JSON options
             builder.Services.Configure<JsonOptions>(options =>
             {
                 options.SerializerOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
@@ -140,6 +146,7 @@ namespace fiskaltrust.Launcher.Services
                 options.SerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
             });
 
+            // Configure Kestrel server binding
             builder.WebHost.ConfigureBinding(uri, listenOptions => ConfigureTls(listenOptions), isHttps: !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64), allowSynchronousIO: true, useHttpSys: _launcherConfiguration.UseHttpSysBinding!.Value);
 
             var app = builder.Build();
@@ -247,7 +254,10 @@ namespace fiskaltrust.Launcher.Services
             builder.Services.AddSingleton(instance);
 
             var app = builder.Build();
-            if (!OperatingSystem.IsWindows() || _launcherConfiguration.UseHttpSysBinding!.Value == false) { app.UsePathBase(uri.AbsolutePath); }
+            if (!OperatingSystem.IsWindows() || _launcherConfiguration.UseHttpSysBinding!.Value == false)
+            {
+                app.UsePathBase(uri.AbsolutePath);
+            }
 
             app.UseRouting();
 #pragma warning disable ASP0014

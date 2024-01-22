@@ -6,8 +6,6 @@ using System.CommandLine.Hosting;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using System.CommandLine.NamingConventionBinder;
-using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.Launcher.Common.Constants;
 
 var runCommand = new RunCommand()
 {
