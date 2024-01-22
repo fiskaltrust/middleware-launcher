@@ -6,8 +6,6 @@ using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Hosting.WindowsServices;
 
 namespace fiskaltrust.Launcher.ProcessHost
@@ -38,7 +36,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             _lifetime = lifetime;
             _launcherExecutablePath = launcherExecutablePath;
         }
-        
+
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             _lifetime.ApplicationLifetime.ApplicationStopping.Register(() => _logger.LogInformation("Shutting down launcher."));

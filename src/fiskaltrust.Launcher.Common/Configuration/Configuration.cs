@@ -32,10 +32,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         private readonly object _rawAccessLock = new();
 
         [JsonConstructor]
-        public LauncherConfiguration()
-        { 
-            _rawAccess = false;
-        }
+        public LauncherConfiguration() { _rawAccess = false; }
 
         public T Raw<T>(System.Linq.Expressions.Expression<Func<LauncherConfiguration, T>> accessor)
         {
@@ -82,11 +79,12 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         private string? _launcherServiceUri;
         [JsonPropertyName("launcherServiceUri")]
-        public string? LauncherServiceUri {
+        public string? LauncherServiceUri
+        {
             get => WithDefault(
                 _launcherServiceUri,
                 OperatingSystem.IsWindows()
-                    ? $"net.pipe://localhost/fiskaltrust-{_cashboxId}" 
+                    ? $"net.pipe://localhost/fiskaltrust-{_cashboxId}"
                     : $"/tmp/fiskaltrust-{_cashboxId}.sock"
             );
             set => _launcherServiceUri = value;
@@ -99,7 +97,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         private bool? _sandbox;
         [JsonPropertyName("sandbox")]
         public bool? Sandbox { get => WithDefault(_sandbox, false); set => _sandbox = value; }
-        
+
         private bool? _useOffline;
         [JsonPropertyName("useOffline")]
         public bool? UseOffline { get => WithDefault(_useOffline, false); set => _useOffline = value; }
@@ -116,7 +114,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("logLevel")]
         [AlternateName("verbosity")]
         public LogLevel? LogLevel { get => WithDefault(_logLevel, Microsoft.Extensions.Logging.LogLevel.Information); set => _logLevel = value; }
-        
+
         private Uri? _packagesUrl;
         [JsonPropertyName("packagesUrl")]
         public Uri? PackagesUrl { get => WithDefault(_packagesUrl, () => new Uri(Sandbox!.Value ? "https://packages-2-0-sandbox.fiskaltrust.cloud" : "https://packages-2-0.fiskaltrust.cloud")); set => _packagesUrl = value; }
@@ -338,9 +336,8 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
             return null;
         }
-        
     }
-    
+
     public record LauncherConfigurationInCashBoxConfiguration
     {
         [JsonPropertyName("launcher")]

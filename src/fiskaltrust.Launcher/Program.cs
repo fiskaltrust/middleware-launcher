@@ -17,8 +17,8 @@ var command = new RootCommand("Launcher for the fiskaltrust.Middleware") {
     runCommand,
     new HostCommand() {
         IsHidden = true,
-        Handler = CommandHandler.Create<HostCommand.HostOptions, IHost>((hostOptions, host) =>
-            HostCommand.HostHandler.HandleAsync(hostOptions, host.Services.GetRequiredService<HostCommand.HostServices>()))
+        Handler = CommandHandler.Create<fiskaltrust.Launcher.Commands.HostOptions, IHost>(
+            (hostOptions, host) => HostHandler.HandleAsync(hostOptions, host.Services.GetRequiredService<HostServices>()))
     },
     new InstallCommand() {
         Handler = CommandHandler.Create<CommonOptions, InstallOptions, IHost>(
@@ -50,7 +50,7 @@ return await new CommandLineBuilder(command)
           host.UseCustomHostLifetime();
 
           host.ConfigureServices(services => services
-            .Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(45))
+            .Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(45))
             .AddSingleton(_ => subArguments)
             .AddSingleton(_ => new LauncherProcessId(Environment.ProcessId))
             .AddSingleton(_ => new LauncherExecutablePath
@@ -59,7 +59,7 @@ return await new CommandLineBuilder(command)
             })
             .AddSingleton<SelfUpdater>()
             .AddSingleton<RunServices>()
-            .AddSingleton<HostCommand.HostServices>()
+            .AddSingleton<HostServices>()
             .AddSingleton<InstallServices>()
             .AddSingleton<UninstallServices>()
             .AddSingleton<DoctorServices>()

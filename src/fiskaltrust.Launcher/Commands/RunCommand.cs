@@ -82,8 +82,8 @@ namespace fiskaltrust.Launcher.Commands
                     services.AddSingleton(_ => Log.Logger);
                     services.AddSingleton(_ => runServices.LauncherExecutablePath);
                 });
-            
-            //Configure Kestrel
+
+            //Configure Kestrel for ProcessHostService
             if (OperatingSystem.IsWindows())
             {
                 builder.WebHost.UseKestrel(serverOptions =>
@@ -98,7 +98,7 @@ namespace fiskaltrust.Launcher.Commands
                     serverOptions.ListenUnixSocket(commonProperties.LauncherConfiguration.LauncherServiceUri!);
                 });
             }
-            
+
             builder.Services.AddCodeFirstGrpc();
 
             var app = builder.Build();
