@@ -63,7 +63,6 @@ namespace fiskaltrust.Launcher.Commands
             var builder = WebApplication.CreateBuilder();
 
             builder.Host
-                .UseCustomHostLifetime()
                 .UseSerilog()
                 .ConfigureServices((_, services) =>
                 {
