@@ -1,5 +1,6 @@
 using System.Runtime.Versioning;
 using System.Text;
+using fiskaltrust.Launcher.Helpers;
 using Microsoft.Extensions.Hosting.Systemd;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Options;
@@ -39,24 +40,15 @@ namespace fiskaltrust.Launcher.Extensions
 #pragma warning restore CA1416
                 });
             }
-            else if (SystemdHelpers.IsSystemdService())
+            else if (CustomSystemdHelper.IsSystemdService())
             {
-                builder.UseSystemd();
-
                 return builder.ConfigureServices(services =>
                 {
-                    services.AddSingleton(new ServiceType(ServiceTypes.SystemdService));
-                    var lifetime = services.FirstOrDefault(s => s.ImplementationType == typeof(SystemdLifetime));
-
-                    if (lifetime != null)
-                    {
-                        services.Remove(lifetime);
-                    }
-
+                    services.AddSingleton<ISystemdNotifier, SystemdNotifier>();
+                    
 #pragma warning disable CA1416
                     services.AddSingleton<ILifetime, CustomSystemDServiceLifetime>();
                     services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
-#pragma warning restore CA1416
                 });
             }
             else
@@ -174,6 +166,7 @@ namespace fiskaltrust.Launcher.Extensions
         private readonly ManualResetEventSlim _started = new();
 
         public IHostApplicationLifetime ApplicationLifetime { get; init; }
+        private readonly ISystemdNotifier _systemdNotifier;
 
         public CustomSystemDServiceLifetime(
             IHostEnvironment environment,
@@ -183,11 +176,13 @@ namespace fiskaltrust.Launcher.Extensions
             : base(environment, applicationLifetime, systemdNotifier, loggerFactory)
         {
             ApplicationLifetime = applicationLifetime;
+            _systemdNotifier = systemdNotifier;
         }
 
         public void ServiceStartupCompleted()
         {
-            ApplicationLifetime.ApplicationStarted.Register(() => _started.Set());
+            _systemdNotifier.Notify(ServiceState.Ready);
+            ApplicationLifetime.ApplicationStarted.Register(_started.Set);
         }
 
         public new async Task WaitForStartAsync(CancellationToken cancellationToken)
