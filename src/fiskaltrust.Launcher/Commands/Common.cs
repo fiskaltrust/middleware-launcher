@@ -283,38 +283,33 @@ namespace fiskaltrust.Launcher.Commands
             }
         }
 
-            public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder, bool useOffline = false, bool dryRun = false, bool useFallback = false)
+        public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder, bool useOffline = false, bool dryRun = false, bool useFallback = false)
+        {
+            Log.Verbose("Loading Curve.");
+            var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
+            var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
+
+            if (File.Exists(clientEcdhPath))
             {
-                Log.Verbose("Loading Curve.");
-                var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
-                var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
-
-                try
-                {
-                    if (File.Exists(clientEcdhPath))
-                    {
-                        return ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
-                    }
-                }
-                catch (Exception e)
-                {
-                    Log.Warning($"Error loading or decrypting ECDH curve: {e.Message}. Regenerating new curve.");
-                }
-
-                // Handling offline client ECDH path and regenerating curve logic
-                ECDiffieHellman clientEcdh = CashboxConfigEncryption.CreateCurve();
+                return ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
+            }
+            else
+            {
                 const string offlineClientEcdhPath = "/client.ecdh";
+                ECDiffieHellman clientEcdh;
+
                 if (!dryRun && useOffline && File.Exists(offlineClientEcdhPath))
                 {
+                    clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
                     try
                     {
-                        clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
                         File.Delete(offlineClientEcdhPath);
                     }
-                    catch (Exception ex)
-                    {
-                        Log.Warning($"Failed to use offline ECDH curve: {ex.Message}");
-                    }
+                    catch { }
+                }
+                else
+                {
+                    clientEcdh = CashboxConfigEncryption.CreateCurve();
                 }
 
                 if (!dryRun)
