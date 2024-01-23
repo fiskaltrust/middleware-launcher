@@ -301,28 +301,28 @@ namespace fiskaltrust.Launcher.Commands
                     Log.Warning($"Error loading or decrypting ECDH curve: {e.Message}. Regenerating new curve.");
                 }
 
-                // Handling offline client ECDH path
+                // Handling offline client ECDH path and regenerating curve logic
+                ECDiffieHellman clientEcdh = CashboxConfigEncryption.CreateCurve();
                 const string offlineClientEcdhPath = "/client.ecdh";
                 if (!dryRun && useOffline && File.Exists(offlineClientEcdhPath))
                 {
-                    var clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
                     try
                     {
+                        clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
                         File.Delete(offlineClientEcdhPath);
                     }
-                    catch { }
-
-                    return clientEcdh;
+                    catch (Exception ex)
+                    {
+                        Log.Warning($"Failed to use offline ECDH curve: {ex.Message}");
+                    }
                 }
 
-                // Regenerating the curve if it's not loaded or in case of an error
-                var newClientEcdh = CashboxConfigEncryption.CreateCurve();
                 if (!dryRun)
                 {
-                    await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(newClientEcdh.Serialize()));
+                    await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize()));
                 }
 
-                return newClientEcdh;
+                return clientEcdh;
             }
         }
     }
