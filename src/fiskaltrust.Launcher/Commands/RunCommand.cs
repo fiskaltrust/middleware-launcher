@@ -7,6 +7,7 @@ using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.Hosting;
 
 
 namespace fiskaltrust.Launcher.Commands
@@ -62,8 +63,8 @@ namespace fiskaltrust.Launcher.Commands
             var builder = WebApplication.CreateBuilder();
 
             builder.Host
+                .UseCustomHostLifetime()
                 .UseSerilog()
-                .UseSystemd()
                 .ConfigureServices((_, services) =>
                 {
                     services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));

@@ -49,6 +49,7 @@ namespace fiskaltrust.Launcher.Extensions
 #pragma warning disable CA1416
                     services.AddSingleton<ILifetime, CustomSystemDServiceLifetime>();
                     services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
+#pragma warning restore CA1416
                 });
             }
             else
