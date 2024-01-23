@@ -91,7 +91,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (clientEcdh is null)
                 {
-                    Log.Warning("Failed to load ECDH curve. Unable to proceed with Doctor checks.");
+                    Log.Warning("Failed to load ECDH curve. Skipping some related doctor checks.");
                 }
                 else
                 {

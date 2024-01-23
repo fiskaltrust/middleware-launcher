@@ -270,20 +270,20 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 }
             }
         }
-
-        private void MapFieldsWithAttribute<T>(Func<object?, object?> action)
+        private void MapFieldsWithAttribute<T>(Func<object?, string, object?> action)
         {
             var errors = new List<Exception>();
 
             foreach (var field in GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
             {
                 var value = field.GetValue(this);
+                var name = field.Name;
 
-                if (field.GetCustomAttributes(typeof(T)).Any())
+                if (field.GetCustomAttributes(typeof(T), false).Any())
                 {
                     try
                     {
-                        field.SetValue(this, action(value));
+                        field.SetValue(this, action(value, name));
                     }
                     catch (Exception e)
                     {
@@ -297,20 +297,26 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 throw new AggregateException(errors);
             }
         }
-
         public void Encrypt(IDataProtector dataProtector)
         {
-            MapFieldsWithAttribute<EncryptAttribute>(value =>
+            MapFieldsWithAttribute<EncryptAttribute>((value, name) =>
             {
-                if (value is null) { return null; }
+                if (value is null) return null;
 
-                return dataProtector.Protect((string)value);
+                try
+                {
+                    return dataProtector.Protect((string)value);
+                }
+                catch (Exception e)
+                {
+                    Log.Warning($"Failed to encrypt value of configuration field {name}. Consider using the 'config set' command to set the field's value.", name);
+                    return null;
+                }
             });
         }
-
         public void Decrypt(IDataProtector dataProtector)
         {
-            MapFieldsWithAttribute<EncryptAttribute>((value) =>
+            MapFieldsWithAttribute<EncryptAttribute>((value, name) =>
             {
                 try
                 {
@@ -319,7 +325,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 }
                 catch (Exception e)
                 {
-                    Log.Warning($"Failed to decrypt field: {e.Message}. Consider using 'config set' to reset.");
+                    Log.Warning("Failed to decrypt value of configuration field {name}. Consider using the 'config set' command to set the fields value.", name);
                     return null;
                 }
             });
@@ -335,7 +341,6 @@ namespace fiskaltrust.Launcher.Common.Configuration
             return null;
         }
     }
-
     public record LauncherConfigurationInCashBoxConfiguration
     {
         [JsonPropertyName("launcher")]
