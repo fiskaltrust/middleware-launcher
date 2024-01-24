@@ -225,6 +225,7 @@ namespace fiskaltrust.Launcher.Commands
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", launcherConfiguration.Redacted());
 
             Log.Debug("Launcher running as {ServiceType}", Enum.GetName(typeof(ServiceTypes), host.Services.GetRequiredService<ServiceType>().Type));
+            Log.Warning("NOTIFY_SOCKET envvar {nn}", Environment.GetEnvironmentVariable("NOTIFY_SOCKET"));
 
             var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
 
