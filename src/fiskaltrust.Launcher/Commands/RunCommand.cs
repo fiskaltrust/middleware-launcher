@@ -67,7 +67,6 @@ namespace fiskaltrust.Launcher.Commands
                 .UseSerilog()
                 .ConfigureServices((_, services) =>
                 {
-                    services.AddSingleton<ISystemdNotifier, SystemdNotifier>();
                     services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => commonProperties.LauncherConfiguration);
                     services.AddSingleton(_ => runServices.Lifetime);
