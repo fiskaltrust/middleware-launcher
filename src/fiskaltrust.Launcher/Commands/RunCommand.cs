@@ -8,6 +8,7 @@ using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Systemd;
 
 
 namespace fiskaltrust.Launcher.Commands
@@ -63,10 +64,10 @@ namespace fiskaltrust.Launcher.Commands
             var builder = WebApplication.CreateBuilder();
 
             builder.Host
-                .UseSystemd()
                 .UseSerilog()
                 .ConfigureServices((_, services) =>
                 {
+                    services.AddSingleton<ISystemdNotifier, SystemdNotifier>();
                     services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => commonProperties.LauncherConfiguration);
                     services.AddSingleton(_ => runServices.Lifetime);
