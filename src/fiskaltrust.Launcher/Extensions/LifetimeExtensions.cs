@@ -49,13 +49,12 @@ namespace fiskaltrust.Launcher.Extensions
                 {
                     services
                         .AddSingleton(new ServiceType(ServiceTypes.SystemdService))
-                        .AddSingleton<ISystemdNotifier, SystemdNotifier>()
                         .AddSingleton<ILifetime, Lifetime>();
 
-// #pragma warning disable CA1416
-//                     services.AddSingleton<ILifetime, CustomSystemDServiceLifetime>();
-//                     services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
-// #pragma warning restore CA1416
+                    // #pragma warning disable CA1416
+                    //                     services.AddSingleton<ILifetime, CustomSystemDServiceLifetime>();
+                    //                     services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
+                    // #pragma warning restore CA1416
                 });
             }
             else
