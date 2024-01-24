@@ -70,6 +70,7 @@ namespace fiskaltrust.Launcher.Commands
                     services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => commonProperties.LauncherConfiguration);
                     services.AddSingleton(_ => runServices.Lifetime);
+                    services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
                     services.AddSingleton(_ => commonProperties.CashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, IProcessHostMonarch>());
                     services.AddSingleton<PackageDownloader>();
