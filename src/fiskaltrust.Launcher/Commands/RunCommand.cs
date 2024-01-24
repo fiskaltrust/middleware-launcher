@@ -63,6 +63,7 @@ namespace fiskaltrust.Launcher.Commands
             var builder = WebApplication.CreateBuilder();
 
             builder.Host
+                .UseSystemd()
                 .UseSerilog()
                 .ConfigureServices((_, services) =>
                 {
