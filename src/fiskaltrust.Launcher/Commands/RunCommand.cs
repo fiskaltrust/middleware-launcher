@@ -7,8 +7,6 @@ using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Hosting.Systemd;
 
 
 namespace fiskaltrust.Launcher.Commands
@@ -70,7 +68,6 @@ namespace fiskaltrust.Launcher.Commands
                     services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                     services.AddSingleton(_ => commonProperties.LauncherConfiguration);
                     services.AddSingleton(_ => runServices.Lifetime);
-                    services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
                     services.AddSingleton(_ => commonProperties.CashboxConfiguration);
                     services.AddSingleton(_ => new Dictionary<Guid, IProcessHostMonarch>());
                     services.AddSingleton<PackageDownloader>();

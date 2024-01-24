@@ -158,11 +158,22 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
-                using var downloader = new ConfigurationDownloader(launcherConfiguration);
-                var exists = await downloader.DownloadConfigurationAsync(clientEcdh);
-                if (launcherConfiguration.UseOffline!.Value && !exists)
+            }
+            catch (Exception e)
+            {
+                Log.Fatal(e, "Could not load client curve.");
+            }
+
+            try
+            {
+                if (clientEcdh is not null)
                 {
-                    Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
+                    using var downloader = new ConfigurationDownloader(launcherConfiguration);
+                    var exists = await downloader.DownloadConfigurationAsync(clientEcdh);
+                    if (launcherConfiguration.UseOffline!.Value && !exists)
+                    {
+                        Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
+                    }
                 }
             }
             catch (Exception e)
@@ -192,7 +203,7 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
-                cashboxConfiguration.Decrypt(launcherConfiguration, clientEcdh);
+                if (clientEcdh is not null) { cashboxConfiguration.Decrypt(launcherConfiguration, clientEcdh); }
             }
             catch (Exception e)
             {
@@ -225,7 +236,6 @@ namespace fiskaltrust.Launcher.Commands
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", launcherConfiguration.Redacted());
 
             Log.Debug("Launcher running as {ServiceType}", Enum.GetName(typeof(ServiceTypes), host.Services.GetRequiredService<ServiceType>().Type));
-            Log.Warning("NOTIFY_SOCKET envvar {nn}", Environment.GetEnvironmentVariable("NOTIFY_SOCKET"));
 
             var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
 
@@ -238,12 +248,12 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Warning(e, "Error decrypring launcher configuration file.");
             }
 
-            return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
+            return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh!, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
         }
 
         private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
         {
-            var serviceDirectory = config.ServiceFolder;
+            var serviceDirectory = config.ServiceFolder!;
             try
             {
                 if (!Directory.Exists(serviceDirectory))

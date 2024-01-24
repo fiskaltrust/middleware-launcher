@@ -1,6 +1,7 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
-using fiskaltrust.Launcher.Helpers;
 using Microsoft.Extensions.Hosting.Systemd;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Options;
@@ -18,7 +19,7 @@ namespace fiskaltrust.Launcher.Extensions
 
     static class LifetimeExtensions
     {
-        public static IHostBuilder UseCustomHostLifetime(this IHostBuilder builder, string[] args)
+        public static IHostBuilder UseCustomHostLifetime(this IHostBuilder builder)
         {
             if (WindowsServiceHelpers.IsWindowsService())
             {
@@ -40,17 +41,21 @@ namespace fiskaltrust.Launcher.Extensions
 #pragma warning restore CA1416
                 });
             }
-            else if (CustomSystemdHelper.IsSystemdService(args))
+            else if (SystemdHelpers.IsSystemdService())
             {
+                builder.UseSystemd();
+
                 return builder.ConfigureServices(services =>
                 {
-                    services.AddSingleton(new ServiceType(ServiceTypes.SystemdService));
-                    services.AddSingleton<ISystemdNotifier, SystemdNotifier>();
-                    
-#pragma warning disable CA1416
-                    services.AddSingleton<ILifetime, CustomSystemDServiceLifetime>();
-                    services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
-#pragma warning restore CA1416
+                    services
+                        .AddSingleton(new ServiceType(ServiceTypes.SystemdService))
+                        .AddSingleton<ISystemdNotifier, SystemdNotifier>()
+                        .AddSingleton<ILifetime, Lifetime>();
+
+// #pragma warning disable CA1416
+//                     services.AddSingleton<ILifetime, CustomSystemDServiceLifetime>();
+//                     services.AddSingleton<IHostLifetime>(sp => sp.GetRequiredService<ILifetime>());
+// #pragma warning restore CA1416
                 });
             }
             else
@@ -124,7 +129,7 @@ namespace fiskaltrust.Launcher.Extensions
 
         public void ServiceStartupCompleted()
         {
-            ApplicationLifetime.ApplicationStarted.Register(() => _started.Set());
+            ApplicationLifetime.ApplicationStarted.Register(_started.Set);
         }
 
         public new async Task WaitForStartAsync(CancellationToken cancellationToken)
@@ -161,40 +166,71 @@ namespace fiskaltrust.Launcher.Extensions
             base.Dispose(disposing);
         }
     }
-    [SupportedOSPlatform("linux")]
-    public class CustomSystemDServiceLifetime : SystemdLifetime, ILifetime
-    {
-        private readonly CancellationTokenSource _starting = new();
-        private readonly ManualResetEventSlim _started = new();
 
-        public IHostApplicationLifetime ApplicationLifetime { get; init; }
+    [SupportedOSPlatform("linux")]
+    public class CustomSystemDServiceLifetime : ILifetime, IHostLifetime, IDisposable
+    {
+        private readonly CancellationTokenSource _started = new();
         private readonly ISystemdNotifier _systemdNotifier;
+        public IHostApplicationLifetime ApplicationLifetime { get; init; }
+
+        private CancellationTokenRegistration _applicationStartedRegistration;
+        private CancellationTokenRegistration _applicationStoppingRegistration;
+        private PosixSignalRegistration? _sigTermRegistration;
 
         public CustomSystemDServiceLifetime(
-            IHostEnvironment environment,
             IHostApplicationLifetime applicationLifetime,
-            ILoggerFactory loggerFactory,
             ISystemdNotifier systemdNotifier)
-            : base(environment, applicationLifetime, systemdNotifier, loggerFactory)
         {
             ApplicationLifetime = applicationLifetime;
             _systemdNotifier = systemdNotifier;
         }
 
-        public void ServiceStartupCompleted()
+        public void ServiceStartupCompleted() => _started.Cancel();
+
+        public Task WaitForStartAsync(CancellationToken cancellationToken)
         {
-            _systemdNotifier.Notify(ServiceState.Ready);
-            ApplicationLifetime.ApplicationStarted.Register(_started.Set);
+            _applicationStartedRegistration = ApplicationLifetime.ApplicationStarted.Register(OnApplicationStarted);
+            _applicationStoppingRegistration = ApplicationLifetime.ApplicationStopping.Register(OnApplicationStopping);
+
+            RegisterShutdownHandlers();
+
+            return Task.CompletedTask;
         }
 
-        public new async Task WaitForStartAsync(CancellationToken cancellationToken)
+        private void OnApplicationStarted()
         {
-            try
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(_started.Token, ApplicationLifetime.ApplicationStopping);
+
+            cts.Token.Register(() =>
             {
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(_starting.Token, cancellationToken);
-                await base.WaitForStartAsync(cts.Token);
-            }
-            catch (OperationCanceledException) when (_starting.IsCancellationRequested) { }
+                _systemdNotifier.Notify(ServiceState.Stopping);
+            });
+        }
+
+        private void OnApplicationStopping() => _systemdNotifier.Notify(ServiceState.Stopping);
+
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        private void RegisterShutdownHandlers() => _sigTermRegistration = PosixSignalRegistration.Create(PosixSignal.SIGTERM, HandlePosixSignal);
+
+        private void HandlePosixSignal(PosixSignalContext context)
+        {
+            Debug.Assert(context.Signal == PosixSignal.SIGTERM);
+
+            context.Cancel = true;
+            ApplicationLifetime.StopApplication();
+        }
+
+        private void UnregisterShutdownHandlers() => _sigTermRegistration?.Dispose();
+
+        public void Dispose()
+        {
+            _started.Cancel();
+
+            UnregisterShutdownHandlers();
+            _applicationStartedRegistration.Dispose();
+            _applicationStoppingRegistration.Dispose();
         }
     }
 }

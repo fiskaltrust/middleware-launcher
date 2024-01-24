@@ -1,7 +1,5 @@
 ﻿using fiskaltrust.Launcher.Helpers;
-using Microsoft.Extensions.Hosting.Systemd;
 using Serilog;
-using System.CommandLine;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
 {
@@ -17,9 +15,9 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
         {
-            if (!await IsSystemd())
+            if (!await IdSystemdAvailable())
             {
-                Log.Error("No SystemD on this machine. No service installation possible.");
+                Log.Error("Systemd is not running on this machine. No service installation is possible.");
                 return -1;
             }
 
@@ -32,18 +30,18 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             var serviceFileContent = GetServiceFileContent(displayName ?? "Service installation of fiskaltrust launcher.", commandArgs);
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
             await File.AppendAllLinesAsync(serviceFilePath, serviceFileContent).ConfigureAwait(false);
-            await ProcessHelper.RunProcess("systemctl", new[] { "daemon-reload" });
+            await ProcessHelper.RunProcess("systemctl", ["daemon-reload"]);
             Log.Information("Starting systemd service.");
-            await ProcessHelper.RunProcess("systemctl", new[] { "start", _serviceName });
+            await ProcessHelper.RunProcess("systemctl", ["start", _serviceName]);
             Log.Information("Enabling systemd service.");
-            return (await ProcessHelper.RunProcess("systemctl", new[] { "enable", _serviceName, "-q" })).exitCode;
+            return (await ProcessHelper.RunProcess("systemctl", ["enable", _serviceName, "-q"])).exitCode;
         }
 
         public override async Task<int> UninstallService()
         {
-            if (!await IsSystemd())
+            if (!await IdSystemdAvailable())
             {
-                Log.Error("No SystemD on this machine. No service uninstallation possible.");
+                Log.Error("Systemd is not running on this machine. No service uninstallation is possible.");
                 return -1;
             }
 
@@ -70,26 +68,25 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         {
             var processPath = _launcherExecutablePath.Path;
 
-            var command = $"sudo {processPath} {commandArgs} isSystemd";
-            return new[]
-            {
+            var command = $"{processPath} {commandArgs}";
+
+            return [
                 "[Unit]",
                 $"Description=\"{serviceDescription}\"",
                 "",
                 "[Service]",
                 "Type=notify",
                 $"ExecStart={command}",
-               // "TimeoutSec=0",
                 $"WorkingDirectory={Path.GetDirectoryName(_launcherExecutablePath.Path)}",
                 "",
                 "[Install]",
                 "WantedBy = multi-user.target"
-            };
+            ];
         }
 
-        private static async Task<bool> IsSystemd()
+        private static async Task<bool> IdSystemdAvailable()
         {
-            var (exitCode, output) = await ProcessHelper.RunProcess("ps", new[] { "--no-headers", "-o", "comm", "1" });
+            var (exitCode, output) = await ProcessHelper.RunProcess("ps", ["--no-headers", "-o", "comm", "1"], logLevel: null);
 
             if (exitCode != 0 && output.Contains("systemd"))
             {
@@ -101,7 +98,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         private static async Task<bool> IsSystemdServiceInstalled(string serviceName)
         {
-            var (exitCode, _) = await ProcessHelper.RunProcess("systemctl", new[] { $"status {serviceName}" });
+            var (exitCode, _) = await ProcessHelper.RunProcess("systemctl", [$"status {serviceName}"], logLevel: null);
             if (exitCode == 4)
             {
                 return false;

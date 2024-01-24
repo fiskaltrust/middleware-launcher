@@ -75,9 +75,9 @@ namespace fiskaltrust.Launcher.Commands
                 }
             }
 
-            var launcherConfiguration = Common.Configuration.LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.LauncherConfiguration)));
+            var launcherConfiguration = LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.LauncherConfiguration)));
 
-            var plebeianConfiguration = Configuration.PlebeianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.PlebeianConfiguration)));
+            var plebeianConfiguration = PlebeianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.PlebeianConfiguration)));
 
             var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
 
@@ -108,7 +108,6 @@ namespace fiskaltrust.Launcher.Commands
 
             var builder = Host.CreateDefaultBuilder()
                 .UseSerilog()
-                .UseSystemd()
                 .ConfigureServices(services =>
                 {
                     services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts =>
