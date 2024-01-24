@@ -70,7 +70,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         {
             var processPath = _launcherExecutablePath.Path;
 
-            var command = $"sudo {processPath} {commandArgs}";
+            var command = $"sudo {processPath} {commandArgs} isSystemd";
             return new[]
             {
                 "[Unit]",

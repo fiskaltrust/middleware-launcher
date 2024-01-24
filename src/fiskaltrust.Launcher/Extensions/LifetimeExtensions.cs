@@ -18,7 +18,7 @@ namespace fiskaltrust.Launcher.Extensions
 
     static class LifetimeExtensions
     {
-        public static IHostBuilder UseCustomHostLifetime(this IHostBuilder builder)
+        public static IHostBuilder UseCustomHostLifetime(this IHostBuilder builder, string[] args)
         {
             if (WindowsServiceHelpers.IsWindowsService())
             {
@@ -40,7 +40,7 @@ namespace fiskaltrust.Launcher.Extensions
 #pragma warning restore CA1416
                 });
             }
-            else if (CustomSystemdHelper.IsSystemdService())
+            else if (CustomSystemdHelper.IsSystemdService(args))
             {
                 return builder.ConfigureServices(services =>
                 {
