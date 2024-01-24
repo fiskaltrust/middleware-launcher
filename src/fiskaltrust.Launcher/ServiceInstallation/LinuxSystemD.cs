@@ -79,7 +79,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 "[Service]",
                 "Type=notify",
                 $"ExecStart={command}",
-                "TimeoutSec=0",
+               // "TimeoutSec=0",
                 $"WorkingDirectory={Path.GetDirectoryName(_launcherExecutablePath.Path)}",
                 "",
                 "[Install]",
