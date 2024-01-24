@@ -160,7 +160,15 @@ namespace fiskaltrust.Launcher.ProcessHost
                             await _hosting.HostService(url, hostingType.Value, (IPOS)instance, addEndpoints);
                             break;
                         case PackageType.Helper:
-                            await _hosting.HostService(url, hostingType.Value, (IHelper)instance, addEndpoints);
+                            if (_packageConfiguration.Package == "fiskaltrust.Middleware.Helper.PosApi")
+                            {
+                                (object instancePOS, Action<WebApplication> addPosEndpoints, Type instancePosInterface) = GetHelperIPOS((IPOS)instance);
+                                await _hosting.HostService(url, hostingType.Value, (IPOS)instancePOS, addPosEndpoints);
+                            }
+                            else
+                            {
+                                await _hosting.HostService(url, hostingType.Value, (IHelper)instance, addEndpoints);
+                            }
                             break;
                         default:
                             throw new NotImplementedException();
@@ -178,6 +186,11 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 throw new Exception("No host could be started.");
             }
+        }
+
+        private static (object, Action<WebApplication>, Type) GetHelperIPOS(IPOS instance)
+        {
+            return (instance, (WebApplication app) => app.AddQueueEndpoints(instance), typeof(IPOS));
         }
 
         private static (object, Action<WebApplication>, Type) GetQueue(IServiceProvider services)
