@@ -44,6 +44,7 @@ namespace fiskaltrust.Launcher.Extensions
             {
                 return builder.ConfigureServices(services =>
                 {
+                    services.AddSingleton(new ServiceType(ServiceTypes.SystemdService));
                     services.AddSingleton<ISystemdNotifier, SystemdNotifier>();
                     
 #pragma warning disable CA1416
