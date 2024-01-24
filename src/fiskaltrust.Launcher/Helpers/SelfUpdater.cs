@@ -112,7 +112,7 @@ namespace fiskaltrust.Launcher.Helpers
                 "--launcher-process-id", _processId.Id.ToString(),
                 "--from", $"\"{Path.Combine(newExecutablePath, $"fiskaltrust.Launcher{(OperatingSystem.IsWindows() ? ".exe" : "")}")}\"",
                 "--to", $"\"{_executablePath.Path}\"",
-                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize(false, false)))}\"",
+                "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(launcherConfiguration.Serialize()))}\"",
                 "--launcher-configuration-file", $"\"{Path.GetFullPath(launcherConfigurationFile)}\"",
             });
 

@@ -45,14 +45,14 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             }
 
             Log.Information("Installing service.");
-            if ((await RunProcess(@"C:\WINDOWS\system32\sc.exe", arguments)).exitCode != 0)
+            if ((await ProcessHelper.RunProcess(@"C:\WINDOWS\system32\sc.exe", arguments)).exitCode != 0)
             {
                 Log.Information($"Could not install service \"{_serviceName}\".");
                 return 1;
             }
 
             Log.Information("Starting service.");
-            if ((await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "start", $"\"{_serviceName}\"" })).exitCode != 0)
+            if ((await ProcessHelper.RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "start", $"\"{_serviceName}\"" })).exitCode != 0)
             {
                 Log.Warning($"Could not start service \"{_serviceName}\".");
             }
@@ -80,13 +80,13 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             }
 
             Log.Information("Stopping service.");
-            if ((await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "stop", $"\"{_serviceName}\"" })).exitCode != 0)
+            if ((await ProcessHelper.RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "stop", $"\"{_serviceName}\"" })).exitCode != 0)
             {
                 Log.Warning($"Could not stop service \"{_serviceName}\".");
             }
 
             Log.Information("Uninstalling service.");
-            if ((await RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "delete", $"\"{_serviceName}\"" })).exitCode != 0)
+            if ((await ProcessHelper.RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "delete", $"\"{_serviceName}\"" })).exitCode != 0)
             {
                 Log.Warning($"Could not uninstall service \"{_serviceName}\".");
                 return 1;

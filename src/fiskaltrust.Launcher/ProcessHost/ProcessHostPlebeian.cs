@@ -131,6 +131,10 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 var url = new Uri(uri);
                 var hostingType = GetHostingType(url);
+                if (hostingType is null)
+                {
+                    continue;
+                }
 
                 Action<WebApplication>? addEndpointsInner = hostingType switch
                 {
@@ -145,18 +149,18 @@ namespace fiskaltrust.Launcher.ProcessHost
                         case PackageType.SCU:
                             if (instanceInterface == typeof(IDESSCD))
                             {
-                                await _hosting.HostService(url, hostingType, (IDESSCD)instance, addEndpoints);
+                                await _hosting.HostService(url, hostingType.Value, (IDESSCD)instance, addEndpoints);
                             }
                             else if (instanceInterface == typeof(IITSSCD))
                             {
-                                await _hosting.HostService(url, hostingType, (IITSSCD)instance, addEndpoints);
+                                await _hosting.HostService(url, hostingType.Value, (IITSSCD)instance, addEndpoints);
                             }
                             break;
                         case PackageType.Queue:
-                            await _hosting.HostService(url, hostingType, (IPOS)instance, addEndpoints);
+                            await _hosting.HostService(url, hostingType.Value, (IPOS)instance, addEndpoints);
                             break;
                         case PackageType.Helper:
-                            await _hosting.HostService(url, hostingType, (IHelper)instance, addEndpoints);
+                            await _hosting.HostService(url, hostingType.Value, (IHelper)instance, addEndpoints);
                             break;
                         default:
                             throw new NotImplementedException();
@@ -201,13 +205,14 @@ namespace fiskaltrust.Launcher.ProcessHost
             throw new Exception("Could not resolve SCU with supported country. (Curently supported are DE and IT)");
         }
 
-        private static HostingType GetHostingType(Uri url)
+        private static HostingType? GetHostingType(Uri url)
         {
             return url.Scheme.ToLowerInvariant() switch
             {
                 "grpc" => HostingType.GRPC,
                 "rest" => HostingType.REST,
                 "http" or "https" or "net.tcp" => HostingType.SOAP,
+                "net.pipe" => null,
                 _ => throw new NotImplementedException($"The hosting type for the URL {url} is currently not supported.")
             };
         }

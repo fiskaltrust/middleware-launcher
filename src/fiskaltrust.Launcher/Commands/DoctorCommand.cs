@@ -20,6 +20,7 @@ using fiskaltrust.Launcher.Clients;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.ifPOS.v1;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using fiskaltrust.Launcher.Factories;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -28,28 +29,40 @@ namespace fiskaltrust.Launcher.Commands
         public DoctorCommand(string name = "doctor") : base(name) { }
     }
 
-    public class DoctorCommandHandler : ICommandHandler
+    public class DoctorOptions
     {
-        public LauncherConfiguration ArgsLauncherConfiguration { get; set; } = null!;
-        public string LauncherConfigurationFile { get; set; } = null!;
-        public string LegacyConfigurationFile { get; set; } = null!;
-        public bool MergeLegacyConfigIfExists { get; set; }
-
-        private const string SUCCESS = "✅";
-        private const string ERROR = "❌";
-        private const string WARNING = "⚠️";
-        private readonly ILifetime _lifetime;
-        private readonly LauncherExecutablePath _launcherExecutablePath;
-        private bool _failed = false;
-
-        public DoctorCommandHandler(ILifetime lifetime, LauncherExecutablePath launcherExecutablePath)
+        public DoctorOptions(LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile, string legacyConfigurationFile, bool mergeLegacyConfigIfExists)
         {
-            _lifetime = lifetime;
-            _launcherExecutablePath = launcherExecutablePath;
+            ArgsLauncherConfiguration = argsLauncherConfiguration;
+            LauncherConfigurationFile = launcherConfigurationFile;
+            LegacyConfigurationFile = legacyConfigurationFile;
+            MergeLegacyConfigIfExists = mergeLegacyConfigIfExists;
         }
 
-        public async Task<int> InvokeAsync(InvocationContext context)
+        public LauncherConfiguration ArgsLauncherConfiguration { get; set; }
+        public string LauncherConfigurationFile { get; set; }
+        public string LegacyConfigurationFile { get; set; }
+        public bool MergeLegacyConfigIfExists { get; set; }
+    }
+
+    public class DoctorServices
+    {
+        public DoctorServices(ILifetime lifetime, LauncherExecutablePath launcherExecutablePath)
         {
+            Lifetime = lifetime;
+            LauncherExecutablePath = launcherExecutablePath;
+        }
+
+        public readonly ILifetime Lifetime;
+        public readonly LauncherExecutablePath LauncherExecutablePath;
+    }
+
+    public static class DoctorHandler
+    {
+        public static async Task<int> HandleAsync(CommonOptions commonOptions, CommonProperties commonProperties, DoctorOptions doctorOptions, DoctorServices doctorServices)
+        {
+            var checkUp = new CheckUp();
+
             try
             {
                 Log.Logger = new LoggerConfiguration()
@@ -58,23 +71,23 @@ namespace fiskaltrust.Launcher.Commands
 
                 LauncherConfiguration launcherConfiguration = new();
 
-                if (File.Exists(LauncherConfigurationFile))
+                if (File.Exists(commonOptions.LauncherConfigurationFile))
                 {
-                    launcherConfiguration = await CheckAwait("Parse launcher configuration", async () => LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(LauncherConfigurationFile))) ?? new LauncherConfiguration();
+                    launcherConfiguration = await checkUp.CheckAwait("Parse launcher configuration", async () => LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(commonOptions.LauncherConfigurationFile))) ?? new LauncherConfiguration();
                 }
 
-                if (MergeLegacyConfigIfExists && File.Exists(LegacyConfigurationFile))
+                if (commonOptions.MergeLegacyConfigIfExists && File.Exists(commonOptions.LegacyConfigurationFile))
                 {
-                    var legacyConfig = await CheckAwait("Parse legacy configuration file", async () => await LegacyConfigFileReader.ReadLegacyConfigFile(LegacyConfigurationFile));
+                    var legacyConfig = await checkUp.CheckAwait("Parse legacy configuration file", async () => await LegacyConfigFileReader.ReadLegacyConfigFile(commonOptions.LegacyConfigurationFile));
                     if (legacyConfig is not null)
                     {
                         launcherConfiguration.OverwriteWith(legacyConfig);
                     }
                 }
 
-                launcherConfiguration.OverwriteWith(ArgsLauncherConfiguration);
+                launcherConfiguration.OverwriteWith(doctorOptions.ArgsLauncherConfiguration);
 
-                var clientEcdh = await CheckAwait("Load ECDH Curve", async () => await CommonCommandHandler.LoadCurve(launcherConfiguration.AccessToken!, launcherConfiguration.UseOffline!.Value, dryRun: true, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value), critical: false);
+                var clientEcdh = await checkUp.CheckAwait("Load ECDH Curve", async () => await CommonHandler.LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value, dryRun: true, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value), critical: false);
                 ftCashBoxConfiguration cashboxConfiguration = new();
 
                 if (clientEcdh is null)
@@ -85,7 +98,7 @@ namespace fiskaltrust.Launcher.Commands
 
                     string? cashboxConfigurationString = null;
 
-                    cashboxConfigurationString = await CheckAwait("Download cashbox configuration", async () => await downloader.GetConfigurationAsync(clientEcdh));
+                    cashboxConfigurationString = await checkUp.CheckAwait("Download cashbox configuration", async () => await downloader.GetConfigurationAsync(clientEcdh));
 
                     if (cashboxConfigurationString is null)
                     {
@@ -96,25 +109,25 @@ namespace fiskaltrust.Launcher.Commands
                     }
                     else
                     {
-                        var launcherConfigurationInCashBoxConfiguration = Check("Parse cashbox configuration in launcher configuration", () => LauncherConfigurationInCashBoxConfiguration.Deserialize(cashboxConfigurationString));
+                        var launcherConfigurationInCashBoxConfiguration = checkUp.Check("Parse cashbox configuration in launcher configuration", () => LauncherConfigurationInCashBoxConfiguration.Deserialize(cashboxConfigurationString));
                         if (launcherConfigurationInCashBoxConfiguration is not null)
                         {
                             launcherConfiguration.OverwriteWith(launcherConfigurationInCashBoxConfiguration);
                         }
 
-                        var cashboxConfigurationInner = Check("Parse cashbox configuration", () => CashBoxConfigurationExt.Deserialize(cashboxConfigurationString));
+                        var cashboxConfigurationInner = checkUp.Check("Parse cashbox configuration", () => CashBoxConfigurationExt.Deserialize(cashboxConfigurationString));
                         if (cashboxConfigurationInner is not null)
                         {
-                            Check("Decrypt cashbox configuration", () => cashboxConfigurationInner.Decrypt(launcherConfiguration, clientEcdh));
+                            checkUp.Check("Decrypt cashbox configuration", () => cashboxConfigurationInner.Decrypt(launcherConfiguration, clientEcdh));
                             cashboxConfiguration = cashboxConfigurationInner;
                         }
                     }
                 }
 
-                var dataProtectionProvider = Check("Setup data protection", () => DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value));
+                var dataProtectionProvider = checkUp.Check("Setup data protection", () => DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value));
                 if (dataProtectionProvider is not null)
                 {
-                    Check("Decrypt launcher configuration", () => launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE)));
+                    checkUp.Check("Decrypt launcher configuration", () => launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE)));
                 }
 
                 var doctorId = Guid.NewGuid();
@@ -125,11 +138,11 @@ namespace fiskaltrust.Launcher.Commands
                     .UseSerilog(new LoggerConfiguration().CreateLogger())
                     .ConfigureServices((_, services) =>
                     {
-                        Check("Setup monarch services", () =>
+                        checkUp.Check("Setup monarch services", () =>
                         {
-                            services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
+                            services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                             services.AddSingleton(_ => launcherConfiguration);
-                            services.AddSingleton(_ => _lifetime);
+                            services.AddSingleton(_ => doctorServices.Lifetime);
                             services.AddSingleton(_ => cashboxConfiguration);
                             services.AddSingleton(_ => new Dictionary<Guid, IProcessHostMonarch>() {
                             {
@@ -138,25 +151,44 @@ namespace fiskaltrust.Launcher.Commands
                             }
                             });
                             services.AddSingleton(_ => Log.Logger);
-                            services.AddSingleton(_ => _launcherExecutablePath);
+                            services.AddSingleton(_ => doctorServices.LauncherExecutablePath);
                         }, throws: true);
                     });
 
-                Check("Setup monarch ProcessHostService", () =>
+                checkUp.Check("Setup monarch ProcessHostService", () =>
                 {
-                    monarchBuilder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{launcherConfiguration.LauncherPort}"), protocols: HttpProtocols.Http2);
+                    if (OperatingSystem.IsWindows())
+                    {
+                        monarchBuilder.WebHost.UseKestrel(serverOptions =>
+                        {
+                            serverOptions.ListenNamedPipe(commonProperties.LauncherConfiguration.LauncherServiceUri!, listenOptions =>
+                            {
+                                listenOptions.Protocols = HttpProtocols.Http2;
+                            });
+                        });
+                    }
+                    else
+                    {
+                        monarchBuilder.WebHost.UseKestrel(serverOptions =>
+                        {
+                            serverOptions.ListenUnixSocket(commonProperties.LauncherConfiguration.LauncherServiceUri!, listenOptions =>
+                            {
+                                listenOptions.Protocols = HttpProtocols.Http2;
+                            });
+                        });
+                    }
 
                     monarchBuilder.Services.AddCodeFirstGrpc();
                 }, throws: true);
 
-                var monarchApp = Check("Build monarch WebApplication", monarchBuilder.Build, throws: true)!;
+                var monarchApp = checkUp.Check("Build monarch WebApplication", monarchBuilder.Build, throws: true)!;
 
                 monarchApp.UseRouting();
 #pragma warning disable ASP0014
                 monarchApp.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 #pragma warning restore ASP0014
 
-                await CheckAwait("Start monarch WebApplication", async () => await WithTimeout(async () => await monarchApp.StartAsync(_lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)), throws: true);
+                await checkUp.CheckAwait("Start monarch WebApplication", async () => await WithTimeout(async () => await monarchApp.StartAsync(doctorServices.Lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)), throws: true);
 
                 var plebeianConfiguration = new PlebeianConfiguration
                 {
@@ -173,15 +205,19 @@ namespace fiskaltrust.Launcher.Commands
                     Version = "1.0.0"
                 };
 
-                IProcessHostService? processHostService = Check("Start plebeian processhostservice client", () => GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>());
+                IProcessHostService? processHostService = checkUp.Check("Start plebeian processhostservice client", () =>
+                {
+                    var handler = new SocketsHttpHandler { ConnectCallback = new IpcConnectionFactory(launcherConfiguration).ConnectAsync };
+                    return GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = handler }).CreateGrpcService<IProcessHostService>();
+                });
 
                 var plebeianBuilder = Host.CreateDefaultBuilder()
                     .UseSerilog(new LoggerConfiguration().CreateLogger())
                     .ConfigureServices(services =>
                     {
-                        Check("Setup plebeian services", () =>
+                        checkUp.Check("Setup plebeian services", () =>
                         {
-                            services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
+                            services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(30));
                             services.AddSingleton(_ => launcherConfiguration);
                             services.AddSingleton(_ => packageConfiguration);
                             services.AddSingleton(_ => plebeianConfiguration);
@@ -212,15 +248,15 @@ namespace fiskaltrust.Launcher.Commands
                         }, throws: true);
                     });
 
-                var plebeianApp = Check("Build plebeian Host", plebeianBuilder.Build, throws: true)!;
+                var plebeianApp = checkUp.Check("Build plebeian Host", plebeianBuilder.Build, throws: true)!;
 
-                await CheckAwait("Start plebeian Host", async () => await WithTimeout(async () => await plebeianApp.StartAsync(_lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)));
+                await checkUp.CheckAwait("Start plebeian Host", async () => await WithTimeout(async () => await plebeianApp.StartAsync(doctorServices.Lifetime.ApplicationLifetime.ApplicationStopping), TimeSpan.FromSeconds(5)));
 
                 await doctorProcessHostMonarch.IsStarted.Task;
 
-                await CheckAwait("Shutdown launcher gracefully", async () => await WithTimeout(async () =>
+                await checkUp.CheckAwait("Shutdown launcher gracefully", async () => await WithTimeout(async () =>
                     {
-                        await _lifetime.StopAsync(new CancellationToken());
+                        await doctorServices.Lifetime.StopAsync(new CancellationToken());
 
                         await monarchApp.StopAsync();
                         await monarchApp.WaitForShutdownAsync();
@@ -232,11 +268,11 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                _failed = true;
+                checkUp.Failed = true;
                 Log.Error(e, "Doctor found errors.");
             }
 
-            if (_failed)
+            if (checkUp.Failed)
             {
                 return 1;
             }
@@ -261,188 +297,197 @@ namespace fiskaltrust.Launcher.Commands
             }
         }
 
-        private async Task<T?> CheckAwait<T>(string operation, Func<Task<T>> action, bool critical = true, bool throws = false)
-        {
-            try
-            {
-                T result = await action();
-                Log.Information($"{SUCCESS} {operation}");
-                return result;
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, $"{ERROR} {operation}");
-                if (critical)
-                {
-                    _failed = true;
-                }
-                if (throws) { throw; }
-                return default;
-            }
-        }
 
-        private async Task CheckAwait(string operation, Func<Task> action, bool critical = true, bool throws = false)
+        public class CheckUp
         {
-            try
-            {
-                await action();
-                Log.Information($"{SUCCESS} {operation}");
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, $"{ERROR} {operation}");
-                if (critical)
-                {
-                    _failed = true;
-                }
-                if (throws) { throw; }
-            }
-        }
+            private const string SUCCESS = "✅";
+            private const string ERROR = "❌";
+            private const string WARNING = "⚠️";
 
-        private T? Check<T>(string operation, Func<T> action, bool critical = true, bool throws = false)
-        {
-            try
-            {
-                T result = action();
-                Log.Information($"{SUCCESS} {operation}");
-                return result;
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, $"{ERROR} {operation}");
-                if (critical)
-                {
-                    _failed = true;
-                }
-                if (throws) { throw; }
-                return default;
-            }
-        }
+            public bool Failed { get; set; }
 
-        private bool Check(string operation, Action action, bool critical = true, bool throws = false)
-        {
-            try
+            public async Task<T?> CheckAwait<T>(string operation, Func<Task<T>> action, bool critical = true, bool throws = false)
             {
-                action();
-                Log.Information($"{SUCCESS} {operation}");
-                return true;
-            }
-            catch (Exception e)
-            {
-                if (critical)
+                try
+                {
+                    T result = await action();
+                    Log.Information($"{SUCCESS} {operation}");
+                    return result;
+                }
+                catch (Exception e)
                 {
                     Log.Error(e, $"{ERROR} {operation}");
-                    _failed = true;
+                    if (critical)
+                    {
+                        Failed = true;
+                    }
+                    if (throws) { throw; }
+                    return default;
                 }
-                else
+            }
+
+            public async Task CheckAwait(string operation, Func<Task> action, bool critical = true, bool throws = false)
+            {
+                try
                 {
-                    Log.Warning(e, $"{WARNING} {operation}");
+                    await action();
+                    Log.Information($"{SUCCESS} {operation}");
                 }
-                if (throws) { throw; }
-                return false;
+                catch (Exception e)
+                {
+                    Log.Error(e, $"{ERROR} {operation}");
+                    if (critical)
+                    {
+                        Failed = true;
+                    }
+                    if (throws) { throw; }
+                }
+            }
+
+            public T? Check<T>(string operation, Func<T> action, bool critical = true, bool throws = false)
+            {
+                try
+                {
+                    T result = action();
+                    Log.Information($"{SUCCESS} {operation}");
+                    return result;
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, $"{ERROR} {operation}");
+                    if (critical)
+                    {
+                        Failed = true;
+                    }
+                    if (throws) { throw; }
+                    return default;
+                }
+            }
+
+            public bool Check(string operation, Action action, bool critical = true, bool throws = false)
+            {
+                try
+                {
+                    action();
+                    Log.Information($"{SUCCESS} {operation}");
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    if (critical)
+                    {
+                        Log.Error(e, $"{ERROR} {operation}");
+                        Failed = true;
+                    }
+                    else
+                    {
+                        Log.Warning(e, $"{WARNING} {operation}");
+                    }
+                    if (throws) { throw; }
+                    return false;
+                }
             }
         }
-    }
 
-
-    public class DoctorProcessHostMonarch : IProcessHostMonarch
-    {
-        public TaskCompletionSource IsStarted = new();
-        public Task Start(CancellationToken cancellationToken)
+        public class DoctorProcessHostMonarch : IProcessHostMonarch
         {
-            return Task.CompletedTask;
+            public TaskCompletionSource IsStarted = new();
+            public Task Start(CancellationToken cancellationToken)
+            {
+                return Task.CompletedTask;
+            }
+
+            public void SetPlebeanStarted()
+            {
+                IsStarted.SetResult();
+            }
+
+            public Task GetStopped()
+            {
+                return Task.CompletedTask;
+            }
+
+            public void SetStartupCompleted() { }
         }
 
-        public void SetPlebeanStarted()
+        public class DoctorMiddlewareBootstrapper : IMiddlewareBootstrapper
         {
-            IsStarted.SetResult();
+            public Guid Id { get; set; }
+            public Dictionary<string, object> Configuration { get; set; }
+
+            public DoctorMiddlewareBootstrapper(Guid id, Dictionary<string, object> configuration)
+            {
+                Id = id;
+                Configuration = configuration;
+            }
+
+            public void ConfigureServices(IServiceCollection serviceCollection)
+            {
+                serviceCollection.AddSingleton<IPOS>(new DoctorQueue());
+            }
         }
 
-        public Task GetStopped()
+        public class DoctorQueue : IPOS
         {
-            return Task.CompletedTask;
-        }
+            public IAsyncResult BeginEcho(string message, AsyncCallback callback, object state)
+            {
+                throw new NotImplementedException();
+            }
 
-        public void SetStartupCompleted() { }
-    }
+            public IAsyncResult BeginJournal(long ftJournalType, long from, long to, AsyncCallback callback, object state)
+            {
+                throw new NotImplementedException();
+            }
 
-    public class DoctorMiddlewareBootstrapper : IMiddlewareBootstrapper
-    {
-        public Guid Id { get; set; }
-        public Dictionary<string, object> Configuration { get; set; }
+            public IAsyncResult BeginSign(ifPOS.v0.ReceiptRequest data, AsyncCallback callback, object state)
+            {
+                throw new NotImplementedException();
+            }
 
-        public DoctorMiddlewareBootstrapper(Guid id, Dictionary<string, object> configuration)
-        {
-            Id = id;
-            Configuration = configuration;
-        }
+            public string Echo(string message)
+            {
+                throw new NotImplementedException();
+            }
 
-        public void ConfigureServices(IServiceCollection serviceCollection)
-        {
-            serviceCollection.AddSingleton<IPOS>(new DoctorQueue());
-        }
-    }
+            public Task<EchoResponse> EchoAsync(EchoRequest message)
+            {
+                throw new NotImplementedException();
+            }
 
-    public class DoctorQueue : IPOS
-    {
-        public IAsyncResult BeginEcho(string message, AsyncCallback callback, object state)
-        {
-            throw new NotImplementedException();
-        }
+            public string EndEcho(IAsyncResult result)
+            {
+                throw new NotImplementedException();
+            }
 
-        public IAsyncResult BeginJournal(long ftJournalType, long from, long to, AsyncCallback callback, object state)
-        {
-            throw new NotImplementedException();
-        }
+            public Stream EndJournal(IAsyncResult result)
+            {
+                throw new NotImplementedException();
+            }
 
-        public IAsyncResult BeginSign(ifPOS.v0.ReceiptRequest data, AsyncCallback callback, object state)
-        {
-            throw new NotImplementedException();
-        }
+            public ifPOS.v0.ReceiptResponse EndSign(IAsyncResult result)
+            {
+                throw new NotImplementedException();
+            }
 
-        public string Echo(string message)
-        {
-            throw new NotImplementedException();
-        }
+            public Stream Journal(long ftJournalType, long from, long to)
+            {
+                throw new NotImplementedException();
+            }
 
-        public Task<EchoResponse> EchoAsync(EchoRequest message)
-        {
-            throw new NotImplementedException();
-        }
+            public IAsyncEnumerable<JournalResponse> JournalAsync(JournalRequest request)
+            {
+                throw new NotImplementedException();
+            }
 
-        public string EndEcho(IAsyncResult result)
-        {
-            throw new NotImplementedException();
-        }
+            public ifPOS.v0.ReceiptResponse Sign(ifPOS.v0.ReceiptRequest data)
+            {
+                throw new NotImplementedException();
+            }
 
-        public Stream EndJournal(IAsyncResult result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ifPOS.v0.ReceiptResponse EndSign(IAsyncResult result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Stream Journal(long ftJournalType, long from, long to)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IAsyncEnumerable<JournalResponse> JournalAsync(JournalRequest request)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ifPOS.v0.ReceiptResponse Sign(ifPOS.v0.ReceiptRequest data)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<ReceiptResponse> SignAsync(ReceiptRequest request)
-        {
-            throw new NotImplementedException();
+            public Task<ReceiptResponse> SignAsync(ReceiptRequest request)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }

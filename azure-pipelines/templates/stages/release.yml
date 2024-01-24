@@ -1,58 +1,75 @@
 parameters:
-- name: stages
-  type: stageList
+  - name: stages
+    type: stageList
 
-- name: artifact
-  type: string
-  default: current
+  - name: artifact
+    type: string
+    default: current
 
-- name: targets
-  type: object
-  default:
-  - win-x64
-  - win-x86
-  - linux-x64
-  - linux-arm
-  - linux-arm64
-  - osx-x64
+  - name: targets
+    type: object
+    default:
+      - win-x64
+      - win-x86
+      - linux-x64
+      - linux-arm
+      - linux-arm64
+      - osx-x64
 
 stages:
-- ${{ each stage in parameters.stages }}:
-  - ${{ each pair in stage }}:
-      ${{ pair.key }}: ${{ pair.value }}
-    
-    displayName: Release ${{ stage.templateContext.environment }}
+  - ${{ each stage in parameters.stages }}:
+      - ${{ each pair in stage }}:
+          ${{ pair.key }}: ${{ pair.value }}
+        
+        displayName: Release ${{ stage.templateContext.environment }}
+        
+        ${{ if eq(stage.templateContext.environment, 'production') }}:
+          condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+        
+        jobs:
+          - deployment: Release
+            
+            pool:
+              vmImage: windows-latest
+            
+            environment: ${{ stage.templateContext.serviceConnection }}
+            
+            strategy:
+              runOnce:
+                deploy:
+                  steps:
 
-    ${{ if eq(stage.templateContext.environment, 'production') }}:
-      condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+                    - ${{ each target in parameters.targets }}:
+                        - download: ${{ parameters.artifact }}
+                          artifact: package-${{ target }}
+                          displayName: "[${{ target }}] Download Package Artifact"
 
-    jobs:
-    - deployment: Release
+                    - ${{ each target in parameters.targets }}:
+                        - download: ${{ parameters.artifact }}
+                          artifact: scripts-${{ target }}
+                          displayName: "[${{ target }}] Download Scripts Artifact"
 
-      pool:
-        vmImage: windows-latest
+                    - pwsh: |
+                        Get-ChildItem "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
+                        Get-ChildItem "$(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher.Scripts-", "") }
+                      displayName: Rename Package Artifacts
 
-      environment: ${{ stage.templateContext.serviceConnection }}
+                    - ${{ each target in parameters.targets }}:
+                        - task: AzureCLI@2
+                          displayName: "[${{ target }}] Publish Packages to Blob Storage"
+                          inputs:
+                            azureSubscription: ${{ stage.templateContext.serviceConnection }}
+                            scriptType: ps
+                            scriptLocation: inlineScript
+                            inlineScript: |
+                              az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}/" --pattern "*.zip*"
 
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-
-            - ${{ each target in parameters.targets }}:
-              - download: ${{ parameters.artifact }}
-                artifact: package-${{ target }}
-                displayName: "[${{ target }}] Download artifact"
-
-            - pwsh: get-childitem "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-*/*" | foreach { rename-item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
-              displayName: Rename artifacts
-
-            - ${{ each target in parameters.targets }}:
-              - task: AzureCLI@2
-                displayName: "[${{ target }}] Publish to blob storage"
-                inputs:
-                  azureSubscription: ${{ stage.templateContext.serviceConnection }}
-                  scriptType: ps
-                  scriptLocation: inlineScript
-                  inlineScript: |
-                    az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}/" --pattern "*.zip*"
+                    - ${{ each target in parameters.targets }}:
+                        - task: AzureCLI@2
+                          displayName: "[${{ target }}] Publish Scripts to Blob Storage"
+                          inputs:
+                            azureSubscription: ${{ stage.templateContext.serviceConnection }}
+                            scriptType: ps
+                            scriptLocation: inlineScript
+                            inlineScript: |
+                              az storage blob upload-batch --account-name ${{ stage.templateContext.storage }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher.Scripts/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-${{ target }}/" --pattern "*.zip*"

@@ -6,7 +6,9 @@ trigger:
       - refs/tags/*
 
 variables:
-  branch: $(Build.SourceBranch)
+  - name: branch
+    value: $(Build.SourceBranch)
+  - group: "Code Signing Certificates"
 
 stages:
   - template: templates/stages/test.yml
