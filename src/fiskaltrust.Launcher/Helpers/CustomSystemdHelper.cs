@@ -16,10 +16,6 @@ namespace fiskaltrust.Launcher.Helpers
             {
                 return false;
             }
-            if (args[0] == "install")
-            {
-                return true;
-            }
             return args.Contains("isSystemd");
         }
     }
