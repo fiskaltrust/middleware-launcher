@@ -160,7 +160,14 @@ namespace fiskaltrust.Launcher.ProcessHost
                             await _hosting.HostService(url, hostingType.Value, (IPOS)instance, addEndpoints);
                             break;
                         case PackageType.Helper:
-                            await _hosting.HostService(url, hostingType.Value, (IHelper)instance, addEndpoints);
+                            if (_packageConfiguration.Package == "fiskaltrust.Middleware.Helper.PosApi")
+                            {
+                                await _hosting.HostService(url, hostingType.Value, (IPOS)instance, addEndpoints);
+                            }
+                            else
+                            {
+                                await _hosting.HostService(url, hostingType.Value, (IHelper)instance, addEndpoints);
+                            }
                             break;
                         default:
                             throw new NotImplementedException();
