@@ -84,24 +84,23 @@ stages:
               $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
 
               $packageDir = "$(Build.ArtifactStagingDirectory)/package-$(target)"
-              New-Item -ItemType Directory -Path $packageDir
+
+              if (-Not (Test-Path -Path $packageDir)) {
+                  New-Item -ItemType Directory -Path $packageDir
+              }
 
               Copy-Item -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -Destination $packageDir
               Copy-Item -Path README.md -Destination $packageDir
 
               $packagePath = "$packageDir/fiskaltrust.Launcher-$version.zip"
-              if("$(vmImage)" -eq "windows-latest") {
-                Compress-Archive -Path $packageDir/* -DestinationPath $packagePath
-              } else {
-                bash -c "cd $packageDir && zip -r $packagePath ./"
-              }
+              Compress-Archive -Path $packageDir/* -DestinationPath $packagePath
 
               $hash = Get-FileHash $packagePath -Algorithm SHA256
               $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
               $hashstring = [System.Convert]::ToBase64String($hashbytes)
               $hashstring | Set-Content $packageDir/fiskaltrust.Launcher-$version.zip.hash
-            displayName: Package executables and README.md
-
+            displayName: Package executables and README.md      
+          
           - pwsh: |
               $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
 
