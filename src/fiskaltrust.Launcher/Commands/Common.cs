@@ -187,7 +187,7 @@ namespace fiskaltrust.Launcher.Commands
                 // will exit with non-zero exit code later.
                 Log.Fatal(e, "Could not read Cashbox configuration file.");
             }
-
+            launcherConfiguration.LogConfigurationWarnings(Log.Logger);
             var cashboxConfiguration = new ftCashBoxConfiguration();
             try
             {
