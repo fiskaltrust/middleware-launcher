@@ -37,7 +37,7 @@ var command = new RootCommand("Launcher for the fiskaltrust.Middleware") {
 
 if (!args.Any())
 {
-    args = new[] { runCommand.Name };
+    args = [runCommand.Name];
 }
 
 var subArguments = new SubArguments(args.SkipWhile(a => a != "--").Skip(1));
