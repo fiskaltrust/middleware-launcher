@@ -123,6 +123,7 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             launcherConfiguration.OverwriteWith(configSetOptions.ArgsLauncherConfiguration);
+            LogConfigurationWarnings(launcherConfiguration);
 
             string rawLauncherConfigurationNew;
             rawLauncherConfigurationNew = launcherConfiguration.Serialize(true, true);
@@ -173,6 +174,14 @@ namespace fiskaltrust.Launcher.Commands
             Console.ForegroundColor = savedColor;
 
             return 0;
+        }
+
+        private static void LogConfigurationWarnings(LauncherConfiguration launcherConfiguration)
+        {
+            if (launcherConfiguration.UseLegacyDataProtection.HasValue)
+            {
+                Log.Warning("Configuration 'UseLegacyDataProtection' is depreciated and will be removed in future.");
+            }
         }
     }
 
