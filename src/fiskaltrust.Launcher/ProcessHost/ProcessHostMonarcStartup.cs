@@ -6,7 +6,6 @@ using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Hosting.WindowsServices;
 
 namespace fiskaltrust.Launcher.ProcessHost
@@ -25,7 +24,6 @@ namespace fiskaltrust.Launcher.ProcessHost
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILifetime _lifetime;
         private readonly LauncherExecutablePath _launcherExecutablePath;
-        private readonly TaskCompletionSource<Uri> _kestrelReady;
 
         public ProcessHostMonarcStartup(ILoggerFactory loggerFactory, ILogger<ProcessHostMonarcStartup> logger, Dictionary<Guid, IProcessHostMonarch> hosts, LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashBoxConfiguration, PackageDownloader downloader, ILifetime lifetime, LauncherExecutablePath launcherExecutablePath, IHostApplicationLifetime hostApplicationLifetime, IServer server)
         {
@@ -37,44 +35,13 @@ namespace fiskaltrust.Launcher.ProcessHost
             _downloader = downloader;
             _lifetime = lifetime;
             _launcherExecutablePath = launcherExecutablePath;
-            _kestrelReady = new TaskCompletionSource<Uri>();
-
-            hostApplicationLifetime.ApplicationStarted.Register(() =>
-            {
-                try
-                {
-                    _kestrelReady.TrySetResult(new Uri(server.Features.Get<IServerAddressesFeature>()!.Addresses!.First()));
-                }
-                catch (Exception e)
-                {
-                    _kestrelReady.TrySetException(e);
-                }
-            });
         }
-
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             _lifetime.ApplicationLifetime.ApplicationStopping.Register(() => _logger.LogInformation("Shutting down launcher."));
-            cancellationToken.Register(() => _kestrelReady.TrySetCanceled());
 
             StartupLogging();
-
-            if (_launcherConfiguration.LauncherPort == 0)
-            {
-                try
-                {
-                    var url = await _kestrelReady.Task.ConfigureAwait(false);
-                    _launcherConfiguration.LauncherPort = url.Port;
-                    _logger.LogInformation("ProcessHostService running on {url}", url);
-                }
-                catch (Exception e)
-                {
-                    if (cancellationToken.IsCancellationRequested) { return; }
-                    _logger.LogError(e, "Could not get Kestrel port.");
-                    throw new AlreadyLoggedException();
-                }
-            }
 
             _downloader.CopyPackagesToCache();
 

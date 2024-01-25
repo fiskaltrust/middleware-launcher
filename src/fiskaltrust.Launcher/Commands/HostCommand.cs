@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using fiskaltrust.Launcher.ProcessHost;
 using fiskaltrust.Launcher.Services;
 using fiskaltrust.storage.serialization.V0;
@@ -15,12 +14,15 @@ using ProtoBuf.Grpc.Client;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Constants;
 using System.Diagnostics;
+using System.Net.Sockets;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Services.Interfaces;
 using fiskaltrust.ifPOS.v1.it;
 using fiskaltrust.Launcher.Helpers;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using fiskaltrust.Launcher.Factories;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -76,19 +78,17 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             var launcherConfiguration = LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.LauncherConfiguration)));
-
             var plebeianConfiguration = PlebeianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.PlebeianConfiguration)));
 
             var cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
-
-            cashboxConfiguration.Decrypt(launcherConfiguration, await CommonHandler.LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseLegacyDataProtection!.Value));
+            cashboxConfiguration.Decrypt(launcherConfiguration, await CommonHandler.LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!));
 
             var packageConfiguration = (plebeianConfiguration.PackageType switch
             {
                 PackageType.Queue => cashboxConfiguration.ftQueues,
                 PackageType.SCU => cashboxConfiguration.ftSignaturCreationDevices,
                 PackageType.Helper => cashboxConfiguration.helpers,
-                var unknown => throw new Exception($"Unknown PackageType {unknown}")
+                _ => throw new Exception($"Unknown PackageType {plebeianConfiguration.PackageType}")
             }).First(p => p.Id == plebeianConfiguration.PackageId);
 
             packageConfiguration.Configuration = ProcessPackageConfiguration(packageConfiguration.Configuration, launcherConfiguration, cashboxConfiguration);
@@ -96,7 +96,8 @@ namespace fiskaltrust.Launcher.Commands
             IProcessHostService? processHostService = null;
             if (!hostOptions.NoProcessHostService)
             {
-                processHostService = GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>();
+                var handler = new SocketsHttpHandler { ConnectCallback = new IpcConnectionFactory(launcherConfiguration).ConnectAsync };
+                processHostService = GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = handler }).CreateGrpcService<IProcessHostService>();
             }
 
             Log.Logger = new LoggerConfiguration()
@@ -110,14 +111,14 @@ namespace fiskaltrust.Launcher.Commands
                 .UseSerilog()
                 .ConfigureServices(services =>
                 {
-                    services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts =>
-                    {
-                        opts.ShutdownTimeout = TimeSpan.FromSeconds(30);
-                        opts.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
-                    });
                     services.AddSingleton(_ => launcherConfiguration);
                     services.AddSingleton(_ => packageConfiguration);
                     services.AddSingleton(_ => plebeianConfiguration);
+
+                    services.Configure<Microsoft.Extensions.Hosting.HostOptions>(opts =>
+                    {
+                        opts.ShutdownTimeout = TimeSpan.FromSeconds(30);
+                    });
 
                     var pluginLoader = new PluginLoader();
                     services.AddSingleton(_ => pluginLoader);
@@ -141,7 +142,7 @@ namespace fiskaltrust.Launcher.Commands
                         var bootstrapper = pluginLoader
                             .LoadComponent<IMiddlewareBootstrapper>(
                                 downloader.GetPackagePath(packageConfiguration),
-                                new[] {
+                                [
                                     typeof(IMiddlewareBootstrapper),
                                     typeof(IPOS),
                                     typeof(IDESSCD),
@@ -153,11 +154,10 @@ namespace fiskaltrust.Launcher.Commands
                                     typeof(JournalResponse),
                                     typeof(IHelper),
                                     typeof(IServiceCollection),
-                                    typeof(Microsoft.Extensions.Logging.ILogger),
+                                    typeof(ILogger),
                                     typeof(ILoggerFactory),
                                     typeof(ILogger<>)
-                            });
-
+                                ]);
                         bootstrapper.Id = packageConfiguration.Id;
                         bootstrapper.Configuration = packageConfiguration.Configuration.ToDictionary(c => c.Key, c => (object?)c.Value.ToString());
 
