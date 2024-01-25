@@ -83,17 +83,24 @@ stages:
           - pwsh: |
               $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
 
+              $packageDir = "$(Build.ArtifactStagingDirectory)/package-$(target)"
+              New-Item -ItemType Directory -Path $packageDir
+
+              Copy-Item -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -Destination $packageDir
+              Copy-Item -Path README.md -Destination $packageDir
+
+              $packagePath = "$packageDir/fiskaltrust.Launcher-$version.zip"
               if("$(vmImage)" -eq "windows-latest") {
-                Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip
+                Compress-Archive -Path $packageDir/* -DestinationPath $packagePath
               } else {
-                bash -c "cd $(Build.ArtifactStagingDirectory)/raw-$(target)/`nzip -r $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip ./"
+                bash -c "cd $packageDir && zip -r $packagePath ./"
               }
 
-              $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip -Algorithm SHA256
+              $hash = Get-FileHash $packagePath -Algorithm SHA256
               $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
               $hashstring = [System.Convert]::ToBase64String($hashbytes)
-              $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash
-            displayName: Pagkage executables
+              $hashstring | Set-Content $packageDir/fiskaltrust.Launcher-$version.zip.hash
+            displayName: Package executables and README.md
 
           - pwsh: |
               $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
