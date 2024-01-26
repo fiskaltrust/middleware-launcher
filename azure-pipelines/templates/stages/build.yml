@@ -98,13 +98,13 @@ stages:
           - pwsh: |
               Copy-Item -Path ./README.md -Destination $(Build.ArtifactStagingDirectory)/scripts-$(target)/README.md
             displayName: "Copy README.md to scripts artifacts"
-            
+
           - pwsh: |
               $readmeContent = Get-Content $(Build.ArtifactStagingDirectory)/scripts-$(target)/README.md -Raw
-              $updatedContent = $readmeContent -replace '<!-- BEGIN (CONTRIBUTING|LICENSE) -->.*?<!-- END (CONTRIBUTING|LICENSE) -->\s*', ''
+              $updatedContent = $readmeContent -replace '(?s)<!-- BEGIN (CONTRIBUTING|LICENSE) -->.*?<!-- END (CONTRIBUTING|LICENSE) -->\s*', ''
               $updatedContent | Set-Content $(Build.ArtifactStagingDirectory)/scripts-$(target)/README.md
             displayName: "Update README.md"
-
+                    
           - pwsh: |
               $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
               $scriptTargetPath = "$(Build.ArtifactStagingDirectory)/scripts-$(target)/fiskaltrust.Launcher.Scripts-$version.zip"
