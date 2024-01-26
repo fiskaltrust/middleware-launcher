@@ -93,11 +93,17 @@ stages:
               $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
               $hashstring = [System.Convert]::ToBase64String($hashbytes)
               $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash
-            displayName: Pagkage executables
+            displayName: Package executables
 
           - pwsh: |
               Copy-Item -Path ./README.md -Destination $(Build.ArtifactStagingDirectory)/scripts-$(target)/README.md
             displayName: "Copy README.md to scripts artifacts"
+            
+          - pwsh: |
+              $readmeContent = Get-Content $(Build.ArtifactStagingDirectory)/scripts-$(target)/README.md -Raw
+              $updatedContent = $readmeContent -replace '<!-- BEGIN (CONTRIBUTING|LICENSE) -->.*?<!-- END (CONTRIBUTING|LICENSE) -->\s*', ''
+              $updatedContent | Set-Content $(Build.ArtifactStagingDirectory)/scripts-$(target)/README.md
+            displayName: "Update README.md"
 
           - pwsh: |
               $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
