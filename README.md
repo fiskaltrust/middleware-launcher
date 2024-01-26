@@ -290,16 +290,16 @@ HttpSysBinding has some limitations:
 * The Launcher has access problems when writing to the keyring on Linux if run as a service.
   The launcher configuration parameter `useLegacyDataProtection` needs to be set to `true` as a workaround. ([#100](https://github.com/fiskaltrust/middleware-launcher/issues/100)
 
-<!--
+<!-- BEGIN CONTRIBUTING -->
 ## Contributing
 
 We welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!
 
 Please check out the [contribution guidelines](CONTRIBUTING.md) for more detailed information about how to proceed.
 
--->
+<!-- END CONTRIBUTING -->
 
-<!--
+<!-- BEGIN LICENSE -->
 ## License
 
 The fiskaltrust Middleware is released under the [EUPL 1.2](./LICENSE).
@@ -308,4 +308,4 @@ As a Compliance-as-a-Service provider, the security and authenticity of the prod
 
 The fiskaltrust Middleware (and related products and services) as contained in these repositories may therefore only be used in the form of binaries signed by fiskaltrust.
 
--->
+<!-- END LICENSE -->
