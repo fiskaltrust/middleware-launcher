@@ -96,18 +96,22 @@ stages:
             displayName: Pagkage executables
 
           - pwsh: |
-              $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
+              Copy-Item -Path ./README.md -Destination $(Build.ArtifactStagingDirectory)/scripts-$(target)/README.md
+            displayName: "Copy README.md to scripts artifacts"
 
+          - pwsh: |
+              $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
               $scriptTargetPath = "$(Build.ArtifactStagingDirectory)/scripts-$(target)/fiskaltrust.Launcher.Scripts-$version.zip"
 
               if("$(vmImage)" -eq "windows-latest") {
-                Compress-Archive -Path ./scripts/$(scriptFolder)/* -DestinationPath $scriptTargetPath
+                Compress-Archive -Path ./scripts/$(scriptFolder)/*, $(Build.ArtifactStagingDirectory)/scripts-$(target)/README.md -DestinationPath $scriptTargetPath
               } else {
                 bash -c "chmod +x ./scripts/$(scriptFolder)/*"
                 bash -c "cd ./scripts/$(scriptFolder)/`nzip -r $scriptTargetPath ./"
+                bash -c "cd $(Build.ArtifactStagingDirectory)/scripts-$(target)/`nzip -r $scriptTargetPath README.md"
               }
-            displayName: Package scripts
-
+            displayName: Package scripts with README.md
+                    
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
 
