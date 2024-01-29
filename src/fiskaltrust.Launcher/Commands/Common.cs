@@ -337,42 +337,47 @@ namespace fiskaltrust.Launcher.Commands
                 .CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
             var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
 
+            ECDiffieHellman? clientEcdh = null;
+
             if (File.Exists(clientEcdhPath))
+            {
                 try
                 {
-                    return ECDiffieHellmanExt.Deserialize(
+                    clientEcdh = ECDiffieHellmanExt.Deserialize(
                         dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
                 }
                 catch (Exception e)
                 {
                     Log.Warning($"Error loading or decrypting ECDH curve: {e.Message}. Regenerating new curve.");
                 }
+            }
 
             // Handling offline client ECDH path
             const string offlineClientEcdhPath = "/client.ecdh";
-            if (!dryRun && useOffline && File.Exists(offlineClientEcdhPath))
+            if (!dryRun && useOffline && File.Exists(offlineClientEcdhPath) && clientEcdh == null)
             {
-                var clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
+                clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
                 try
                 {
                     File.Delete(offlineClientEcdhPath);
                 }
                 catch
                 {
+                    /* handle exception if needed */
                 }
-
-                return clientEcdh;
             }
 
-            // Regenerating the curve if it's not loaded or in case of an error
-            var newClientEcdh = CashboxConfigEncryption.CreateCurve();
-            if (!dryRun) 
+            if (clientEcdh == null)
             {
-                await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(newClientEcdh.Serialize()));
-                return newClientEcdh;
+                // Regenerating the curve if it's not loaded or in case of an error
+                clientEcdh = CashboxConfigEncryption.CreateCurve();
+                if (!dryRun)
+                {
+                    await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(clientEcdh.Serialize()));
+                }
             }
-            return clientEcdh;
 
+            return clientEcdh;
         }
     }
 }
