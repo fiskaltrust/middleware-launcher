@@ -337,6 +337,8 @@ public static class CommonHandler
         var newClientEcdh = CashboxConfigEncryption.CreateCurve();
         if (!dryRun) await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(newClientEcdh.Serialize()));
 
-        return clientEcdh;
+                return clientEcdh;
+            }
+        }
     }
 }
