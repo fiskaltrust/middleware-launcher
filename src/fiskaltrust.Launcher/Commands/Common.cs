@@ -176,7 +176,6 @@ namespace fiskaltrust.Launcher.Commands
                     }
                 }
             }
-            
             catch (Exception e)
             {
                 var message = "Could not download Cashbox configuration. ";
