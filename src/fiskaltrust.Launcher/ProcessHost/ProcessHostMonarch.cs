@@ -45,11 +45,6 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _stopped = new TaskCompletionSource();
             _started = new TaskCompletionSource();
-
-            // if (Debugger.IsAttached)
-            // {
-            //     _process.StartInfo.Arguments += " --debugging";
-            // }
         }
 
         private void Setup()
@@ -61,11 +56,11 @@ namespace fiskaltrust.Launcher.ProcessHost
                     UseShellExecute = false,
                     FileName = _launcherExecutablePath.Path,
                     CreateNoWindow = false,
-                    Arguments = string.Join(" ", new string[] {
+                    Arguments = string.Join(" ", [
                         "host",
                         "--plebeian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(new PlebeianConfiguration { PackageType = _packageType, PackageId = _packageConfiguration.Id }.Serialize()))}\"",
                         "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(_launcherConfiguration.Serialize()))}\"",
-                    }),
+                    ]),
                     RedirectStandardInput = true,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true
@@ -75,6 +70,11 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _process.OutputDataReceived += ReceiveStdOut;
             _process.ErrorDataReceived += ReceiveStdOut;
+
+            // if (Debugger.IsAttached && _packageType == PackageType.Helper)
+            // {
+            //     _process.StartInfo.Arguments += " --debugging";
+            // }
         }
 
         private void ReceiveStdOut(object sender, DataReceivedEventArgs e)

@@ -20,6 +20,7 @@ using fiskaltrust.Launcher.Clients;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.ifPOS.v1;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using fiskaltrust.Launcher.Factories;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -158,7 +159,26 @@ namespace fiskaltrust.Launcher.Commands
 
                 checkUp.Check("Setup monarch ProcessHostService", () =>
                 {
-                    monarchBuilder.WebHost.ConfigureBinding(new Uri($"http://[::1]:{launcherConfiguration.LauncherPort}"), protocols: HttpProtocols.Http2);
+                    if (OperatingSystem.IsWindows())
+                    {
+                        monarchBuilder.WebHost.UseKestrel(serverOptions =>
+                        {
+                            serverOptions.ListenNamedPipe(commonProperties.LauncherConfiguration.LauncherServiceUri!, listenOptions =>
+                            {
+                                listenOptions.Protocols = HttpProtocols.Http2;
+                            });
+                        });
+                    }
+                    else
+                    {
+                        monarchBuilder.WebHost.UseKestrel(serverOptions =>
+                        {
+                            serverOptions.ListenUnixSocket(commonProperties.LauncherConfiguration.LauncherServiceUri!, listenOptions =>
+                            {
+                                listenOptions.Protocols = HttpProtocols.Http2;
+                            });
+                        });
+                    }
 
                     monarchBuilder.Services.AddCodeFirstGrpc();
                 }, throws: true);
@@ -187,7 +207,11 @@ namespace fiskaltrust.Launcher.Commands
                     Version = "1.0.0"
                 };
 
-                IProcessHostService? processHostService = checkUp.Check("Start plebeian processhostservice client", () => GrpcChannel.ForAddress($"http://localhost:{launcherConfiguration.LauncherPort}").CreateGrpcService<IProcessHostService>());
+                IProcessHostService? processHostService = checkUp.Check("Start plebeian processhostservice client", () =>
+                {
+                    var handler = new SocketsHttpHandler { ConnectCallback = new IpcConnectionFactory(launcherConfiguration).ConnectAsync };
+                    return GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = handler }).CreateGrpcService<IProcessHostService>();
+                });
 
                 var plebeianBuilder = Host.CreateDefaultBuilder()
                     .UseSerilog(new LoggerConfiguration().CreateLogger())

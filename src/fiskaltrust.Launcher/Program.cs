@@ -6,8 +6,6 @@ using System.CommandLine.Hosting;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using System.CommandLine.NamingConventionBinder;
-using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.Launcher.Common.Constants;
 
 var runCommand = new RunCommand()
 {
@@ -39,7 +37,7 @@ var command = new RootCommand("Launcher for the fiskaltrust.Middleware") {
 
 if (!args.Any())
 {
-    args = new[] { runCommand.Name };
+    args = [runCommand.Name];
 }
 
 var subArguments = new SubArguments(args.SkipWhile(a => a != "--").Skip(1));

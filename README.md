@@ -13,20 +13,29 @@ Middleware packages each provide specific fiscalization-, data source- and secur
 
 Below, we illustrate a minimal sample configuration with the international SQLite _Queue_ package (with a configured HTTP endpoint) and a German _Signature Creation Unit_ (with a gRPC endpoint) that abstracts a Swissbit TSS.
 
-<div align="center">
-  <img src="./doc/images/overview.png" alt="overview" />
-</div>
+![Overview](https://raw.githubusercontent.com/fiskaltrust/middleware-launcher/main/doc/images/overview.png)
 
 ## Getting Started
-
-> warning: This beta version  of the Launcher 2.0 is for test purpose only and should be used with our German sandbox.
 
 Download the latest release from GitHub. We always recommend using the latest release to benefit from the newest improvements.
 Unzip the downloaded release.
 
-Start the Launcher via the commandline:
+You can also download the Launcher from the fiskaltrust Portal (only sandbox at the moment), the Launcher will come with a preconfigured `launcher.configuration.json` file.
 
-```sh
+The download will contain the `fiskaltrust.Launcher` executable and `test`, `install`, `uninstall` `.cmd` or `.sh` scripts and a `migrate.cmd` script on Windows.
+
+* The `test.cmd` or `test.sh` script can be used to test the Launcher.
+  It will start the Launcher with `--log-level` parameter set to debug.
+* The `install.cmd` or `install.sh` script can be used to install the Launcher as a service.
+* The `uninstall.cmd` or `uninstall.sh` script can be used to uninstall the Launcher as a service.
+* The `migrate.cmd` script can be used to from migrate the Launcher 1.3 to the Launcher 2.0 (See [Migration Script](#automatic-migration-using-the-migration-script) for more information).
+
+Alternatively you can start the Launcher via the command line:
+
+```ps1
+# Will use the configuration file `launcher.configuration.json` in the current directory
+fiskaltrust.Launcher.exe run
+# Will use the cashbox id and access token from the cli parameters
 fiskaltrust.Launcher.exe run --cashbox-id <cashboxid> --access-token <accesstoken> --sandbox
 ```
 
@@ -46,16 +55,16 @@ To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 
 ### Installation
 
-On debian based linux systems the Launcher can also be installed via `apt-get` . The executable will be installed at `/usr/bin/fiskaltrust.Launcher` and can be run like that `fiskaltrust.Launcher --help` .
+On Debian based Linux systems the Launcher can also be installed via `apt-get` . The executable will be installed at `/usr/bin/fiskaltrust.Launcher` and can be run like that `fiskaltrust.Launcher --help` .
 
 ```bash
 curl -L http://downloads.fiskaltrust.cloud/apt-repo/KEY.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/fiskaltrust-archive-keyring.gpg > /dev/null
-echo "deb [signed-by=/usr/share/keyrings/fiskaltrust-archive-keyring.gpg] http://downloads.fiskaltrust.cloud/apt-repo stable main" | sudo tee /etc/apt/sources.list.d/fiskaltrust.list
+echo "deb [signed-by=/usr/share/keyrings/fiskaltrust-archive-keyring.gpg] https://downloads.fiskaltrust.cloud/apt-repo stable main" | sudo tee /etc/apt/sources.list.d/fiskaltrust.list
 sudo apt update
 sudo apt install fiskaltrust-middleware-launcher
 ```
 
-> When installed this way the self-update funtionality of the launcher is disabled and it has to be updated via `apt-get` .
+> When installed this way the self-update functionality of the launcher is disabled and it has to be updated via `apt-get` .
 > 
 >  ```bash
 > sudo apt update && sudo apt install --only-upgrade fiskaltrust-middleware-launcher
@@ -63,21 +72,47 @@ sudo apt install fiskaltrust-middleware-launcher
 
 ## Migration guide
 
-> Caution: To switch from a launcher version 1.3.x to a version 2.0 is possible using the version Launcher 2.0- Public Preview 3 onwards.
+Before switching from a 1.3 Launcher to a Launcher 2.0, please update the Queues, SCUs and Helpers to the latest packages.
 
-Before switching from a 1.3.x Launcher to a Launcher 2.0, please make sure that the packages configured are compatible. You can check with the [table of the supported Packages in the Alpha](#supported-packages-in-the-alpha).
+Then download the new launcher from the Portal or the [GitHub release page](https://github.com/fiskaltrust/middleware-launcher/releases).
 
-Run the uninstall-service.cmd or sh command to deinstall the old launcher.
+Run the `uninstall-service.cmd` or `uninstall-service.sh` command to deinstall the old launcher.
 
-Create the [configuration file](#launcher-configuration), and make sure to include the cashboxId and access token. 
+If you did not download the Launcher from the Portal manually create the [configuration file](#launcher-configuration), and make sure to include the `cashboxId` and `accessToken` and to set `sandbox` to true if needed.
 
-In the new launcher folder run the following command `.\fiskaltrust.Launcher.exe install --sandbox` .
+In the new launcher folder execute the `install.cmd` or `install.sh` script or run the following command `.\fiskaltrust.Launcher.exe install`.
 
-To check that the switch is successful, try send receipt to the middleware using our Postman collection.
+To check that the switch was successful, e.g. try sending receipt to the middleware using our Postman collection.
+
+### Automatic Migration using the Migration Script
+
+On Windows we provide a `migrate.cmd` script that can be used to migrate the Launcher 1.3 to the Launcher 2.0.
+
+This script will migrate an existing service installation of the Launcher 1.3 to the Launcher 2.0.
+
+To run this script unzip the downloaded Launcher 2.0 files into the folder containing the old Launcher 1.3.
+
+> _The folder should now contain at least the following files:_
+> ```
+> .
+> ├─ fiskaltrust.Launcher.exe
+> ├─ launcher.configuration.json
+> ├─ migrate.cmd
+> └─ fiskaltrust.exe
+> ```
+
+And then run the `migrate.cmd` script as an administrator.
+
+The script will do the following:
+
+* Find the service of the old Launcher (`fiskaltrust.exe`)
+* Stop and uninstall the service
+* Install the new Launcher 2.0 as a service using the same service name as the old Launcher
+* Backup the old Launcher 1.3 files to the `.backup` folder
 
 ## Launcher configuration
 
-The Launcher 2.0 configuration is now read from a json file ( `launcher.configuration.json` in the working directory per default). The configuration has to be created mannually.
+The Launcher 2.0 configuration is now read from a JSON file ( `launcher.configuration.json` in the working directory per default). The configuration has to be created manually.
 
 This file can be set via the `--launcher-configuration-file` cli argument.
 
@@ -129,7 +164,7 @@ The `run` command of the fiskaltrust.Launcher is used to execute the launcher, p
 | `--merge-legacy-config-if-exists`                             | If set, merges legacy configuration if it exists.                                                                | `true`                                                                                                                              |
 | `--launcher-port <port>`                                      | Specifies the port which the launcher will use for internal communication. A dynamic binding is used by default. | `0`                                                                                                                                 |
 | `--use-offline`                                               | Enables offline mode.                                                                                            | `false`                                                                                                                             |
-| `--service-folder <service-folder>`                           | Path to the service folder.                                                                                      | windows: `"C:/ProgramData/fiskaltrust"`<br/>linux: `"/var/lib/fiskaltrust"`<br/>macos: `"/Library/Application Support/fiskaltrust"` |
+| `--service-folder <service-folder>`                           | Path to the service folder.                                                                                      | Windows: `"C:/ProgramData/fiskaltrust"`<br/>Linux: `"/var/lib/fiskaltrust"`<br/>MacOS: `"/Library/Application Support/fiskaltrust"` |
 | `--configuration-url <configuration-url>`                     | URL to fetch the configuration from.                                                                             | `"https://configuration[-sandbox].fiskaltrust.cloud"`                                                                               |
 | `--packages-url <packages-url>`                               | URL to fetch packages from.                                                                                      | `"https://packages-2-0[-sandbox].fiskaltrust.cloud"`                                                                                |
 | `--package-cache <package-cache>`                             | Cache directory for the packages.                                                                                | `"<serviceFolder>/cache"`                                                                                                           |
@@ -199,23 +234,23 @@ The `doctor` command should give the following output when run successfully:
 
 ## Service
 
-The Launcher 2.0 can be installed as a service on Windows and linux (when systemd is available) using the `install` command:
+The Launcher 2.0 can be installed as a service on Windows and Linux (when `systemd` is available) using the `install` command:
 
 ```sh
 fiskaltrust.Launcher.exe install --cashbox-id <cashboxid> --access-token <accesstoken> --launcher-configuration-file <launcher-configuration-file>
 ```
 
-## Selfupdate
+## Self update
 
-The Launcher 2.0 can update itsself automatically. For this the `launcherVersion` must be set in the [launcher configuration file](#launcher-configuration).
+The Launcher 2.0 can update itself automatically. For this the `launcherVersion` must be set in the [launcher configuration file](#launcher-configuration).
 
 This can be set to a specific version (e.g. `"launcherVersion": "2.0.0-preview3"` updates to version `2.0.0-preview3` ).
 
-Or this can be set to a [semver range](https://devhints.io/semver#ranges) (e.g. `"launcherVersion": ">= 2.0.0-preview3 < 2.0.0"` automatically updates to all preview versions greater or equal to `2.0.0-preview3` but does not update to non preview versions).
+Or this can be set to a [SemVer Range](https://devhints.io/semver#ranges) (e.g. `"launcherVersion": ">= 2.0.0-preview3 < 2.0.0"` automatically updates to all preview versions greater or equal to `2.0.0-preview3` but does not update to non preview versions).
 
 ## Getting Started for developers
 
-Clone this github repository and bild the project with Visual Studio.
+Clone this GitHub repository and build the project with Visual Studio.
 
 When using VS Code, please ensure that the following command line parameters are passed to `dotnet build` to enable seamless debugging: `-p:PublishSingleFile=true -p:PublishReadyToRun=true` .
 
@@ -223,43 +258,48 @@ When using VS Code, please ensure that the following command line parameters are
 
 **Q:** Are additional components required to be installed to be able to run the Launcher 2.0?
 
-**A:** The Launcher 2.0 does not require any additionnal components to be installed.
+**A:** The Launcher 2.0 does not require any additional components to be installed.
 
 ---
 
 **Q:** Which market can test the launcher 2.0?
 
-**A:** Right now only the German and Italian market can test the launcher 2.0. It is possible for everyone to register to the German/Italian sandbox and test the launcher 2.0.  Also, we are working on making the launcher available for all market.
+**A:** Right now only the German and Italian market can test the launcher 2.0. It is possible for everyone to register to the German/Italian sandbox and test the launcher 2.0.  Also, we are working on making the launcher available for all markets.
 
 ---
 
 **Q:** Is it possible to update the launcher version (e.g. from 1.3 to 2.0)?
 
-**A:** It is possible to switch the launcher version from 1.3 to 2.0 using the version Launcher 2.0.0-rc.3 and later versions.
+**A:** It is possible to switch the launcher version from 1.3 to 2.0 using the version Launcher `2.0.0-rc.3` and later versions.
 
 ---
 
-**Q:** Can I use portsharing to run multiple Queues or SCUs on the same port (e.g. `rest://localhost:1500/queue1` and `rest://localhost:1500/queue2` )
+**Q:** Can I use port sharing to run multiple Queues or SCUs on the same port (e.g. `rest://localhost:1500/queue1` and `rest://localhost:1500/queue2` )
 
 **A:** Yes this is possible by setting the launcher config parameter `useHttpSysBinding` to true.
 
 HttpSysBinding has some limitations:
 
 * It is only supported on windows
-* It is not supported for grpc communication
+* It is not supported for GRPC communication
 * The launcher may need to be run as an administrator
-* No Tls certificates can be set
+* No TLS certificates can be set
 
 ## Known Issues
 
-* The Launcher has access problems when writing to the keyring on linux if run as a service. The launcher configuration parameter `useLegacyDataProtection` needs to be set to `true` as a workaround. ([#100](https://github.com/fiskaltrust/middleware-launcher/issues/100)
+* The Launcher has access problems when writing to the keyring on Linux if run as a service.
+  The launcher configuration parameter `useLegacyDataProtection` needs to be set to `true` as a workaround. ([#100](https://github.com/fiskaltrust/middleware-launcher/issues/100)
 
+<!-- BEGIN CONTRIBUTING -->
 ## Contributing
 
 We welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!
 
 Please check out the [contribution guidelines](CONTRIBUTING.md) for more detailed information about how to proceed.
 
+<!-- END CONTRIBUTING -->
+
+<!-- BEGIN LICENSE -->
 ## License
 
 The fiskaltrust Middleware is released under the [EUPL 1.2](./LICENSE).
@@ -267,3 +307,5 @@ The fiskaltrust Middleware is released under the [EUPL 1.2](./LICENSE).
 As a Compliance-as-a-Service provider, the security and authenticity of the products installed on our users' endpoints is essential to us. To ensure that only peer-reviewed binaries are distributed by maintainers, fiskaltrust explicitly reserves the sole right to use the brand name "fiskaltrust Middleware" (and the brand names of related products and services) for the software provided here as open source - regardless of the spelling or abbreviation, as long as conclusions can be drawn about the original product name.  
 
 The fiskaltrust Middleware (and related products and services) as contained in these repositories may therefore only be used in the form of binaries signed by fiskaltrust.
+
+<!-- END LICENSE -->
