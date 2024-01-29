@@ -157,14 +157,26 @@ namespace fiskaltrust.Launcher.Commands
             ECDiffieHellman? clientEcdh = null;
             try
             {
-                clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value,  useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
-                using var downloader = new ConfigurationDownloader(launcherConfiguration);
-                var exists = await downloader.DownloadConfigurationAsync(clientEcdh);
-                if (launcherConfiguration.UseOffline!.Value && !exists)
+                clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
+            }
+            catch (Exception e)
+            {
+                Log.Fatal(e, "Could not load client curve.");
+            }
+
+            try
+            {
+                if (clientEcdh is not null)
                 {
-                    Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
+                    using var downloader = new ConfigurationDownloader(launcherConfiguration);
+                    var exists = await downloader.DownloadConfigurationAsync(clientEcdh);
+                    if (launcherConfiguration.UseOffline!.Value && !exists)
+                    {
+                        Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
+                    }
                 }
             }
+            
             catch (Exception e)
             {
                 var message = "Could not download Cashbox configuration. ";
