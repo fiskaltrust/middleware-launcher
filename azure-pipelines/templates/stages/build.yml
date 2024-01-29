@@ -93,7 +93,7 @@ stages:
               $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
               $hashstring = [System.Convert]::ToBase64String($hashbytes)
               $hashstring | Set-Content $(Build.ArtifactStagingDirectory)/package-$(target)/fiskaltrust.Launcher-$version.zip.hash
-            displayName: "Package executables"
+            displayName: Package executables
 
           - pwsh: |
               Copy-Item -Path ./README.md -Destination $(Build.ArtifactStagingDirectory)/scripts-$(target)/README.md
@@ -106,24 +106,22 @@ stages:
             displayName: "Update README.md"
 
           - pwsh: |
-              $scriptFolderPath = "$(Build.ArtifactStagingDirectory)/scripts-$(target)"
               $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
-              $scriptTargetPath = "$scriptFolderPath/fiskaltrust.Launcher.Scripts-$version.zip"
-
-              Copy-Item -Path ./scripts/$(scriptFolder)/* -Destination $scriptFolderPath
+              $scriptTargetPath = "$(Build.ArtifactStagingDirectory)/scripts-$(target)/fiskaltrust.Launcher.Scripts-$version.zip"
+              Copy-Item -Path ./scripts/$(scriptFolder)/* -Destination $(Build.ArtifactStagingDirectory)/scripts-$(target)
 
               if("$(vmImage)" -eq "windows-latest") {
-                Compress-Archive -Path $scriptFolderPath/* -DestinationPath $scriptTargetPath
+                Compress-Archive -Path $(Build.ArtifactStagingDirectory)/scripts-$(target)/* -DestinationPath $scriptTargetPath
               } else {
-                bash -c "chmod +x $scriptFolderPath/*"
-                bash -c "cd $scriptFolderPath && zip -r $scriptTargetPath ./"
+                bash -c "chmod +x $(Build.ArtifactStagingDirectory)/scripts-$(target)/*"
+                bash -c "cd $(Build.ArtifactStagingDirectory)/scripts-$(target) && zip -r $scriptTargetPath ./"
               }
             displayName: "Package scripts with README.md"
 
           - pwsh: |
-              Remove-Item -Path $(Build.ArtifactStagingDirectory)/scripts-$(target)/README.md
-            displayName: "Remove README.md from scripts artifacts"
-              
+              Get-ChildItem -Path $(Build.ArtifactStagingDirectory)/scripts-$(target)/* -Exclude *.zip | Remove-Item
+            displayName: "Clean up scripts directory"
+
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
 
