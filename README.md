@@ -13,9 +13,7 @@ Middleware packages each provide specific fiscalization-, data source- and secur
 
 Below, we illustrate a minimal sample configuration with the international SQLite _Queue_ package (with a configured HTTP endpoint) and a German _Signature Creation Unit_ (with a gRPC endpoint) that abstracts a Swissbit TSS.
 
-<div align="center">
-  <img src="./doc/images/overview.png" alt="overview" />
-</div>
+![Overview](https://raw.githubusercontent.com/fiskaltrust/middleware-launcher/main/doc/images/overview.png)
 
 ## Getting Started
 
@@ -292,12 +290,16 @@ HttpSysBinding has some limitations:
 * The Launcher has access problems when writing to the keyring on Linux if run as a service.
   The launcher configuration parameter `useLegacyDataProtection` needs to be set to `true` as a workaround. ([#100](https://github.com/fiskaltrust/middleware-launcher/issues/100)
 
+<!-- BEGIN CONTRIBUTING -->
 ## Contributing
 
 We welcome all kinds of contributions and feedback, e.g. via issues or pull requests, and want to thank every future contributors in advance!
 
 Please check out the [contribution guidelines](CONTRIBUTING.md) for more detailed information about how to proceed.
 
+<!-- END CONTRIBUTING -->
+
+<!-- BEGIN LICENSE -->
 ## License
 
 The fiskaltrust Middleware is released under the [EUPL 1.2](./LICENSE).
@@ -305,3 +307,5 @@ The fiskaltrust Middleware is released under the [EUPL 1.2](./LICENSE).
 As a Compliance-as-a-Service provider, the security and authenticity of the products installed on our users' endpoints is essential to us. To ensure that only peer-reviewed binaries are distributed by maintainers, fiskaltrust explicitly reserves the sole right to use the brand name "fiskaltrust Middleware" (and the brand names of related products and services) for the software provided here as open source - regardless of the spelling or abbreviation, as long as conclusions can be drawn about the original product name.  
 
 The fiskaltrust Middleware (and related products and services) as contained in these repositories may therefore only be used in the form of binaries signed by fiskaltrust.
+
+<!-- END LICENSE -->
