@@ -330,10 +330,10 @@ namespace fiskaltrust.Launcher.Commands
 
         // Regenerating the curve if it's not loaded or in case of an error
         var newClientEcdh = CashboxConfigEncryption.CreateCurve();
-        if (!dryRun) await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(newClientEcdh.Serialize()));
-
-                return clientEcdh;
-            }
-        }
+        if (!dryRun) await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(newClientEcdh.Serialize())); 
+        
+        return clientEcdh;
+        
+        } 
     }
 }
