@@ -218,18 +218,12 @@ namespace fiskaltrust.Launcher.Commands
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
-            foreach (var logEvent in collectionSink.Events)
-            {
-                Log.Write(logEvent);
-            }
+        foreach (var logEvent in collectionSink.Events) Log.Write(logEvent);
 
-            // If any critical errors occured, we exit with a non-zero exit code.
-            // In many cases we don't want to immediately exit the application,
-            // but we want to log the error and continue and see what else is going on before we exit.
-            if (collectionSink.Events.Where(e => e.Level == LogEventLevel.Fatal).Any())
-            {
-                return 1;
-            }
+        // If any critical errors occured, we exit with a non-zero exit code.
+        // In many cases we don't want to immediately exit the application,
+        // but we want to log the error and continue and see what else is going on before we exit.
+        if (collectionSink.Events.Where(e => e.Level == LogEventLevel.Fatal).Any()) return 1;
 
             Log.Debug("Launcher Configuration File: {LauncherConfigurationFile}", options.LauncherConfigurationFile);
             Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", launcherConfiguration.CashboxConfigurationFile);
@@ -237,16 +231,18 @@ namespace fiskaltrust.Launcher.Commands
 
             Log.Debug("Launcher running as {ServiceType}", Enum.GetName(typeof(ServiceTypes), host.Services.GetRequiredService<ServiceType>().Type));
 
-            var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
+        var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken,
+            useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
 
-            try
-            {
-                launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
-            }
-            catch (Exception e)
-            {
-                Log.Warning(e, "Error decrypring launcher configuration file.");
-            }
+        try
+        {
+            launcherConfiguration.Decrypt(
+                dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Error decrypring launcher configuration file.");
+        }
 
             return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh!, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
         }
@@ -295,11 +291,13 @@ namespace fiskaltrust.Launcher.Commands
             }
         }
 
-        public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder, bool useOffline = false, bool dryRun = false, bool useFallback = false)
-        {
-            Log.Verbose("Loading Curve.");
-            var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
-            var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
+    public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder,
+        bool useOffline = false, bool dryRun = false, bool useFallback = false)
+    {
+        Log.Verbose("Loading Curve.");
+        var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback)
+            .CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
+        var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
 
         if (File.Exists(clientEcdhPath))
             try
@@ -332,8 +330,8 @@ namespace fiskaltrust.Launcher.Commands
         var newClientEcdh = CashboxConfigEncryption.CreateCurve();
         if (!dryRun) await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(newClientEcdh.Serialize()));
 
-            return clientEcdh;
+                return clientEcdh;
+            }
         }
-    }
 }
 }
