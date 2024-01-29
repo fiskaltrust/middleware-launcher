@@ -316,57 +316,7 @@ namespace fiskaltrust.Launcher.Commands
                     "Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.", serviceDirectory);
             }
         }
-
-        private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
-        {
-            var serviceDirectory = config.ServiceFolder!;
-            try
-            {
-                if (!Directory.Exists(serviceDirectory))
-                {
-                    Directory.CreateDirectory(serviceDirectory);
-
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
-                        RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                    {
-                        var user = Environment.GetEnvironmentVariable("USER");
-                        if (!string.IsNullOrEmpty(user))
-                        {
-                            var chownResult = await ProcessHelper.RunProcess("chown", new[] { user, serviceDirectory },
-                                LogEventLevel.Debug);
-                            if (chownResult.exitCode != 0)
-                            {
-                                Log.Warning("Failed to change owner of the service directory.");
-                            }
-
-                            var chmodResult = await ProcessHelper.RunProcess("chmod", new[] { "774", serviceDirectory },
-                                LogEventLevel.Debug);
-                            if (chmodResult.exitCode != 0)
-                            {
-                                Log.Warning("Failed to change permissions of the service directory.");
-                            }
-                        }
-                        else
-                        {
-                            Log.Warning(
-                                "Service user name is not set. Owner of the service directory will not be changed.");
-                        }
-                    }
-                    else
-                    {
-                        Log.Debug("Changing owner and permissions is skipped on non-Unix operating systems.");
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException e)
-            {
-                // will exit with non-zero exit code later.
-                Log.Fatal(e,
-                    "Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.",
-                    serviceDirectory);
-            }
-        }
-
+        
         public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder,
             bool useOffline = false, bool dryRun = false, bool useFallback = false)
         {
