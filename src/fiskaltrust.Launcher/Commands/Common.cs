@@ -361,9 +361,10 @@ namespace fiskaltrust.Launcher.Commands
                 {
                     File.Delete(offlineClientEcdhPath);
                 }
-                catch
+                catch (Exception e)
                 {
-                    /* handle exception if needed */
+                    Log.Error(e, "Error occurred while loading or decrypting ECDH curve from file: {ClientEcdhPath}", clientEcdhPath);
+                    throw;
                 }
             }
 
