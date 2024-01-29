@@ -203,7 +203,7 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
-                cashboxConfiguration.Decrypt(launcherConfiguration, clientEcdh);
+                if (clientEcdh is not null) { cashboxConfiguration.Decrypt(launcherConfiguration, clientEcdh); }
             }
             catch (Exception e)
             {
@@ -235,6 +235,7 @@ namespace fiskaltrust.Launcher.Commands
             Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", launcherConfiguration.CashboxConfigurationFile);
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", launcherConfiguration.Redacted());
 
+            Log.Debug("Launcher running as {ServiceType}", Enum.GetName(typeof(ServiceTypes), host.Services.GetRequiredService<ServiceType>().Type));
 
             var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
 
@@ -247,12 +248,12 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Warning(e, "Error decrypring launcher configuration file.");
             }
 
-            return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
+            return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh!, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
         }
 
         private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
         {
-            var serviceDirectory = config.ServiceFolder;
+            var serviceDirectory = config.ServiceFolder!;
             try
             {
                 if (!Directory.Exists(serviceDirectory))
@@ -333,7 +334,8 @@ namespace fiskaltrust.Launcher.Commands
                 await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(newClientEcdh.Serialize()));
             }
 
-            return newClientEcdh;
+                return clientEcdh;
+            }
         }
     }
 }
