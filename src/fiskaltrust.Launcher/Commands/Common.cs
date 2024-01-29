@@ -81,21 +81,21 @@ public record CommonProperties
     public IDataProtectionProvider DataProtectionProvider { get; set; }
 }
 
-public static class CommonHandler
-{
-    public static async Task<int> HandleAsync<O, S>(
-        CommonOptions options,
-        O specificOptions,
-        IHost host,
-        Func<CommonOptions, CommonProperties, O, S, Task<int>> handler) where S : notnull
+    public static class CommonHandler
     {
-        // Log messages will be save here and logged later when we have the configuration options to create the logger.
-        var collectionSink = new CollectionSink();
-        Log.Logger = new LoggerConfiguration()
-            .WriteTo.Sink(collectionSink)
-            .CreateLogger();
+        public static async Task<int> HandleAsync<O, S>(
+            CommonOptions options,
+            O specificOptions,
+            IHost host,
+            Func<CommonOptions, CommonProperties, O, S, Task<int>> handler) where S : notnull
+        {
+            // Log messages will be save here and logged later when we have the configuration options to create the logger.
+            var collectionSink = new CollectionSink();
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Sink(collectionSink)
+                .CreateLogger();
 
-        var launcherConfiguration = new LauncherConfiguration();
+            var launcherConfiguration = new LauncherConfiguration();
 
         Log.Verbose("Reading launcher config file.");
         try
@@ -135,68 +135,72 @@ public static class CommonHandler
             fi.Delete();
         }
 
-        Log.Verbose("Merging launcher cli args.");
-        launcherConfiguration.OverwriteWith(options.ArgsLauncherConfiguration);
-        await EnsureServiceDirectoryExists(launcherConfiguration);
+            Log.Verbose("Merging launcher cli args.");
+            launcherConfiguration.OverwriteWith(options.ArgsLauncherConfiguration);
+            await EnsureServiceDirectoryExists(launcherConfiguration);
 
-        if (!launcherConfiguration.UseOffline!.Value &&
-            (launcherConfiguration.CashboxId is null || launcherConfiguration.AccessToken is null))
-            Log.Error("CashBoxId and AccessToken are not provided.");
-
-        try
-        {
-            var configFileDirectory = Path.GetDirectoryName(launcherConfiguration.CashboxConfigurationFile);
-            if (configFileDirectory is not null) Directory.CreateDirectory(configFileDirectory);
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Could not create cashbox-configuration-file folder.");
-        }
-
-        ECDiffieHellman? clientEcdh = null;
-        try
-        {
-            clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!,
-                launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
-        }
-        catch (Exception e)
-        {
-            Log.Fatal(e, "Could not load client curve.");
-        }
-
-        try
-        {
-            if (clientEcdh is not null)
+            if (!launcherConfiguration.UseOffline!.Value && (launcherConfiguration.CashboxId is null || launcherConfiguration.AccessToken is null))
             {
-                using var downloader = new ConfigurationDownloader(launcherConfiguration);
-                var exists = await downloader.DownloadConfigurationAsync(clientEcdh);
-                if (launcherConfiguration.UseOffline!.Value && !exists)
-                    Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
+                Log.Error("CashBoxId and AccessToken are not provided.");
             }
-        }
-        catch (Exception e)
-        {
-            var message = "Could not download Cashbox configuration. ";
-            message +=
-                $"(Launcher is running in {(launcherConfiguration.Sandbox!.Value ? "sandbox" : "production")} mode.";
-            if (!launcherConfiguration.Sandbox!.Value) message += " Did you forget the --sandbox flag?";
 
-            message += ")";
-            Log.Error(e, message);
-        }
+            try
+            {
+                var configFileDirectory = Path.GetDirectoryName(launcherConfiguration.CashboxConfigurationFile);
+                if (configFileDirectory is not null)
+                {
+                    Directory.CreateDirectory(configFileDirectory);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Could not create cashbox-configuration-file folder.");
+            }
 
-        try
-        {
-            var cashboxConfigurationFile = launcherConfiguration.CashboxConfigurationFile!;
-            launcherConfiguration.OverwriteWith(
-                LauncherConfigurationInCashBoxConfiguration.Deserialize(
-                    await File.ReadAllTextAsync(cashboxConfigurationFile)));
-        }
-        catch (Exception e)
-        {
-            // will exit with non-zero exit code later.
-            Log.Fatal(e, "Could not read Cashbox configuration file.");
-        }
+            ECDiffieHellman? clientEcdh = null;
+            try
+            {
+                clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
+            }
+            catch (Exception e)
+            {
+                Log.Fatal(e, "Could not load client curve.");
+            }
+
+            try
+            {
+                if (clientEcdh is not null)
+                {
+                    using var downloader = new ConfigurationDownloader(launcherConfiguration);
+                    var exists = await downloader.DownloadConfigurationAsync(clientEcdh);
+                    if (launcherConfiguration.UseOffline!.Value && !exists)
+                    {
+                        Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                var message = "Could not download Cashbox configuration. ";
+                message += $"(Launcher is running in {(launcherConfiguration.Sandbox!.Value ? "sandbox" : "production")} mode.";
+                if (!launcherConfiguration.Sandbox!.Value)
+                {
+                    message += " Did you forget the --sandbox flag?";
+                }
+                message += ")";
+                Log.Error(e, message);
+            }
+
+            try
+            {
+                var cashboxConfigurationFile = launcherConfiguration.CashboxConfigurationFile!;
+                launcherConfiguration.OverwriteWith(LauncherConfigurationInCashBoxConfiguration.Deserialize(await File.ReadAllTextAsync(cashboxConfigurationFile)));
+            }
+            catch (Exception e)
+            {
+                // will exit with non-zero exit code later.
+                Log.Fatal(e, "Could not read Cashbox configuration file.");
+            }
 
         var cashboxConfiguration = new ftCashBoxConfiguration();
         try
@@ -227,13 +231,11 @@ public static class CommonHandler
         // but we want to log the error and continue and see what else is going on before we exit.
         if (collectionSink.Events.Where(e => e.Level == LogEventLevel.Fatal).Any()) return 1;
 
-        Log.Debug("Launcher Configuration File: {LauncherConfigurationFile}", options.LauncherConfigurationFile);
-        Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}",
-            launcherConfiguration.CashboxConfigurationFile);
-        Log.Debug("Launcher Configuration: {@LauncherConfiguration}", launcherConfiguration.Redacted());
+            Log.Debug("Launcher Configuration File: {LauncherConfigurationFile}", options.LauncherConfigurationFile);
+            Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", launcherConfiguration.CashboxConfigurationFile);
+            Log.Debug("Launcher Configuration: {@LauncherConfiguration}", launcherConfiguration.Redacted());
 
-        Log.Debug("Launcher running as {ServiceType}",
-            Enum.GetName(typeof(ServiceTypes), host.Services.GetRequiredService<ServiceType>().Type));
+            Log.Debug("Launcher running as {ServiceType}", Enum.GetName(typeof(ServiceTypes), host.Services.GetRequiredService<ServiceType>().Type));
 
         var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken,
             useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
@@ -248,55 +250,52 @@ public static class CommonHandler
             Log.Warning(e, "Error decrypring launcher configuration file.");
         }
 
-        return await handler(options,
-            new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh!, dataProtectionProvider),
-            specificOptions, host.Services.GetRequiredService<S>());
-    }
+            return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh!, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
+        }
 
-    private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
-    {
-        var serviceDirectory = config.ServiceFolder!;
-        try
+        private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
         {
-            if (!Directory.Exists(serviceDirectory))
+            var serviceDirectory = config.ServiceFolder!;
+            try
             {
-                Directory.CreateDirectory(serviceDirectory);
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
-                    RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                if (!Directory.Exists(serviceDirectory))
                 {
-                    var user = Environment.GetEnvironmentVariable("USER");
-                    if (!string.IsNullOrEmpty(user))
-                    {
-                        var chownResult = await ProcessHelper.RunProcess("chown", new[] { user, serviceDirectory },
-                            LogEventLevel.Debug);
-                        if (chownResult.exitCode != 0) Log.Warning("Failed to change owner of the service directory.");
+                    Directory.CreateDirectory(serviceDirectory);
 
-                        var chmodResult = await ProcessHelper.RunProcess("chmod", new[] { "774", serviceDirectory },
-                            LogEventLevel.Debug);
-                        if (chmodResult.exitCode != 0)
-                            Log.Warning("Failed to change permissions of the service directory.");
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    {
+                        var user = Environment.GetEnvironmentVariable("USER");
+                        if (!string.IsNullOrEmpty(user))
+                        {
+                            var chownResult = await ProcessHelper.RunProcess("chown", new[] { user, serviceDirectory }, LogEventLevel.Debug);
+                            if (chownResult.exitCode != 0)
+                            {
+                                Log.Warning("Failed to change owner of the service directory.");
+                            }
+
+                            var chmodResult = await ProcessHelper.RunProcess("chmod", new[] { "774", serviceDirectory }, LogEventLevel.Debug);
+                            if (chmodResult.exitCode != 0)
+                            {
+                                Log.Warning("Failed to change permissions of the service directory.");
+                            }
+                        }
+                        else
+                        {
+                            Log.Warning("Service user name is not set. Owner of the service directory will not be changed.");
+                        }
                     }
                     else
                     {
-                        Log.Warning(
-                            "Service user name is not set. Owner of the service directory will not be changed.");
+                        Log.Debug("Changing owner and permissions is skipped on non-Unix operating systems.");
                     }
                 }
-                else
-                {
-                    Log.Debug("Changing owner and permissions is skipped on non-Unix operating systems.");
-                }
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                // will exit with non-zero exit code later.
+                Log.Fatal(e, "Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.", serviceDirectory);
             }
         }
-        catch (UnauthorizedAccessException e)
-        {
-            // will exit with non-zero exit code later.
-            Log.Fatal(e,
-                "Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.",
-                serviceDirectory);
-        }
-    }
 
     public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder,
         bool useOffline = false, bool dryRun = false, bool useFallback = false)
