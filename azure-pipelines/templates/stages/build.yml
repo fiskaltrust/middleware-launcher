@@ -120,6 +120,10 @@ stages:
               }
             displayName: "Package scripts with README.md"
 
+          - pwsh: |
+              Remove-Item -Path $(Build.ArtifactStagingDirectory)/scripts-$(target)/README.md
+            displayName: "Remove README.md from scripts artifacts"
+              
           - publish: $(Build.ArtifactStagingDirectory)/package-$(target)
             artifact: package-$(target)
 
