@@ -37,8 +37,10 @@ namespace fiskaltrust.Launcher.Commands
 
             if (addCliOnlyParameters)
             {
-                AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => Paths.LauncherConfigurationFileName));
-                AddOption(new Option<string>("--legacy-configuration-file", getDefaultValue: () => Paths.LegacyConfigurationFileName));
+                AddOption(new Option<string>("--launcher-configuration-file",
+                    getDefaultValue: () => Paths.LauncherConfigurationFileName));
+                AddOption(new Option<string>("--legacy-configuration-file",
+                    getDefaultValue: () => Paths.LegacyConfigurationFileName));
                 AddOption(new Option<bool>("--merge-legacy-config-if-exists", getDefaultValue: () => true));
             }
         }
@@ -46,7 +48,8 @@ namespace fiskaltrust.Launcher.Commands
 
     public class CommonOptions
     {
-        public CommonOptions(LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile, string legacyConfigurationFile, bool mergeLegacyConfigIfExists)
+        public CommonOptions(LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile,
+            string legacyConfigurationFile, bool mergeLegacyConfigIfExists)
         {
             ArgsLauncherConfiguration = argsLauncherConfiguration;
             LauncherConfigurationFile = launcherConfigurationFile;
@@ -62,7 +65,9 @@ namespace fiskaltrust.Launcher.Commands
 
     public record CommonProperties
     {
-        public CommonProperties(LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashboxConfiguration, ECDiffieHellman clientEcdh, IDataProtectionProvider dataProtectionProvider)
+        public CommonProperties(LauncherConfiguration launcherConfiguration,
+            ftCashBoxConfiguration cashboxConfiguration, ECDiffieHellman clientEcdh,
+            IDataProtectionProvider dataProtectionProvider)
         {
             LauncherConfiguration = launcherConfiguration;
             CashboxConfiguration = cashboxConfiguration;
@@ -96,7 +101,8 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 options.LauncherConfigurationFile = Path.GetFullPath(options.LauncherConfigurationFile);
-                launcherConfiguration = LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(options.LauncherConfigurationFile));
+                launcherConfiguration =
+                    LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(options.LauncherConfigurationFile));
             }
             catch (Exception e)
             {
@@ -104,15 +110,19 @@ namespace fiskaltrust.Launcher.Commands
                 {
                     if (File.Exists(options.LauncherConfigurationFile))
                     {
-                        Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".", options.LauncherConfigurationFile);
+                        Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".",
+                            options.LauncherConfigurationFile);
                     }
                     else
                     {
-                        Log.Warning("Launcher configuration file \"{LauncherConfigurationFile}\" does not exist.", options.LauncherConfigurationFile);
+                        Log.Warning("Launcher configuration file \"{LauncherConfigurationFile}\" does not exist.",
+                            options.LauncherConfigurationFile);
                     }
+
                     Log.Warning("Using command line parameters only.", options.LauncherConfigurationFile);
                 }
             }
+
             Log.Verbose("Merging legacy launcher config file.");
             if (options.MergeLegacyConfigIfExists && File.Exists(options.LegacyConfigurationFile))
             {
@@ -136,7 +146,8 @@ namespace fiskaltrust.Launcher.Commands
             launcherConfiguration.OverwriteWith(options.ArgsLauncherConfiguration);
             await EnsureServiceDirectoryExists(launcherConfiguration);
 
-            if (!launcherConfiguration.UseOffline!.Value && (launcherConfiguration.CashboxId is null || launcherConfiguration.AccessToken is null))
+            if (!launcherConfiguration.UseOffline!.Value &&
+                (launcherConfiguration.CashboxId is null || launcherConfiguration.AccessToken is null))
             {
                 Log.Error("CashBoxId and AccessToken are not provided.");
             }
@@ -157,7 +168,8 @@ namespace fiskaltrust.Launcher.Commands
             ECDiffieHellman? clientEcdh = null;
             try
             {
-                clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
+                clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!,
+                    launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
             }
             catch (Exception e)
             {
@@ -179,11 +191,13 @@ namespace fiskaltrust.Launcher.Commands
             catch (Exception e)
             {
                 var message = "Could not download Cashbox configuration. ";
-                message += $"(Launcher is running in {(launcherConfiguration.Sandbox!.Value ? "sandbox" : "production")} mode.";
+                message +=
+                    $"(Launcher is running in {(launcherConfiguration.Sandbox!.Value ? "sandbox" : "production")} mode.";
                 if (!launcherConfiguration.Sandbox!.Value)
                 {
                     message += " Did you forget the --sandbox flag?";
                 }
+
                 message += ")";
                 Log.Error(e, message);
             }
@@ -191,7 +205,9 @@ namespace fiskaltrust.Launcher.Commands
             try
             {
                 var cashboxConfigurationFile = launcherConfiguration.CashboxConfigurationFile!;
-                launcherConfiguration.OverwriteWith(LauncherConfigurationInCashBoxConfiguration.Deserialize(await File.ReadAllTextAsync(cashboxConfigurationFile)));
+                launcherConfiguration.OverwriteWith(
+                    LauncherConfigurationInCashBoxConfiguration.Deserialize(
+                        await File.ReadAllTextAsync(cashboxConfigurationFile)));
             }
             catch (Exception e)
             {
@@ -202,8 +218,13 @@ namespace fiskaltrust.Launcher.Commands
             var cashboxConfiguration = new ftCashBoxConfiguration();
             try
             {
-                cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
-                if (clientEcdh is not null) { cashboxConfiguration.Decrypt(launcherConfiguration, clientEcdh); }
+                cashboxConfiguration =
+                    CashBoxConfigurationExt.Deserialize(
+                        await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
+                if (clientEcdh is not null)
+                {
+                    cashboxConfiguration.Decrypt(launcherConfiguration, clientEcdh);
+                }
             }
             catch (Exception e)
             {
@@ -214,7 +235,8 @@ namespace fiskaltrust.Launcher.Commands
             // Previous log messages will be logged here using this logger.
             Log.Logger = new LoggerConfiguration()
                 .AddLoggingConfiguration(launcherConfiguration)
-                .AddFileLoggingConfiguration(launcherConfiguration, new[] { "fiskaltrust.Launcher", launcherConfiguration.CashboxId?.ToString() })
+                .AddFileLoggingConfiguration(launcherConfiguration,
+                    new[] { "fiskaltrust.Launcher", launcherConfiguration.CashboxId?.ToString() })
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
@@ -232,23 +254,29 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             Log.Debug("Launcher Configuration File: {LauncherConfigurationFile}", options.LauncherConfigurationFile);
-            Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}", launcherConfiguration.CashboxConfigurationFile);
+            Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}",
+                launcherConfiguration.CashboxConfigurationFile);
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", launcherConfiguration.Redacted());
 
-            Log.Debug("Launcher running as {ServiceType}", Enum.GetName(typeof(ServiceTypes), host.Services.GetRequiredService<ServiceType>().Type));
+            Log.Debug("Launcher running as {ServiceType}",
+                Enum.GetName(typeof(ServiceTypes), host.Services.GetRequiredService<ServiceType>().Type));
 
-            var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
+            var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken,
+                useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
 
             try
             {
-                launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
+                launcherConfiguration.Decrypt(
+                    dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE));
             }
             catch (Exception e)
             {
                 Log.Warning(e, "Error decrypring launcher configuration file.");
             }
 
-            return await handler(options, new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh!, dataProtectionProvider), specificOptions, host.Services.GetRequiredService<S>());
+            return await handler(options,
+                new CommonProperties(launcherConfiguration, cashboxConfiguration, clientEcdh!, dataProtectionProvider),
+                specificOptions, host.Services.GetRequiredService<S>());
         }
 
         private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
@@ -260,18 +288,21 @@ namespace fiskaltrust.Launcher.Commands
                 {
                     Directory.CreateDirectory(serviceDirectory);
 
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                        RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     {
                         var user = Environment.GetEnvironmentVariable("USER");
                         if (!string.IsNullOrEmpty(user))
                         {
-                            var chownResult = await ProcessHelper.RunProcess("chown", new[] { user, serviceDirectory }, LogEventLevel.Debug);
+                            var chownResult = await ProcessHelper.RunProcess("chown", new[] { user, serviceDirectory },
+                                LogEventLevel.Debug);
                             if (chownResult.exitCode != 0)
                             {
                                 Log.Warning("Failed to change owner of the service directory.");
                             }
 
-                            var chmodResult = await ProcessHelper.RunProcess("chmod", new[] { "774", serviceDirectory }, LogEventLevel.Debug);
+                            var chmodResult = await ProcessHelper.RunProcess("chmod", new[] { "774", serviceDirectory },
+                                LogEventLevel.Debug);
                             if (chmodResult.exitCode != 0)
                             {
                                 Log.Warning("Failed to change permissions of the service directory.");
@@ -279,7 +310,8 @@ namespace fiskaltrust.Launcher.Commands
                         }
                         else
                         {
-                            Log.Warning("Service user name is not set. Owner of the service directory will not be changed.");
+                            Log.Warning(
+                                "Service user name is not set. Owner of the service directory will not be changed.");
                         }
                     }
                     else
@@ -291,21 +323,26 @@ namespace fiskaltrust.Launcher.Commands
             catch (UnauthorizedAccessException e)
             {
                 // will exit with non-zero exit code later.
-                Log.Fatal(e, "Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.", serviceDirectory);
+                Log.Fatal(e,
+                    "Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.",
+                    serviceDirectory);
             }
         }
 
-        public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder, bool useOffline = false, bool dryRun = false, bool useFallback = false)
+        public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder,
+            bool useOffline = false, bool dryRun = false, bool useFallback = false)
         {
             Log.Verbose("Loading Curve.");
-            var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback).CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
+            var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback)
+                .CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
             var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
 
             if (File.Exists(clientEcdhPath))
             {
                 try
                 {
-                    return ECDiffieHellmanExt.Deserialize(dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
+                    return ECDiffieHellmanExt.Deserialize(
+                        dataProtector.Unprotect(await File.ReadAllTextAsync(clientEcdhPath)));
                 }
                 catch (Exception e)
                 {
@@ -322,7 +359,9 @@ namespace fiskaltrust.Launcher.Commands
                 {
                     File.Delete(offlineClientEcdhPath);
                 }
-                catch { }
+                catch
+                {
+                }
 
                 return clientEcdh;
             }
@@ -334,8 +373,7 @@ namespace fiskaltrust.Launcher.Commands
                 await File.WriteAllTextAsync(clientEcdhPath, dataProtector.Protect(newClientEcdh.Serialize()));
             }
 
-                return clientEcdh;
-            }
+            return clientEcdh;
         }
     }
 }
