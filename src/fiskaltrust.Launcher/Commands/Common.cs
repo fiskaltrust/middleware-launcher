@@ -17,64 +17,69 @@ using Microsoft.AspNetCore.DataProtection;
 using Serilog;
 using Serilog.Events;
 
-namespace fiskaltrust.Launcher.Commands
+namespace fiskaltrust.Launcher.Commands;
+
+public record SubArguments(IEnumerable<string> Args);
+
+public class CommonCommand : Command
 {
-    public record SubArguments(IEnumerable<string> Args);
-
-    public class CommonCommand : Command
+    public CommonCommand(string name, bool addCliOnlyParameters = true) : base(name)
     {
-        public CommonCommand(string name, bool addCliOnlyParameters = true) : base(name)
+        AddOption(new Option<Guid?>("--cashbox-id"));
+        AddOption(new Option<string?>("--access-token"));
+        AddOption(new Option<bool>("--sandbox"));
+        AddOption(new Option<string?>("--log-folder"));
+
+        var logLevelOption = new Option<LogLevel?>("--log-level", "Set the log level of the application.");
+        logLevelOption.AddAlias("-v");
+        logLevelOption.AddAlias("--verbosity");
+        AddOption(logLevelOption);
+
+        if (addCliOnlyParameters)
         {
-            AddOption(new Option<Guid?>("--cashbox-id"));
-            AddOption(new Option<string?>("--access-token"));
-            AddOption(new Option<bool>("--sandbox"));
-            AddOption(new Option<string?>("--log-folder"));
-
-            var logLevelOption = new Option<LogLevel?>("--log-level", "Set the log level of the application.");
-            logLevelOption.AddAlias("-v");
-            logLevelOption.AddAlias("--verbosity");
-            AddOption(logLevelOption);
-
-            if (addCliOnlyParameters)
-            {
-                AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => Paths.LauncherConfigurationFileName));
-                AddOption(new Option<string>("--legacy-configuration-file", getDefaultValue: () => Paths.LegacyConfigurationFileName));
-                AddOption(new Option<bool>("--merge-legacy-config-if-exists", getDefaultValue: () => true));
-            }
+            AddOption(new Option<string>("--launcher-configuration-file",
+                () => Paths.LauncherConfigurationFileName));
+            AddOption(new Option<string>("--legacy-configuration-file",
+                () => Paths.LegacyConfigurationFileName));
+            AddOption(new Option<bool>("--merge-legacy-config-if-exists", () => true));
         }
     }
+}
 
-    public class CommonOptions
+public class CommonOptions
+{
+    public CommonOptions(LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile,
+        string legacyConfigurationFile, bool mergeLegacyConfigIfExists)
     {
-        public CommonOptions(LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile, string legacyConfigurationFile, bool mergeLegacyConfigIfExists)
-        {
-            ArgsLauncherConfiguration = argsLauncherConfiguration;
-            LauncherConfigurationFile = launcherConfigurationFile;
-            LegacyConfigurationFile = legacyConfigurationFile;
-            MergeLegacyConfigIfExists = mergeLegacyConfigIfExists;
-        }
-
-        public LauncherConfiguration ArgsLauncherConfiguration { get; set; }
-        public string LauncherConfigurationFile { get; set; }
-        public string LegacyConfigurationFile { get; set; }
-        public bool MergeLegacyConfigIfExists { get; set; }
+        ArgsLauncherConfiguration = argsLauncherConfiguration;
+        LauncherConfigurationFile = launcherConfigurationFile;
+        LegacyConfigurationFile = legacyConfigurationFile;
+        MergeLegacyConfigIfExists = mergeLegacyConfigIfExists;
     }
 
-    public record CommonProperties
-    {
-        public CommonProperties(LauncherConfiguration launcherConfiguration, ftCashBoxConfiguration cashboxConfiguration, ECDiffieHellman clientEcdh, IDataProtectionProvider dataProtectionProvider)
-        {
-            LauncherConfiguration = launcherConfiguration;
-            CashboxConfiguration = cashboxConfiguration;
-            ClientEcdh = clientEcdh;
-            DataProtectionProvider = dataProtectionProvider;
-        }
+    public LauncherConfiguration ArgsLauncherConfiguration { get; set; }
+    public string LauncherConfigurationFile { get; set; }
+    public string LegacyConfigurationFile { get; set; }
+    public bool MergeLegacyConfigIfExists { get; set; }
+}
 
-        public LauncherConfiguration LauncherConfiguration { get; set; }
-        public ftCashBoxConfiguration CashboxConfiguration { get; set; }
-        public ECDiffieHellman ClientEcdh { get; set; }
-        public IDataProtectionProvider DataProtectionProvider { get; set; }
+public record CommonProperties
+{
+    public CommonProperties(LauncherConfiguration launcherConfiguration,
+        ftCashBoxConfiguration cashboxConfiguration, ECDiffieHellman clientEcdh,
+        IDataProtectionProvider dataProtectionProvider)
+    {
+        LauncherConfiguration = launcherConfiguration;
+        CashboxConfiguration = cashboxConfiguration;
+        ClientEcdh = clientEcdh;
+        DataProtectionProvider = dataProtectionProvider;
     }
+
+    public LauncherConfiguration LauncherConfiguration { get; set; }
+    public ftCashBoxConfiguration CashboxConfiguration { get; set; }
+    public ECDiffieHellman ClientEcdh { get; set; }
+    public IDataProtectionProvider DataProtectionProvider { get; set; }
+}
 
     public static class CommonHandler
     {
@@ -92,45 +97,43 @@ namespace fiskaltrust.Launcher.Commands
 
             var launcherConfiguration = new LauncherConfiguration();
 
-            Log.Verbose("Reading launcher config file.");
-            try
+        Log.Verbose("Reading launcher config file.");
+        try
+        {
+            options.LauncherConfigurationFile = Path.GetFullPath(options.LauncherConfigurationFile);
+            launcherConfiguration =
+                LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(options.LauncherConfigurationFile));
+        }
+        catch (Exception e)
+        {
+            if (!(options.MergeLegacyConfigIfExists && File.Exists(options.LegacyConfigurationFile)))
             {
-                options.LauncherConfigurationFile = Path.GetFullPath(options.LauncherConfigurationFile);
-                launcherConfiguration = LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(options.LauncherConfigurationFile));
-            }
-            catch (Exception e)
-            {
-                if (!(options.MergeLegacyConfigIfExists && File.Exists(options.LegacyConfigurationFile)))
-                {
-                    if (File.Exists(options.LauncherConfigurationFile))
-                    {
-                        Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".", options.LauncherConfigurationFile);
-                    }
-                    else
-                    {
-                        Log.Warning("Launcher configuration file \"{LauncherConfigurationFile}\" does not exist.", options.LauncherConfigurationFile);
-                    }
-                    Log.Warning("Using command line parameters only.", options.LauncherConfigurationFile);
-                }
-            }
-            Log.Verbose("Merging legacy launcher config file.");
-            if (options.MergeLegacyConfigIfExists && File.Exists(options.LegacyConfigurationFile))
-            {
-                var legacyConfig = await LegacyConfigFileReader.ReadLegacyConfigFile(options.LegacyConfigurationFile);
-                launcherConfiguration.OverwriteWith(legacyConfig);
+                if (File.Exists(options.LauncherConfigurationFile))
+                    Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".",
+                        options.LauncherConfigurationFile);
+                else
+                    Log.Warning("Launcher configuration file \"{LauncherConfigurationFile}\" does not exist.",
+                        options.LauncherConfigurationFile);
 
-                var configFileDirectory = Path.GetDirectoryName(Path.GetFullPath(options.LauncherConfigurationFile));
-                if (configFileDirectory is not null)
-                {
-                    Directory.CreateDirectory(configFileDirectory);
-                }
-
-                await File.WriteAllTextAsync(options.LauncherConfigurationFile, legacyConfig.Serialize());
-
-                var fi = new FileInfo(options.LegacyConfigurationFile);
-                fi.CopyTo(options.LegacyConfigurationFile + ".legacy");
-                fi.Delete();
+                Log.Warning("Using command line parameters only.", options.LauncherConfigurationFile);
             }
+        }
+
+        Log.Verbose("Merging legacy launcher config file.");
+        if (options.MergeLegacyConfigIfExists && File.Exists(options.LegacyConfigurationFile))
+        {
+            var legacyConfig = await LegacyConfigFileReader.ReadLegacyConfigFile(options.LegacyConfigurationFile);
+            launcherConfiguration.OverwriteWith(legacyConfig);
+
+            var configFileDirectory = Path.GetDirectoryName(Path.GetFullPath(options.LauncherConfigurationFile));
+            if (configFileDirectory is not null) Directory.CreateDirectory(configFileDirectory);
+
+            await File.WriteAllTextAsync(options.LauncherConfigurationFile, legacyConfig.Serialize());
+
+            var fi = new FileInfo(options.LegacyConfigurationFile);
+            fi.CopyTo(options.LegacyConfigurationFile + ".legacy");
+            fi.Delete();
+        }
 
             Log.Verbose("Merging launcher cli args.");
             launcherConfiguration.OverwriteWith(options.ArgsLauncherConfiguration);
@@ -199,24 +202,27 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Fatal(e, "Could not read Cashbox configuration file.");
             }
 
-            var cashboxConfiguration = new ftCashBoxConfiguration();
-            try
-            {
-                cashboxConfiguration = CashBoxConfigurationExt.Deserialize(await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
-                if (clientEcdh is not null) { cashboxConfiguration.Decrypt(launcherConfiguration, clientEcdh); }
-            }
-            catch (Exception e)
-            {
-                // will exit with non-zero exit code later.
-                Log.Fatal(e, "Could not parse Cashbox configuration.");
-            }
+        var cashboxConfiguration = new ftCashBoxConfiguration();
+        try
+        {
+            cashboxConfiguration =
+                CashBoxConfigurationExt.Deserialize(
+                    await File.ReadAllTextAsync(launcherConfiguration.CashboxConfigurationFile!));
+            if (clientEcdh is not null) cashboxConfiguration.Decrypt(launcherConfiguration, clientEcdh);
+        }
+        catch (Exception e)
+        {
+            // will exit with non-zero exit code later.
+            Log.Fatal(e, "Could not parse Cashbox configuration.");
+        }
 
-            // Previous log messages will be logged here using this logger.
-            Log.Logger = new LoggerConfiguration()
-                .AddLoggingConfiguration(launcherConfiguration)
-                .AddFileLoggingConfiguration(launcherConfiguration, new[] { "fiskaltrust.Launcher", launcherConfiguration.CashboxId?.ToString() })
-                .Enrich.FromLogContext()
-                .CreateLogger();
+        // Previous log messages will be logged here using this logger.
+        Log.Logger = new LoggerConfiguration()
+            .AddLoggingConfiguration(launcherConfiguration)
+            .AddFileLoggingConfiguration(launcherConfiguration,
+                new[] { "fiskaltrust.Launcher", launcherConfiguration.CashboxId?.ToString() })
+            .Enrich.FromLogContext()
+            .CreateLogger();
 
         foreach (var logEvent in collectionSink.Events) Log.Write(logEvent);
 
