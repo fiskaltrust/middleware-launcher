@@ -25,7 +25,7 @@ namespace fiskaltrust.Launcher.Common.Extensions
                 .MinimumLevel.Override("Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware", aspLogging ? LogEventLevel.Information : LogEventLevel.Warning)
                 .MinimumLevel.Override("System", LogEventLevel.Warning)
                 .MinimumLevel.Override("Grpc", LogEventLevel.Warning)
-                .MinimumLevel.Override("ProtoBuf", LogEventLevel.Warning);
+                .MinimumLevel.Override("ProtoBuf", LogEventLevel.Error);
 
             return loggerConfiguration;
         }
