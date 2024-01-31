@@ -7,9 +7,9 @@ namespace fiskaltrust.Launcher.Helpers;
 public static class ProcessHelper
 {
     public static async Task<(int exitCode, string output)> RunProcess(
-        string fileName, 
-        IEnumerable<string> arguments, 
-        LogEventLevel logLevel = LogEventLevel.Information)
+        string fileName,
+        IEnumerable<string> arguments,
+        LogEventLevel? logLevel = LogEventLevel.Information)
     {
         var process = new Process
         {
@@ -30,7 +30,7 @@ public static class ProcessHelper
         var stdOut = await process.StandardOutput.ReadToEndAsync();
         if (!string.IsNullOrEmpty(stdOut))
         {
-            Log.Write(logLevel, stdOut);
+            if (logLevel is not null) { Log.Write(logLevel.Value, stdOut); }
         }
 
         var stdErr = await process.StandardError.ReadToEndAsync();

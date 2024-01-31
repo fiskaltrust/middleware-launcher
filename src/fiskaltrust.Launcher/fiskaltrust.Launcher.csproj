@@ -9,12 +9,12 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(SelfUpdate)'=='true' or '$(SelfUpdate)'==''">
-      <DefineConstants>$(DefineConstants);EnableSelfUpdate</DefineConstants>
+    <DefineConstants>$(DefineConstants);EnableSelfUpdate</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreWCF.Http" Version="1.4.1" />
-    <PackageReference Include="CoreWCF.NetTcp" Version="1.4.1" />
+    <PackageReference Include="CoreWCF.Http" Version="1.5.1" />
+    <PackageReference Include="CoreWCF.NetTcp" Version="1.5.1" />
     <PackageReference Include="fiskaltrust.interface" Version="1.3.50-rc1" />
     <PackageReference Include="fiskaltrust.Middleware.Abstractions" Version="1.3.3" />
 
@@ -22,22 +22,24 @@
     <PackageReference Include="fiskaltrust.storage.serialization" Version="1.3.47" />
     <PackageReference Include="fiskaltrust.Middleware.Interface.Client.Grpc" Version="1.3.50-rc2" />
     <PackageReference Include="fiskaltrust.Middleware.Interface.Client.Http" Version="1.3.50-rc2" />
-    <PackageReference Include="Polly" Version="7.2.4" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="8.0.0" />
+    <PackageReference Include="Polly" Version="8.2.1" />
     <PackageReference Include="Polly.Extensions.Http" Version="3.0.0" />
-    <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="7.0.0" />
-    <PackageReference Include="Serilog.Formatting.Compact.Reader" Version="2.0.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Serilog.Formatting.Compact.Reader" Version="3.0.0" />
     <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.1.1" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.22272.1" />
     <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="SemanticVersioning" Version="2.0.2" />
-    <PackageReference Include="DiffPlex" Version="1.7.1" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../fiskaltrust.Launcher.Common/fiskaltrust.Launcher.Common.csproj" PrivateAssets="all" />
+    <ProjectReference Include="../fiskaltrust.Launcher.Common/fiskaltrust.Launcher.Common.csproj"
+      PrivateAssets="all" />
   </ItemGroup>
 </Project>
