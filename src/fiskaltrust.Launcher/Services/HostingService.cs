@@ -19,6 +19,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Runtime.Versioning;
 using Microsoft.AspNetCore.Server.HttpSys;
 using System.Text.Json;
+using fiskaltrust.ifPOS.v0;
 
 namespace fiskaltrust.Launcher.Services
 {
@@ -248,6 +249,12 @@ namespace fiskaltrust.Launcher.Services
             {
                 _logger.LogWarning($"{nameof(_launcherConfiguration.UseHttpSysBinding)} is not supported for grpc.");
             }
+
+            ProtoBuf.Meta.RuntimeTypeModel.Default.Add(typeof(IAsyncResult), true);
+            ProtoBuf.Meta.RuntimeTypeModel.Default.Add(typeof(AsyncCallback), true);
+            ProtoBuf.Meta.RuntimeTypeModel.Default.Add(typeof(Stream), true);
+            ProtoBuf.Meta.RuntimeTypeModel.Default.GetSchema(typeof(IPOS));
+            ProtoBuf.Meta.RuntimeTypeModel.Default.Add(typeof(IPOS), true).AddSubType(1, typeof(ifPOS.v1.IPOS));
 
             builder.WebHost.BindKestrel(uri, listenOptions => ConfigureTls(listenOptions), false, HttpProtocols.Http2);
             builder.Services.AddCodeFirstGrpc(options => options.EnableDetailedErrors = true);
