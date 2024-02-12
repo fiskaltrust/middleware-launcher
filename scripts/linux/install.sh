@@ -1,14 +1,18 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 
-if type jq > /dev/null && [ -f launcher.configuration.json ]; then
-  servicefolder=$(jq -r '.serviceFolder' launcher.configuration.json) || {
-    echo "Failed to parse launcher.configuration.json"
-    exit 1
-  }
+servicefolder="/var/lib/fiskaltrust"
+if type jq > /dev/null;  then
+  if [ -f launcher.configuration.json ]; then
+    servicefolder=$(jq -r '.serviceFolder // "/var/lib/fiskaltrust"' launcher.configuration.json) || {
+      echo "Failed to parse launcher.configuration.json"
+      exit 1
+    }
+  else
+    echo "launcher.configuration.json does not exist, using default service folder"
+  fi
 else
-  echo "jq not found or launcher.configuration.json does not exist, using default service folder"
-  servicefolder="/var/lib/fiskaltrust"
+  echo "jq not found, using default service folder"
 fi
 
 # if default servicefolder does not exist, create it
