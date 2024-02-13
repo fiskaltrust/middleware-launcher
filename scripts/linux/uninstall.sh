@@ -16,13 +16,13 @@ else
 fi
 
 # if default servicefolder does not exist, create it
-if [ ! -d $servicefolder ]; then
+if [ ! -d "$servicefolder" ]; then
   echo "Creating service folder $servicefolder"
-  sudo mkdir $servicefolder || {
+  sudo mkdir "$servicefolder" || {
     echo "Failed to create service folder"
     exit 1
   }
-  sudo chown -R $USER:$USER $servicefolder || {
+  sudo chown -R $USER:$USER "$servicefolder" || {
     echo "Failed to change ownership of service folder"
     exit 1
   }

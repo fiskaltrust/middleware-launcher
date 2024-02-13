@@ -59,6 +59,7 @@ namespace fiskaltrust.Launcher.Commands
             }.Concat(installServices.SubArguments.Args));
 
             ServiceInstaller? installer = null;
+
             if (OperatingSystem.IsLinux())
             {
                 installer = new LinuxSystemD(installOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}", installServices.LauncherExecutablePath);
@@ -73,7 +74,7 @@ namespace fiskaltrust.Launcher.Commands
                 return await installer.InstallService(commandArgs, installOptions.ServiceDisplayName, installOptions.DelayedStart).ConfigureAwait(false);
             }
 
-            Log.Error("For non windows or linux(systemd) service installation see: {link}", ""); // TODO
+            Log.Error("The launcher can only install itsself as a sevice on windows and linux(systemd). On other OSs it has to be done manually. See: {link}", ""); // TODO
             return 1;
         }
     }

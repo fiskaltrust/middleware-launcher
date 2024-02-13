@@ -1,10 +1,10 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 
-servicefolder="/var/lib/fiskaltrust"
+servicefolder="/Library/Application Support"
 if type jq > /dev/null;  then
   if [ -f launcher.configuration.json ]; then
-    servicefolder=$(jq -r '.serviceFolder // "/var/lib/fiskaltrust"' launcher.configuration.json) || {
+    servicefolder=$(jq -r '.serviceFolder // "/Library/Application Support"' launcher.configuration.json) || {
       echo "Failed to parse launcher.configuration.json"
       exit 1
     }
@@ -28,8 +28,4 @@ if [ ! -d "$servicefolder" ]; then
   }
 fi
 
-# Installation command
-sudo ./fiskaltrust.Launcher install
-
-echo "Press any key to continue..."
-read -n1 -s
+./fiskaltrust.Launcher run --log-level debug
