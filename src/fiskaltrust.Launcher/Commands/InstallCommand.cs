@@ -55,7 +55,7 @@ namespace fiskaltrust.Launcher.Commands
                 "--cashbox-id", commonProperties.LauncherConfiguration.CashboxId!.Value.ToString(),
                 "--access-token", commonProperties.LauncherConfiguration.AccessToken!,
                 "--sandbox", commonProperties.LauncherConfiguration.Sandbox!.Value.ToString(),
-                "--launcher-configuration-file", commonOptions.LauncherConfigurationFile,
+                "--launcher-configuration-file", $"\"{commonOptions.LauncherConfigurationFile}\"",
             }.Concat(installServices.SubArguments.Args));
 
             ServiceInstaller? installer = null;
