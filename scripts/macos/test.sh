@@ -22,7 +22,7 @@ if [ ! -d "$servicefolder" ]; then
     echo "Failed to create service folder"
     exit 1
   }
-  sudo chown -R $USER:$USER "$servicefolder" || {
+  sudo chown -R $USER:staff "$servicefolder" || {
     echo "Failed to change ownership of service folder"
     exit 1
   }
