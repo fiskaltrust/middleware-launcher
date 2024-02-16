@@ -126,6 +126,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 _ => throw new NotImplementedException()
             };
 
+            var helperIPOS = GetHelper(_services);
 
             foreach (var uri in uris)
             {
@@ -135,12 +136,6 @@ namespace fiskaltrust.Launcher.ProcessHost
                 {
                     continue;
                 }
-
-                Action<WebApplication>? addEndpointsInner = hostingType switch
-                {
-                    HostingType.REST => addEndpoints,
-                    _ => null
-                };
 
                 try
                 {
@@ -160,7 +155,10 @@ namespace fiskaltrust.Launcher.ProcessHost
                             await _hosting.HostService(url, hostingType.Value, (IPOS)instance, addEndpoints);
                             break;
                         case PackageType.Helper:
-                            await _hosting.HostService(url, hostingType.Value, (IHelper)instance, addEndpoints);
+                            if (helperIPOS is not null)
+                            {
+                                await _hosting.HostService(url, hostingType.Value, helperIPOS.Value.instance, helperIPOS.Value.addEndpoints);
+                            }
                             break;
                         default:
                             throw new NotImplementedException();
@@ -178,6 +176,18 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 throw new Exception("No host could be started.");
             }
+        }
+
+        private static (IPOS instance, Action<WebApplication> addEndpoints)? GetHelper(IServiceProvider services)
+        {
+            var queue = services.GetService<IPOS>();
+
+            if (queue is not null)
+            {
+                return (queue, (WebApplication app) => app.AddQueueEndpoints(queue));
+            }
+
+            return null;
         }
 
         private static (object, Action<WebApplication>, Type) GetQueue(IServiceProvider services)
