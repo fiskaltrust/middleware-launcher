@@ -69,6 +69,7 @@ stages:
         gitHubConnection: ${{ parameters.serviceConnection }}
         repositoryName: ${{ parameters.repositoryName }}
         action: edit
-        tag: refs/tags/v2.0.0-rc.14 #$(Build.SourceBranchName)
+        tag: refs/tags/v2.0.0-rc.14
+        #$(Build.SourceBranchName)
         addChangeLog: false
         assets: $(Pipeline.Workspace)/zipped/*.zip
