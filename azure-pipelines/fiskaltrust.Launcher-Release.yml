@@ -30,7 +30,7 @@ stages:
 
   - template: templates/stages/github-release.yml
     parameters:
-      # dependsOn: Release_Production
+      dependsOn: []
       artifact: build
       serviceConnection: fiskaltrust-github
       repositoryName: fiskaltrust/middleware-launcher
