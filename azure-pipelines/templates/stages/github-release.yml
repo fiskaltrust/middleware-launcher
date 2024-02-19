@@ -49,13 +49,13 @@ stages:
         artifact: scripts-${{ target }}
         displayName: "[${{ target }}] Download artifact"
 
-    - pwsh: Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File -Depth 3 | Write-Host
-      displayName: List files
-
     - ${{ each target in parameters.targets }}:
       - bash: |
           unzip -d $(Pipeline.Workspace)/${{ parameters.artifact }}/${{ target }} $(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-${{ target }}/fiskaltrust.Launcher.Scripts-*.zip
         displayName: "[${{ target }}] Unzip scripts"
+
+    - pwsh: Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File -Depth 3 | Write-Host
+      displayName: List files
 
     - bash: mkdir $(Pipeline.Workspace)/zipped/
       displayName: Create folder
@@ -65,6 +65,9 @@ stages:
           cd $(Pipeline.Workspace)/${{ parameters.artifact }}/${{ target }}
           zip -r $(Pipeline.Workspace)/zipped/${{ target }}.zip ./
         displayName: "[${{ target }}] Zip artifact"
+
+    - pwsh: Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File -Depth 3 | Write-Host
+      displayName: List files
 
     # - task: GitHubRelease@1
     #   displayName: "Edit GitHub Release"
