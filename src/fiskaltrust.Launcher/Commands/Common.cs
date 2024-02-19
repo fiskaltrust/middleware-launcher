@@ -294,14 +294,14 @@ namespace fiskaltrust.Launcher.Commands
                         var user = Environment.GetEnvironmentVariable("USER");
                         if (!string.IsNullOrEmpty(user))
                         {
-                            var chownResult = await ProcessHelper.RunProcess("chown", new[] { user, serviceDirectory },
+                            var chownResult = await ProcessHelper.RunProcess("chown", [user, $"\"{serviceDirectory}\""],
                                 LogEventLevel.Debug);
                             if (chownResult.exitCode != 0)
                             {
                                 Log.Warning("Failed to change owner of the service directory.");
                             }
 
-                            var chmodResult = await ProcessHelper.RunProcess("chmod", new[] { "774", serviceDirectory },
+                            var chmodResult = await ProcessHelper.RunProcess("chmod", ["774", $"\"{serviceDirectory}\""],
                                 LogEventLevel.Debug);
                             if (chmodResult.exitCode != 0)
                             {
