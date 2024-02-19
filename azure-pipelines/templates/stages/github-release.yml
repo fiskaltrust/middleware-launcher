@@ -44,15 +44,20 @@ stages:
         artifact: scripts-${{ target }}
         displayName: "[${{ target }}] Download artifact"
 
+    - pwsh: Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File -Depth 3 | Write-Host
+      displayName: List files
+
     - pwsh: |
         Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File | Where-Object { !($_ -match "fiskaltrust.Launcher(.exe)?`$") } | Remove-Item
         Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -Directory | %{ $_ -match "drop-(.*)"; Move-Item $_ $(Join-Path $_.Parent $Matches[1]); }
       displayName: Prepare artifacts
 
+    - pwsh: Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File -Depth 3 | Write-Host
+      displayName: List files
+
     - ${{ each target in parameters.targets }}:
       - bash: |
-          scriptfilename=$(find . -type f -name '$(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-${{ target }}/fiskaltrust.Launcher.Scripts-*.zip' -exec echo {} +)
-          unzip -d $(Pipeline.Workspace)/${{ parameters.artifact }}/${{ target }} $scriptfilename
+          unzip -d $(Pipeline.Workspace)/${{ parameters.artifact }}/${{ target }} $(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-${{ target }}/fiskaltrust.Launcher.Scripts-*.zip
         displayName: "[${{ target }}] Unzip scripts"
 
     - bash: mkdir $(Pipeline.Workspace)/zipped/
