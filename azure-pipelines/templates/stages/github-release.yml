@@ -63,7 +63,7 @@ stages:
           zip -r $(Pipeline.Workspace)/zipped/${{ target }}.zip ./
         displayName: "[${{ target }}] Zip artifact"
 
-    - task: GitHubRelease@1
+    - task: GitHubRelease@0
       displayName: "Edit GitHub Release"
       inputs:
         gitHubConnection: ${{ parameters.serviceConnection }}
