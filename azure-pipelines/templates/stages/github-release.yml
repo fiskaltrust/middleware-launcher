@@ -38,19 +38,16 @@ stages:
       - download: ${{ parameters.artifact }}
         artifact: drop-${{ target }}
         displayName: "[${{ target }}] Download artifact"
-        
-    - ${{ each target in parameters.targets }}:
-      - download: ${{ parameters.artifact }}
-        artifact: scripts-${{ target }}
-        displayName: "[${{ target }}] Download artifact"
-
-    - pwsh: Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File -Depth 3 | Write-Host
-      displayName: List files
 
     - pwsh: |
         Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File | Where-Object { !($_ -match "fiskaltrust.Launcher(.exe)?`$") } | Remove-Item
         Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -Directory | %{ $_ -match "drop-(.*)"; Move-Item $_ $(Join-Path $_.Parent $Matches[1]); }
       displayName: Prepare artifacts
+
+    - ${{ each target in parameters.targets }}:
+      - download: ${{ parameters.artifact }}
+        artifact: scripts-${{ target }}
+        displayName: "[${{ target }}] Download artifact"
 
     - pwsh: Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File -Depth 3 | Write-Host
       displayName: List files
