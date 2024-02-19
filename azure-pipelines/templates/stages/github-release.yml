@@ -54,9 +54,6 @@ stages:
           unzip -d $(Pipeline.Workspace)/${{ parameters.artifact }}/${{ target }} $(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-${{ target }}/fiskaltrust.Launcher.Scripts-*.zip
         displayName: "[${{ target }}] Unzip scripts"
 
-    - pwsh: Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File -Depth 3 | Write-Host
-      displayName: List files
-
     - bash: mkdir $(Pipeline.Workspace)/zipped/
       displayName: Create folder
 
@@ -66,15 +63,12 @@ stages:
           zip -r $(Pipeline.Workspace)/zipped/${{ target }}.zip ./
         displayName: "[${{ target }}] Zip artifact"
 
-    - pwsh: Get-ChildItem $(Pipeline.Workspace)/${{ parameters.artifact }}/ -Recurse -File -Depth 3 | Write-Host
-      displayName: List files
-
-    # - task: GitHubRelease@1
-    #   displayName: "Edit GitHub Release"
-    #   inputs:
-    #     gitHubConnection: ${{ parameters.serviceConnection }}
-    #     repositoryName: ${{ parameters.repositoryName }}
-    #     action: edit
-    #     tag: $(Build.SourceBranchName)
-    #     addChangeLog: false
-    #     assets: $(Pipeline.Workspace)/zipped/*.zip
+    - task: GitHubRelease@1
+      displayName: "Edit GitHub Release"
+      inputs:
+        gitHubConnection: ${{ parameters.serviceConnection }}
+        repositoryName: ${{ parameters.repositoryName }}
+        action: edit
+        tag: refs/tags/v2.0.0-rc.14 #$(Build.SourceBranchName)
+        addChangeLog: false
+        assets: $(Pipeline.Workspace)/zipped/*.zip
