@@ -6,8 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <PublishReadyToRun>true</PublishReadyToRun>
     <PublishSingleFile>true</PublishSingleFile>
-    <PublishTrimmed>true</PublishTrimmed>
-    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -16,7 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../fiskaltrust.Launcher.Common/fiskaltrust.Launcher.Common.csproj" PrivateAssets="all" />
+    <ProjectReference Include="../fiskaltrust.Launcher.Common/fiskaltrust.Launcher.Common.csproj"
+      PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
