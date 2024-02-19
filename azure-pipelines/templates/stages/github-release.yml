@@ -51,7 +51,8 @@ stages:
 
     - ${{ each target in parameters.targets }}:
       - bash: |
-          unzip -d $(Pipeline.Workspace)/${{ parameters.artifact }}/${{ target }} $(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-${{ target }}/fiskaltrust.Launcher.Scripts-*.zip
+          scriptfilename=$(find . -type f -name '$(Pipeline.Workspace)/${{ parameters.artifact }}/scripts-${{ target }}/fiskaltrust.Launcher.Scripts-*.zip' -exec echo {} +)
+          unzip -d $(Pipeline.Workspace)/${{ parameters.artifact }}/${{ target }} $scriptfilename
         displayName: "[${{ target }}] Unzip scripts"
 
     - bash: mkdir $(Pipeline.Workspace)/zipped/
@@ -63,12 +64,12 @@ stages:
           zip -r $(Pipeline.Workspace)/zipped/${{ target }}.zip ./
         displayName: "[${{ target }}] Zip artifact"
 
-    - task: GitHubRelease@1
-      displayName: "Edit GitHub Release"
-      inputs:
-        gitHubConnection: ${{ parameters.serviceConnection }}
-        repositoryName: ${{ parameters.repositoryName }}
-        action: edit
-        tag: $(Build.SourceBranchName)
-        addChangeLog: false
-        assets: $(Pipeline.Workspace)/zipped/*.zip
+    # - task: GitHubRelease@1
+    #   displayName: "Edit GitHub Release"
+    #   inputs:
+    #     gitHubConnection: ${{ parameters.serviceConnection }}
+    #     repositoryName: ${{ parameters.repositoryName }}
+    #     action: edit
+    #     tag: $(Build.SourceBranchName)
+    #     addChangeLog: false
+    #     assets: $(Pipeline.Workspace)/zipped/*.zip
