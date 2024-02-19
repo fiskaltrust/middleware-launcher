@@ -26,7 +26,7 @@ parameters:
 stages:
 - stage: Github_Release
   displayName: Edit Github Release
-  dependsOn: [] #${{ parameters.dependsOn }}
+  dependsOn: ${{ parameters.dependsOn }}
 
   jobs:
   - job: Release
@@ -69,7 +69,6 @@ stages:
         gitHubConnection: ${{ parameters.serviceConnection }}
         repositoryName: ${{ parameters.repositoryName }}
         action: edit
-        tag: refs/tags/v2.0.0-rc.14
-        #$(Build.SourceBranchName)
+        tag: $(Build.SourceBranchName)
         addChangeLog: false
         assets: $(Pipeline.Workspace)/zipped/*.zip
