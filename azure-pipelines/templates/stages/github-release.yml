@@ -26,7 +26,7 @@ parameters:
 stages:
 - stage: Github_Release
   displayName: Edit Github Release
-  dependsOn: ${{ parameters.dependsOn }}
+  dependsOn: [] #${{ parameters.dependsOn }}
 
   jobs:
   - job: Release
