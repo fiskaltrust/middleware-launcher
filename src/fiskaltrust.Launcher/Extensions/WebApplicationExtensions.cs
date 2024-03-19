@@ -1,4 +1,5 @@
 ﻿using fiskaltrust.ifPOS.v1;
+using fiskaltrust.ifPOS.v1.at;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.ifPOS.v1.it;
 using Microsoft.AspNetCore.Mvc;
@@ -21,8 +22,8 @@ namespace fiskaltrust.Launcher.Extensions
 
         public static WebApplication AddQueueEndpoints(this WebApplication app, IPOS pos)
         {
-            app.MapMultiplePrefixed(_prefixesV1, "Echo", EndpointRouteBuilderExtensions.MapPost, async (EchoRequest req) => await pos.EchoAsync(req));
-            app.MapMultiplePrefixed(_prefixesV0, "Echo", EndpointRouteBuilderExtensions.MapPost, async ([FromBody] string message) => (await pos.EchoAsync(new EchoRequest { Message = message })).Message);
+            app.MapMultiplePrefixed(_prefixesV1, "Echo", EndpointRouteBuilderExtensions.MapPost, async (ifPOS.v1.EchoRequest req) => await pos.EchoAsync(req));
+            app.MapMultiplePrefixed(_prefixesV0, "Echo", EndpointRouteBuilderExtensions.MapPost, async ([FromBody] string message) => (await pos.EchoAsync(new ifPOS.v1.EchoRequest { Message = message })).Message);
             app.MapMultiplePrefixed(_prefixes, "Sign", EndpointRouteBuilderExtensions.MapPost, async (ReceiptRequest req) => await pos.SignAsync(req));
             app.MapMultiplePrefixed(_prefixes, "Journal", EndpointRouteBuilderExtensions.MapPost, ([FromQuery] long type, [FromQuery] long? from, [FromQuery] long? to) =>
             {
@@ -70,6 +71,15 @@ namespace fiskaltrust.Launcher.Extensions
             app.MapMultiplePrefixed(_prefixesV1, "ExecuteDailyClosing", EndpointRouteBuilderExtensions.MapPost, async (DailyClosingRequest req) => await sscd.ExecuteDailyClosingAsync(req));
             app.MapMultiplePrefixed(_prefixesV1, "ProcessReceipt", EndpointRouteBuilderExtensions.MapPost, async (ProcessRequest req) => await sscd.ProcessReceiptAsync(req));
             app.MapMultiplePrefixed(_prefixesV1, "GetRTInfo", EndpointRouteBuilderExtensions.MapGet, async () => await sscd.GetRTInfoAsync());
+            return app;
+        }
+
+
+        public static WebApplication AddScuAtEndpoints(this WebApplication app, IATSSCD ssat)
+        {
+            app.MapMultiplePrefixed(_prefixesV1, "Certificate", EndpointRouteBuilderExtensions.MapGet, async () => await ssat.CertificateAsync());
+            app.MapMultiplePrefixed(_prefixesV1, "ZDA", EndpointRouteBuilderExtensions.MapGet, async () => await ssat.ZdaAsync());
+            app.MapMultiplePrefixed(_prefixesV1, "Sign", EndpointRouteBuilderExtensions.MapGet, async (SignRequest req) => await ssat.SignAsync(req));
             return app;
         }
     }
