@@ -79,7 +79,6 @@ namespace fiskaltrust.Launcher.Extensions
         {
             app.MapMultiplePrefixed(_prefixesV1, "Certificate", EndpointRouteBuilderExtensions.MapGet, async () => await ssat.CertificateAsync());
             app.MapMultiplePrefixed(_prefixesV1, "ZDA", EndpointRouteBuilderExtensions.MapGet, async () => await ssat.ZdaAsync());
-            app.MapMultiplePrefixed(_prefixesV1, "Sign", EndpointRouteBuilderExtensions.MapGet, async (SignRequest req) => await ssat.SignAsync(req));
             return app;
         }
     }
