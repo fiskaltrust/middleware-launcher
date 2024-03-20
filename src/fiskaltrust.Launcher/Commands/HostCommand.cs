@@ -23,6 +23,7 @@ using fiskaltrust.ifPOS.v1.it;
 using fiskaltrust.Launcher.Helpers;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using fiskaltrust.Launcher.Factories;
+using fiskaltrust.ifPOS.v1.at;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -133,6 +134,7 @@ namespace fiskaltrust.Launcher.Commands
 
                     services.AddSingleton<IClientFactory<IDESSCD>, DESSCDClientFactory>();
                     services.AddSingleton<IClientFactory<IITSSCD>, ITSSCDClientFactory>();
+                    services.AddSingleton<IClientFactory<IATSSCD>, ATSSCDClientFactory>();
                     services.AddSingleton<IClientFactory<IPOS>, POSClientFactory>();
 
                     using var downloader = new PackageDownloader(services.BuildServiceProvider().GetRequiredService<ILogger<PackageDownloader>>(), launcherConfiguration, hostServices.LauncherExecutablePath);
@@ -150,6 +152,7 @@ namespace fiskaltrust.Launcher.Commands
                                     typeof(IClientFactory<IPOS>),
                                     typeof(IClientFactory<IDESSCD>),
                                     typeof(IClientFactory<IITSSCD>),
+                                    typeof(IClientFactory<IATSSCD>),
                                     typeof(JournalRequest),
                                     typeof(JournalResponse),
                                     typeof(IHelper),
