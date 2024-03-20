@@ -149,6 +149,7 @@ namespace fiskaltrust.Launcher.Commands
                                     typeof(IPOS),
                                     typeof(IDESSCD),
                                     typeof(IITSSCD),
+                                    typeof(IATSSCD),
                                     typeof(IClientFactory<IPOS>),
                                     typeof(IClientFactory<IDESSCD>),
                                     typeof(IClientFactory<IITSSCD>),
