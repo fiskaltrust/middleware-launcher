@@ -1,4 +1,5 @@
 using fiskaltrust.ifPOS.v1;
+using fiskaltrust.ifPOS.v1.at;
 using fiskaltrust.ifPOS.v1.de;
 using fiskaltrust.ifPOS.v1.it;
 using fiskaltrust.Launcher.Common.Configuration;
@@ -150,6 +151,10 @@ namespace fiskaltrust.Launcher.ProcessHost
                             {
                                 await _hosting.HostService(url, hostingType.Value, (IITSSCD)instance, addEndpoints);
                             }
+                            else if (instanceInterface == typeof(IATSSCD))
+                            {
+                                await _hosting.HostService(url, hostingType.Value, (IATSSCD)instance, addEndpoints);
+                            }
                             break;
                         case PackageType.Queue:
                             await _hosting.HostService(url, hostingType.Value, (IPOS)instance, addEndpoints);
@@ -210,6 +215,12 @@ namespace fiskaltrust.Launcher.ProcessHost
             if (scuIt is not null)
             {
                 return (scuIt, (WebApplication app) => app.AddScuItEndpoints(scuIt), typeof(IITSSCD));
+            }
+
+            var scuAt = services.GetService<IATSSCD>();
+            if (scuAt is not null)
+            {
+                return (scuAt, (WebApplication app) => app.AddScuAtEndpoints(scuAt), typeof(IATSSCD));
             }
 
             throw new Exception("Could not resolve SCU with supported country. (Curently supported are DE and IT)");
