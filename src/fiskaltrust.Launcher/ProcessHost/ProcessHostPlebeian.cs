@@ -151,6 +151,10 @@ namespace fiskaltrust.Launcher.ProcessHost
                             {
                                 await _hosting.HostService(url, hostingType.Value, (IITSSCD)instance, addEndpoints);
                             }
+                            else if (instanceInterface == typeof(IATSSCD))
+                            {
+                                await _hosting.HostService(url, hostingType.Value, (IATSSCD)instance, addEndpoints);
+                            }
                             break;
                         case PackageType.Queue:
                             await _hosting.HostService(url, hostingType.Value, (IPOS)instance, addEndpoints);
