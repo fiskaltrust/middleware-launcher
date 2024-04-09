@@ -13,6 +13,7 @@ public sealed class PolicyHttpClient : IDisposable
     public PolicyHttpClient(LauncherConfiguration configuration, HttpClient httpClient)
     {
         _httpClient = httpClient;
+        _httpClient.Timeout = TimeSpan.FromSeconds(configuration.DownloadTimeoutSec!.Value);
         _policy = GetPolicy(configuration);
     }
 
@@ -24,9 +25,7 @@ public sealed class PolicyHttpClient : IDisposable
                 configuration.DownloadRetry!.Value,
                 retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 
-        var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(configuration.DownloadTimeoutSec!.Value);
-
-        return Policy.WrapAsync(retryPolicy, timeoutPolicy);
+        return retryPolicy;
     }
 
     public Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> getMessage) => _policy.ExecuteAsync(ct => _httpClient.SendAsync(getMessage(), ct), CancellationToken.None);
