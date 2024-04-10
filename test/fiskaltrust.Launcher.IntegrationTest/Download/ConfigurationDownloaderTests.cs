@@ -87,7 +87,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
             var downloader = new ConfigurationDownloader(config, httpClient);
 
             var clientCurve = ECDiffieHellman.Create();
-            await Assert.ThrowsAsync<TimeoutRejectedException>(() => downloader.DownloadConfigurationAsync(clientCurve));
+            await Assert.ThrowsAsync<TaskCanceledException>(() => downloader.DownloadConfigurationAsync(clientCurve));
         }
     }
 }

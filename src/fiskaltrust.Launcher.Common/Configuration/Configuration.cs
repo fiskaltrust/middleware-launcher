@@ -316,7 +316,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 {
                     return dataProtector.Protect((string)value);
                 }
-                catch (Exception e)
+                catch
                 {
                     Log.Warning($"Failed to encrypt value of configuration field {name}. Consider using the 'config set' command to set the field's value.", name);
                     return null;
