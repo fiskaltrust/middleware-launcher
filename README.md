@@ -22,13 +22,13 @@ Unzip the downloaded release.
 
 You can also download the Launcher from the fiskaltrust Portal (only sandbox at the moment), the Launcher will come with a preconfigured `launcher.configuration.json` file.
 
-The download will contain the `fiskaltrust.Launcher` executable and `test`, `install`, `uninstall` `.cmd` or `.sh` scripts and a `migrate.cmd` script on Windows.
+The download will contain the `fiskaltrust.Launcher` executable and `launcher-test`, `launcher-install`, `launcher-uninstall` `.cmd` or `.sh` scripts and a `launcher-migrate.cmd` script on Windows.
 
-* The `test.cmd` or `test.sh` script can be used to test the Launcher.
+* The `launcher-test.cmd` or `launcher-test.sh` script can be used to test the Launcher.
   It will start the Launcher with `--log-level` parameter set to debug.
-* The `install.cmd` or `install.sh` script can be used to install the Launcher as a service.
-* The `uninstall.cmd` or `uninstall.sh` script can be used to uninstall the Launcher as a service.
-* The `migrate.cmd` script can be used to from migrate the Launcher 1.3 to the Launcher 2.0 (See [Migration Script](#automatic-migration-using-the-migration-script) for more information).
+* The `launcher-install.cmd` or `launcher-install.sh` script can be used to install the Launcher as a service.
+* The `launcher-uninstall.cmd` or `launcher-uninstall.sh` script can be used to uninstall the Launcher as a service.
+* The `launcher-migrate.cmd` script can be used to from migrate the Launcher 1.3 to the Launcher 2.0 (See [Migration Script](#automatic-migration-using-the-migration-script) for more information).
 
 Alternatively you can start the Launcher via the command line:
 
@@ -80,13 +80,13 @@ Run the `uninstall-service.cmd` or `uninstall-service.sh` command to deinstall t
 
 If you did not download the Launcher from the Portal manually create the [configuration file](#launcher-configuration), and make sure to include the `cashboxId` and `accessToken` and to set `sandbox` to true if needed.
 
-In the new launcher folder execute the `install.cmd` or `install.sh` script or run the following command `.\fiskaltrust.Launcher.exe install`.
+In the new launcher folder execute the `launcher-install.cmd` or `launcher-install.sh` script or run the following command `.\fiskaltrust.Launcher.exe install`.
 
 To check that the switch was successful, e.g. try sending receipt to the middleware using our Postman collection.
 
 ### Automatic Migration using the Migration Script
 
-On Windows we provide a `migrate.cmd` script that can be used to migrate the Launcher 1.3 to the Launcher 2.0.
+On Windows we provide a `launcher-migrate.cmd` script that can be used to migrate the Launcher 1.3 to the Launcher 2.0.
 
 This script will migrate an existing service installation of the Launcher 1.3 to the Launcher 2.0.
 
@@ -97,11 +97,11 @@ To run this script unzip the downloaded Launcher 2.0 files into the folder conta
 > .
 > ├─ fiskaltrust.Launcher.exe
 > ├─ launcher.configuration.json
-> ├─ migrate.cmd
+> ├─ launcher-migrate.cmd
 > └─ fiskaltrust.exe
 > ```
 
-And then run the `migrate.cmd` script as an administrator.
+And then run the `launcher-migrate.cmd` script as an administrator.
 
 The script will do the following:
 
