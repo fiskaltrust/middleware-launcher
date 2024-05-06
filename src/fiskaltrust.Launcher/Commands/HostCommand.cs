@@ -24,7 +24,7 @@ using fiskaltrust.Launcher.Helpers;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using fiskaltrust.Launcher.Factories;
 using fiskaltrust.ifPOS.v1.at;
-
+//test
 namespace fiskaltrust.Launcher.Commands
 {
     public class HostCommand : Command
