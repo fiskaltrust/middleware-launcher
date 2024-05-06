@@ -5,6 +5,12 @@ trigger:
       - main
       - refs/tags/*
 
+pr:
+  branches:
+    include:
+      - main
+      - refs/tags/*
+      
 variables:
   - name: branch
     value: $(Build.SourceBranch)
