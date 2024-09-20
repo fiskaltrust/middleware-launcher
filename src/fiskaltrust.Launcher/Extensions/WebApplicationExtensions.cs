@@ -25,10 +25,12 @@ namespace fiskaltrust.Launcher.Extensions
             app.MapMultiplePrefixed(_prefixesV1, "Echo", EndpointRouteBuilderExtensions.MapPost, async (ifPOS.v1.EchoRequest req) => await pos.EchoAsync(req));
             app.MapMultiplePrefixed(_prefixesV0, "Echo", EndpointRouteBuilderExtensions.MapPost, async ([FromBody] string message) => (await pos.EchoAsync(new ifPOS.v1.EchoRequest { Message = message })).Message);
             app.MapMultiplePrefixed(_prefixes, "Sign", EndpointRouteBuilderExtensions.MapPost, async (ReceiptRequest req) => await pos.SignAsync(req));
-            app.MapMultiplePrefixed(_prefixes, "Journal", EndpointRouteBuilderExtensions.MapPost, ([FromQuery] long type, [FromQuery] long? from, [FromQuery] long? to) =>
+            app.MapMultiplePrefixed(_prefixes, "Journal", EndpointRouteBuilderExtensions.MapPost, async ([FromQuery] long type, [FromQuery] long? from, [FromQuery] long? to) =>
             {
                 var pipe = new Pipe();
                 var journal = pos.JournalAsync(new JournalRequest { ftJournalType = type, From = from ?? 0, To = to ?? 0 });
+                // Throws if something failed in the request. Does not pop the first element
+                await journal.FirstAsync();
                 var _ = Task.Run(async () =>
                 {
                     await journal.ForEachAwaitAsync(async b => await pipe.Writer.WriteAsync(new ReadOnlyMemory<byte>(b.Chunk.ToArray())));

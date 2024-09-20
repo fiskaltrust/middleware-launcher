@@ -49,7 +49,7 @@ stages:
 
   - job: TestMacOS
     pool:
-      vmImage: macos-11
+      vmImage: macos-latest
 
     steps:
     - template: ../restore.yml
