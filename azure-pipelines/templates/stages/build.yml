@@ -37,7 +37,7 @@ stages:
               scriptFolder: 'linux'
 
             osx-x64:
-              vmImage: macos-11
+              vmImage: macos-latest
               target: osx-x64
               scriptFolder: 'macos'
 
