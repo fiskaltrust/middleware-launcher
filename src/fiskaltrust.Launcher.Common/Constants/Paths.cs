@@ -14,7 +14,17 @@ namespace fiskaltrust.Launcher.Common.Constants
 
         public static string LegacyConfigurationFileName
         {
-            get => "fiskaltrust.exe.config";
+            get
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    return "fiskaltrust.exe.config";
+                }
+                else
+                {
+                    return "fiskaltrust.mono.exe.config";
+                }
+            }
         }
 
         public static string CommonFolder
