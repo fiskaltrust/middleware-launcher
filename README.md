@@ -70,6 +70,21 @@ sudo apt install fiskaltrust-middleware-launcher
 > sudo apt update && sudo apt install --only-upgrade fiskaltrust-middleware-launcher
 > ```
 
+### Supported Platforms
+
+We build the launcher for the following platforms:
+
+| OS      | architecture |
+|---------|--------------|
+| Linux   | `arm`        |
+| Linux   | `arm64`      |
+| Linux   | `x64`        |
+| MacOS   | `x64`        |
+| Windows | `x64`        |
+| Windows | `x86`        |
+
+For these build configurations the OS Versions [that .NET 8 supports](https://github.com/dotnet/core/blob/main/release-notes/8.0/supported-os.md) are supported by the launcher.
+
 ## Migration guide
 
 Before switching from a 1.3 Launcher to a Launcher 2.0, please update the Queues, SCUs and Helpers to the latest packages.
