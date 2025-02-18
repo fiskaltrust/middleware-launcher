@@ -7,10 +7,12 @@ namespace fiskaltrust.Launcher.ServiceInstallation
     {
         private static readonly string _servicePath = "/etc/systemd/system/";
         private readonly string _serviceName = "fiskaltrustLauncher";
+        private readonly string? _serviceFolder;
 
-        public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath) : base(launcherExecutablePath)
+        public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath, string? serviceFolder) : base(launcherExecutablePath)
         {
             _serviceName = serviceName ?? _serviceName;
+            _serviceFolder = serviceFolder;
         }
 
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
@@ -67,17 +69,20 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         private string[] GetServiceFileContent(string serviceDescription, string commandArgs)
         {
             var processPath = _launcherExecutablePath.Path;
-
+            var workingDirectory = Path.GetDirectoryName(_launcherExecutablePath.Path);
             var command = $"{processPath} {commandArgs}";
 
             return [
                 "[Unit]",
                 $"Description=\"{serviceDescription}\"",
+                $"RequiresMountsFor={_serviceFolder} {workingDirectory}",
+                $"Wants=network-online.target",
+                $"After=network.target,network-online.target",
                 "",
                 "[Service]",
                 "Type=notify",
                 $"ExecStart={command}",
-                $"WorkingDirectory={Path.GetDirectoryName(_launcherExecutablePath.Path)}",
+                $"WorkingDirectory={workingDirectory}",
                 "",
                 "[Install]",
                 "WantedBy = multi-user.target"

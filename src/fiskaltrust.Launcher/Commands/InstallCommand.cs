@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using Serilog;
 using fiskaltrust.Launcher.ServiceInstallation;
 using fiskaltrust.Launcher.Helpers;
@@ -62,7 +61,8 @@ namespace fiskaltrust.Launcher.Commands
 
             if (OperatingSystem.IsLinux())
             {
-                installer = new LinuxSystemD(installOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}", installServices.LauncherExecutablePath);
+                installer = new LinuxSystemD(installOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}", 
+                    installServices.LauncherExecutablePath, commonProperties.LauncherConfiguration.ServiceFolder);
             }
             if (OperatingSystem.IsWindows())
             {
