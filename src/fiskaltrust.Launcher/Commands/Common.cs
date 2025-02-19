@@ -124,7 +124,8 @@ namespace fiskaltrust.Launcher.Commands
             }
 
             Log.Verbose("Merging legacy launcher config file.");
-            if (options.MergeLegacyConfigIfExists && File.Exists(options.LegacyConfigurationFile))
+            var legacyFileBackupPath = options.LegacyConfigurationFile + ".legacy";
+            if (options.MergeLegacyConfigIfExists && File.Exists(options.LegacyConfigurationFile) && !File.Exists(legacyFileBackupPath))
             {
                 var legacyConfig = await LegacyConfigFileReader.ReadLegacyConfigFile(options.LegacyConfigurationFile);
                 launcherConfiguration.OverwriteWith(legacyConfig);
@@ -138,8 +139,7 @@ namespace fiskaltrust.Launcher.Commands
                 await File.WriteAllTextAsync(options.LauncherConfigurationFile, legacyConfig.Serialize());
 
                 var fi = new FileInfo(options.LegacyConfigurationFile);
-                fi.CopyTo(options.LegacyConfigurationFile + ".legacy");
-                fi.Delete();
+                fi.CopyTo(legacyFileBackupPath);
             }
 
             Log.Verbose("Merging launcher cli args.");
