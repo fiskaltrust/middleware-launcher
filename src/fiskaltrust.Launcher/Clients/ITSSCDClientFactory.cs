@@ -30,8 +30,8 @@ namespace fiskaltrust.Launcher.Clients
                 ClientTimeout = configuration.Timeout != default ? configuration.Timeout : RetryPolicyOptions.Default.ClientTimeout
             };
 
-            var isHttps = !string.IsNullOrEmpty(_launcherConfiguration?.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration?.TlsCertificateBase64);
-            var sslValidationDisabled = _launcherConfiguration != null && _launcherConfiguration.SslValidation.HasValue && !_launcherConfiguration.SslValidation.Value;
+            var isHttps = !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64);
+            var sslValidationDisabled = _launcherConfiguration.SslValidation!.Value;
 
             return configuration.UrlType switch
             {

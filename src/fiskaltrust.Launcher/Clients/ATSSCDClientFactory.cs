@@ -31,8 +31,8 @@ namespace fiskaltrust.Launcher.Clients
                 ClientTimeout = configuration.Timeout != default ? configuration.Timeout : RetryPolicyOptions.Default.ClientTimeout
             };
 
-            var isHttps = !string.IsNullOrEmpty(_launcherConfiguration?.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration?.TlsCertificateBase64);
-            var sslValidationDisabled = _launcherConfiguration != null && _launcherConfiguration.SslValidation.HasValue && !_launcherConfiguration.SslValidation.Value;
+            var isHttps = !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificatePath) || !string.IsNullOrEmpty(_launcherConfiguration.TlsCertificateBase64);
+            var sslValidationDisabled = _launcherConfiguration.SslValidation!.Value;
 
             return configuration.UrlType switch
             {
@@ -52,7 +52,14 @@ namespace fiskaltrust.Launcher.Clients
                     RetryPolicyOptions = retryPolicyoptions,
                     DisableSslValidation = sslValidationDisabled
                 }).Result,
-                "http" or "https" or "net.tcp" => SoapATSSCDFactory.CreateSSCDAsync(new ClientOptions
+                "https" => SoapATSSCDFactory.CreateSSCDAsync(new SoapClientOptions
+                {
+                    Url = new Uri(configuration.Url),
+                    RetryPolicyOptions = retryPolicyoptions,
+                    CashboxId = _launcherConfiguration.CashboxId!.Value,
+                    AccessToken = _launcherConfiguration.AccessToken
+                }).Result,
+                "http" or "net.tcp" => SoapATSSCDFactory.CreateSSCDAsync(new SoapClientOptions
                 {
                     Url = new Uri(configuration.Url),
                     RetryPolicyOptions = retryPolicyoptions
