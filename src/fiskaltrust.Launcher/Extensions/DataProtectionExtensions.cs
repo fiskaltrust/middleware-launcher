@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
+using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Helpers;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
@@ -159,17 +160,17 @@ namespace fiskaltrust.Launcher.Extensions
         private const string DATA_PROTECTION_APPLICATION_NAME = "fiskaltrust.Launcher";
         internal static AccessTokenForEncryption? AccessTokenForEncryption = null; // This godawful workaround exists becaues of this allegedly fixed bug https://github.com/dotnet/aspnetcore/issues/2523
 
-        public static IDataProtectionProvider Create(string? accessToken = null, string? path = null, bool useFallback = false)
+        public static IDataProtectionProvider Create(LauncherConfiguration launcherConfiguration)
         {
             Log.Verbose("Called IDataProtectionProvider.Create");
 
             return DataProtectionProvider
             .Create(
-                new DirectoryInfo(path ?? Path.Combine(Common.Constants.Paths.CommonFolder, DATA_PROTECTION_APPLICATION_NAME, "keys")),
+                new DirectoryInfo(Path.Combine(launcherConfiguration.LauncherDataFolder!, "keys")),
                 configuration =>
                 {
                     configuration.SetApplicationName(DATA_PROTECTION_APPLICATION_NAME);
-                    configuration.ProtectKeysCustom(accessToken, useFallback);
+                    configuration.ProtectKeysCustom(launcherConfiguration.AccessToken!, launcherConfiguration.UseLegacyDataProtection!.Value);
                 });
         }
 

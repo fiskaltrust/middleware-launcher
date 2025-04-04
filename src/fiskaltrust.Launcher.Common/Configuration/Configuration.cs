@@ -94,6 +94,10 @@ namespace fiskaltrust.Launcher.Common.Configuration
         [JsonPropertyName("serviceFolder")]
         public string? ServiceFolder { get => MakeAbsolutePath(WithDefault(_serviceFolder, Paths.ServiceFolder)); set => _serviceFolder = value; }
 
+        private string? _launcherDataFolder;
+        [JsonPropertyName("launcherDataFolder")]
+        public string? LauncherDataFolder { get => MakeAbsolutePath(WithDefault(_launcherDataFolder, Paths.LauncherDataFolder)); set => _launcherDataFolder = value; }
+
         private bool? _sandbox;
         [JsonPropertyName("sandbox")]
         public bool? Sandbox { get => WithDefault(_sandbox, false); set => _sandbox = value; }

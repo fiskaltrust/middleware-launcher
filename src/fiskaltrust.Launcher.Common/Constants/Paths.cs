@@ -7,6 +7,11 @@ namespace fiskaltrust.Launcher.Common.Constants
             get => Path.Combine(CommonFolder, "fiskaltrust");
         }
 
+        public static string LauncherDataFolder
+        {
+            get => Path.Combine(CommonFolder, "fiskaltrust.Launcher");
+        }
+
         public static string LauncherConfigurationFileName
         {
             get => "launcher.configuration.json";
@@ -46,7 +51,8 @@ namespace fiskaltrust.Launcher.Common.Constants
                 else
                 {
                     return "/var/lib";
-                };
+                }
+                ;
             }
         }
     }

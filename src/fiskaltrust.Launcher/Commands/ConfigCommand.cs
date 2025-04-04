@@ -80,7 +80,7 @@ namespace fiskaltrust.Launcher.Commands
                 Log.Warning("Launcher configuration file {file} does not exist. Creating new file.", configSetOptions.LauncherConfigurationFile);
                 launcherConfiguration = new LauncherConfiguration();
 
-                dataProtector = DataProtectionExtensions.Create(configSetOptions.ArgsLauncherConfiguration.AccessToken, useFallback: configSetOptions.ArgsLauncherConfiguration.UseLegacyDataProtection!.Value).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+                dataProtector = DataProtectionExtensions.Create(configSetOptions.ArgsLauncherConfiguration).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
             }
             else
             {
@@ -100,7 +100,7 @@ namespace fiskaltrust.Launcher.Commands
                     return 1;
                 }
 
-                dataProtector = DataProtectionExtensions.Create(configSetOptions.ArgsLauncherConfiguration.AccessToken ?? launcherConfiguration?.AccessToken, useFallback: configSetOptions.ArgsLauncherConfiguration!.UseLegacyDataProtection!.Value || launcherConfiguration!.UseLegacyDataProtection!.Value).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+                dataProtector = DataProtectionExtensions.Create(configSetOptions.ArgsLauncherConfiguration).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
 
                 try
                 {
@@ -260,7 +260,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             else
             {
-                var dataProtector = DataProtectionExtensions.Create(accessToken ?? launcherConfiguration!.AccessToken, useFallback: launcherConfiguration!.UseLegacyDataProtection!.Value).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
+                var dataProtector = DataProtectionExtensions.Create(launcherConfiguration).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
 
                 try
                 {
