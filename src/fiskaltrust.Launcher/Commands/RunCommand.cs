@@ -18,6 +18,7 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<int?>("--launcher-port"));
             AddOption(new Option<bool>("--use-offline"));
             AddOption(new Option<string?>("--service-folder"));
+            AddOption(new Option<string?>("--launcher-data-folder"));
             AddOption(new Option<Uri?>("--configuration-url"));
             AddOption(new Option<Uri?>("--packages-url"));
             AddOption(new Option<string?>("--package-cache"));

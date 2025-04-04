@@ -87,7 +87,7 @@ namespace fiskaltrust.Launcher.Commands
 
                 launcherConfiguration.OverwriteWith(doctorOptions.ArgsLauncherConfiguration);
 
-                var clientEcdh = await checkUp.CheckAwait("Load ECDH Curve", async () => await CommonHandler.LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!, launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value, dryRun: true, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value), critical: false);
+                var clientEcdh = await checkUp.CheckAwait("Load ECDH Curve", async () => await CommonHandler.LoadCurve(launcherConfiguration, dryRun: true), critical: false);
                 ftCashBoxConfiguration cashboxConfiguration = new();
 
                 if (clientEcdh is null)
@@ -126,7 +126,7 @@ namespace fiskaltrust.Launcher.Commands
                     }
                 }
 
-                var dataProtectionProvider = checkUp.Check("Setup data protection", () => DataProtectionExtensions.Create(launcherConfiguration.AccessToken, useFallback: launcherConfiguration.UseLegacyDataProtection!.Value));
+                var dataProtectionProvider = checkUp.Check("Setup data protection", () => DataProtectionExtensions.Create(launcherConfiguration));
                 if (dataProtectionProvider is not null)
                 {
                     checkUp.Check("Decrypt launcher configuration", () => launcherConfiguration.Decrypt(dataProtectionProvider.CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE)));

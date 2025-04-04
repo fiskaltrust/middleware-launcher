@@ -168,8 +168,7 @@ namespace fiskaltrust.Launcher.Commands
             ECDiffieHellman? clientEcdh = null;
             try
             {
-                clientEcdh = await LoadCurve(launcherConfiguration.CashboxId!.Value, launcherConfiguration.AccessToken!,
-                    launcherConfiguration.ServiceFolder!, launcherConfiguration.UseOffline!.Value);
+                clientEcdh = await LoadCurve(launcherConfiguration);
             }
             catch (Exception e)
             {
@@ -261,8 +260,7 @@ namespace fiskaltrust.Launcher.Commands
             Log.Debug("Launcher running as {ServiceType}",
                 Enum.GetName(typeof(ServiceTypes), host.Services.GetRequiredService<ServiceType>().Type));
 
-            var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration.AccessToken,
-                useFallback: launcherConfiguration.UseLegacyDataProtection!.Value);
+            var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration);
 
             try
             {
@@ -329,13 +327,12 @@ namespace fiskaltrust.Launcher.Commands
             }
         }
 
-        public static async Task<ECDiffieHellman> LoadCurve(Guid cashboxId, string accessToken, string serviceFolder,
-            bool useOffline = false, bool dryRun = false, bool useFallback = false)
+        public static async Task<ECDiffieHellman> LoadCurve(LauncherConfiguration launcherConfiguration, bool dryRun = false)
         {
             Log.Verbose("Loading Curve.");
-            var dataProtector = DataProtectionExtensions.Create(accessToken, useFallback: useFallback)
+            var dataProtector = DataProtectionExtensions.Create(launcherConfiguration)
                 .CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
-            var clientEcdhPath = Path.Combine(serviceFolder, $"client-{cashboxId}.ecdh");
+            var clientEcdhPath = Path.Combine(launcherConfiguration.ServiceFolder!, $"client-{launcherConfiguration.CashboxId!.Value}.ecdh");
 
             ECDiffieHellman? clientEcdh = null;
 
@@ -354,7 +351,7 @@ namespace fiskaltrust.Launcher.Commands
 
             // Handling offline client ECDH path
             const string offlineClientEcdhPath = "/client.ecdh";
-            if (!dryRun && useOffline && File.Exists(offlineClientEcdhPath) && clientEcdh == null)
+            if (!dryRun && launcherConfiguration.UseOffline!.Value && File.Exists(offlineClientEcdhPath) && clientEcdh == null)
             {
                 clientEcdh = ECDiffieHellmanExt.Deserialize(await File.ReadAllTextAsync(offlineClientEcdhPath));
                 try
