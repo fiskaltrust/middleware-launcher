@@ -41,6 +41,11 @@ stages:
               target: osx-x64
               scriptFolder: 'macos'
 
+            osx-arm64:
+              vmImage: macos-latest
+              target: osx-arm64
+              scriptFolder: 'macos'
+
         pool:
           vmImage: $(vmImage)
 
