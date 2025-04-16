@@ -48,26 +48,18 @@ jobs:
          configuration: ${{ steps.set-config.outputs.config }}
 
     - name: Unit Tests
-      uses: ./.github/actions/test@main
+      uses: fiskaltrust/middleware/.github/actions/test@main
       with:
         directory: test
         pattern: "UnitTest"
-        args: '--no-build'
-      env:
-        CONNECTIONSTRING_AZURE_STORAGE_TESTS: ${{ secrets.CONNECTIONSTRING_AZURE_STORAGE_TESTS }}
-        CONNECTIONSTRING_POSTGRESQL_TESTS: ${{ secrets.CONNECTIONSTRING_POSTGRESQL_TESTS }}
-        CONNECTIONSTRING_MYSQL_TESTS: ${{ secrets.CONNECTIONSTRING_MYSQL_TESTS }}
+        args: '--no-build'      
 
     - name: Integration Tests
-      uses: ./.github/actions/test@main
+      uses: fiskaltrust/middleware/.github/actions/test@main
       with:
         directory: test
         pattern: "IntegrationTest"
         args: '--no-build'
-      env:
-        CONNECTIONSTRING_AZURE_STORAGE_TESTS: ${{ secrets.CONNECTIONSTRING_AZURE_STORAGE_TESTS }}
-        CONNECTIONSTRING_POSTGRESQL_TESTS: ${{ secrets.CONNECTIONSTRING_POSTGRESQL_TESTS }}
-        CONNECTIONSTRING_MYSQL_TESTS: ${{ secrets.CONNECTIONSTRING_MYSQL_TESTS }}
 
   publish-test-results:
     name: Publish Tests Results
