@@ -30,11 +30,11 @@ jobs:
     - name: Set build configuration
       id: set-config
       run: |
-          if [[ "$(Build.SourceBranch)" == refs/tags/v* ]]; then
-            echo "config=Release" >> $GITHUB_OUTPUT
-          else
-            echo "config=Debug" >> $GITHUB_OUTPUT
-          fi
+         if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+          echo "config=Release" >> $GITHUB_OUTPUT
+         else
+          echo "config=Debug" >> $GITHUB_OUTPUT
+         fi
 
     - uses: actions/checkout@v4
       
