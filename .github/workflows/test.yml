@@ -1,0 +1,90 @@
+name: Test and package launcher
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      commit:
+        type: string
+        required: false
+  push:
+    branches:
+      - main
+      - refs/tags/*
+  pull_request:
+    branches:
+      - main
+
+
+jobs:
+  test:
+    name: test
+    strategy:
+      matrix:
+        vmImage: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.vmImage }}
+    outputs:
+      config: ${{ steps.set-config.outputs.config }}
+   
+    steps:
+    - name: Set build configuration
+      id: set-config
+      run: |
+          if [[ "$(Build.SourceBranch)" == refs/tags/v* ]]; then
+            echo "config=Release" >> $GITHUB_OUTPUT
+          else
+            echo "config=Debug" >> $GITHUB_OUTPUT
+          fi
+
+    - uses: actions/checkout@v4
+      
+    - name: build
+      uses: fiskaltrust/middleware/.github/actions/build
+      with:
+         pattern: fiskaltrust.Launcher.sln
+         configuration: ${{ steps.config.outputs.config }}
+
+    - name: Unit Tests
+      uses: ./.github/actions/test
+      with:
+        directory: test
+        pattern: "UnitTest"
+        args: '--no-build'
+      env:
+        CONNECTIONSTRING_AZURE_STORAGE_TESTS: ${{ secrets.CONNECTIONSTRING_AZURE_STORAGE_TESTS }}
+        CONNECTIONSTRING_POSTGRESQL_TESTS: ${{ secrets.CONNECTIONSTRING_POSTGRESQL_TESTS }}
+        CONNECTIONSTRING_MYSQL_TESTS: ${{ secrets.CONNECTIONSTRING_MYSQL_TESTS }}
+
+    - name: Integration Tests
+      uses: ./.github/actions/test
+      with:
+        directory: test
+        pattern: "IntegrationTest"
+        args: '--no-build'
+      env:
+        CONNECTIONSTRING_AZURE_STORAGE_TESTS: ${{ secrets.CONNECTIONSTRING_AZURE_STORAGE_TESTS }}
+        CONNECTIONSTRING_POSTGRESQL_TESTS: ${{ secrets.CONNECTIONSTRING_POSTGRESQL_TESTS }}
+        CONNECTIONSTRING_MYSQL_TESTS: ${{ secrets.CONNECTIONSTRING_MYSQL_TESTS }}
+
+  publish-test-results:
+    name: Publish Tests Results
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+    if: always()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: Queue Test Results
+          comment_mode: always
+          files: "artifacts/**/*.trx"
+          commit: ${{ inputs.commit }}
