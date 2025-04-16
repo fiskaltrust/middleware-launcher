@@ -1,4 +1,4 @@
-name: Test and package launcher
+name: Test
 
 on:
   workflow_dispatch:
