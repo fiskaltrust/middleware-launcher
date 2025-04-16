@@ -15,6 +15,7 @@ parameters:
       - linux-arm
       - linux-arm64
       - osx-x64
+      - osx-arm64
 
 stages:
   - ${{ each stage in parameters.stages }}:
