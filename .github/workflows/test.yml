@@ -29,6 +29,7 @@ jobs:
     steps:
     - name: Set build configuration
       id: set-config
+      shell: bash
       run: |
          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
           echo "config=Release" >> $GITHUB_OUTPUT
