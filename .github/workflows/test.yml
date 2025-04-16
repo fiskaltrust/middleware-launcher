@@ -45,7 +45,7 @@ jobs:
       uses: fiskaltrust/middleware/.github/actions/build@main
       with:
          pattern: fiskaltrust.Launcher.sln
-         configuration: ${{ steps.config.outputs.config }}
+         configuration: ${{ steps.set-config.outputs.config }}
 
     - name: Unit Tests
       uses: ./.github/actions/test@main
