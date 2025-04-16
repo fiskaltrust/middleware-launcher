@@ -31,12 +31,13 @@ jobs:
       id: set-config
       shell: bash
       run: |
+         echo "GITHUB_REF=${GITHUB_REF}"
          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
           echo "config=Release" >> $GITHUB_OUTPUT
          else
           echo "config=Debug" >> $GITHUB_OUTPUT
          fi
-
+         echo "steps.set-config.outputs.config=${steps.set-config.outputs.config}"
     - uses: actions/checkout@v4
       
     - name: build
