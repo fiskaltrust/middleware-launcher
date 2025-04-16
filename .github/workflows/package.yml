@@ -1,0 +1,65 @@
+name: Package Launcher
+
+on:
+  workflow_run:
+    workflows: ["Test Launcher"]
+    types:
+      - completed
+
+jobs:
+  package:
+    name: package
+    strategy:
+      matrix:
+        project: [fiskaltrust.Launcher, fiskaltrust.LauncherUpdater]
+        include:
+          - vmImage: windows-latest
+            target: win-x64
+            scriptFolder: 'windows'
+
+          - vmImage: windows-latest
+            target: win-x86
+            scriptFolder: 'windows'
+
+          - vmImage: ubuntu-latest
+            target: linux-x64
+            scriptFolder: 'linux'
+
+          - vmImage: ubuntu-latest
+            target: linux-arm
+            scriptFolder: 'linux'
+
+          - vmImage: ubuntu-latest
+            target: linux-arm64
+            scriptFolder: 'linux'
+
+          - vmImage: macos-latest
+            target: osx-x64
+            scriptFolder: 'macos'
+   
+    runs-on: ${{ matrix.vmImage }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: fiskaltrust/middleware/.github/actions/build
+        with:
+          pattern: fiskaltrust.Launcher.sln
+          configuration: ${{ needs.test.outputs.config }}
+
+      # - name: Publish ${{ matrix.project }}
+      #   shell: pwsh
+      #   run: |
+      #     mv ./Directory.build.props ./Directory.Build.props
+      #     dotnet publish ./src/${{ matrix.project }}/${{ matrix.project }}.csproj -c ${{ needs.test.outputs.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net8.0 --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
+      
+      - uses: fiskaltrust/middleware/.github/actions/sign
+        with:
+          certificate: 'codesigning.pfx'
+          password: '$(Code_Signing_Password)'
+          path: src
+
+      - uses: fiskaltrust/middleware/.github/actions/package
+        with:
+          project: fiskaltrust.Launcher
+          path: src

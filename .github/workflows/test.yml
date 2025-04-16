@@ -1,4 +1,4 @@
-name: Test
+name: Test Launcher
 
 on:
   workflow_dispatch:
