@@ -37,7 +37,7 @@ jobs:
          else
           echo "config=Debug" >> $GITHUB_OUTPUT
          fi
-         echo "steps.set-config.outputs.config=${steps.set-config.outputs.config}"
+         echo "steps.set-config.outputs.config=${config}"
     - uses: actions/checkout@v4
       
     - name: build
