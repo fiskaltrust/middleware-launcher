@@ -51,14 +51,14 @@ jobs:
       uses: fiskaltrust/middleware/.github/actions/test@main
       with:
         directory: test
-        pattern: "${{ matrix.vmImage }}--UnitTest"
+        pattern: "UnitTest"
         args: '--no-build'      
 
     - name: Integration Tests
       uses: fiskaltrust/middleware/.github/actions/test@main
       with:
         directory: test
-        pattern: "${{ matrix.vmImage }}--IntegrationTest"
+        pattern: "IntegrationTest"
         args: '--no-build'
 
   publish-test-results:
