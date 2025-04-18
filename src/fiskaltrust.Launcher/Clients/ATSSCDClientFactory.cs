@@ -59,7 +59,7 @@ namespace fiskaltrust.Launcher.Clients
                     CashboxId = _launcherConfiguration.CashboxId!.Value,
                     AccessToken = _launcherConfiguration.AccessToken
                 }).Result,
-                "http" or "net.tcp" => SoapATSSCDFactory.CreateSSCDAsync(new SoapClientOptions
+                "http" or "https" or "net.tcp" or "wcf" => SoapATSSCDFactory.CreateSSCDAsync(new SoapClientOptions
                 {
                     Url = new Uri(configuration.Url),
                     RetryPolicyOptions = retryPolicyoptions
