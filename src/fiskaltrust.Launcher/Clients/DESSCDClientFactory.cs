@@ -51,7 +51,7 @@ namespace fiskaltrust.Launcher.Clients
                     RetryPolicyOptions = retryPolicyoptions,
                     DisableSslValidation = sslValidationDisabled
                 }).Result,
-                "http" or "https" or "net.tcp" => SoapDESSCDFactory.CreateSSCDAsync(new ClientOptions
+                "http" or "https" or "net.tcp" or "wcf" => SoapDESSCDFactory.CreateSSCDAsync(new ClientOptions
                 {
                     Url = new Uri(configuration.Url),
                     RetryPolicyOptions = retryPolicyoptions

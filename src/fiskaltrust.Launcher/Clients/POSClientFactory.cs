@@ -51,7 +51,7 @@ namespace fiskaltrust.Launcher.Clients
                     RetryPolicyOptions = retryPolicyoptions,
                     DisableSslValidation = sslValidationDisabled
                 }).Result,
-                "http" or "https" or "net.tcp" => SoapPosFactory.CreatePosAsync(new ClientOptions
+                "http" or "https" or "net.tcp" or "wcf" => SoapPosFactory.CreatePosAsync(new ClientOptions
                 {
                     Url = new Uri(configuration.Url),
                     RetryPolicyOptions = retryPolicyoptions
