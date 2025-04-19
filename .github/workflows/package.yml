@@ -1,13 +1,18 @@
 name: Package Launcher
 
 on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - refs/tags/*
   pull_request:
     branches:
       - main
-  workflow_run:
-    workflows: ["Test Launcher"]
-    types:
-      - completed
+  # workflow_run:
+  #   workflows: ["Test Launcher"]
+  #   types:
+  #     - completed
 
 jobs:
   package:
@@ -44,6 +49,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+  
+      - uses: ./.github/actions/test
+        
 
       - uses: fiskaltrust/middleware/.github/actions/build@main
         with:
