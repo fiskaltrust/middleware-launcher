@@ -61,25 +61,25 @@ jobs:
         pattern: "IntegrationTest"
         args: '--no-build'
 
-  publish-test-results:
-    name: Publish Tests Results
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      checks: write
-      pull-requests: write
-    if: always()
+  # publish-test-results:
+  #   name: Publish Tests Results
+  #   needs: test
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     checks: write
+  #     pull-requests: write
+  #   if: always()
 
-    steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
+  #   steps:
+  #     - name: Download Artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         path: artifacts
 
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          check_name: Queue Test Results
-          comment_mode: always
-          files: "artifacts/**/*.trx"
-          commit: ${{ inputs.commit }}
+  #     - name: Publish Test Results
+  #       uses: EnricoMi/publish-unit-test-result-action@v2
+  #       with:
+  #         check_name: Queue Test Results
+  #         comment_mode: always
+  #         files: "artifacts/**/*.trx"
+  #         commit: ${{ inputs.commit }}
