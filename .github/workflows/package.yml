@@ -48,7 +48,7 @@ jobs:
       - uses: fiskaltrust/middleware/.github/actions/build@main
         with:
           pattern: fiskaltrust.Launcher.sln
-          configuration: ${{ needs.test.outputs.config }}
+          configuration: ${{ steps.set-config.outputs.config }}
 
       # - name: Publish ${{ matrix.project }}
       #   shell: pwsh
