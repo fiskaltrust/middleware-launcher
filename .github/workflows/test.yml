@@ -1,7 +1,7 @@
 name: Test Launcher
 
-on:
-         
+on: 
+  workflow_dispatch:
   workflow_call:
     inputs:
       commit:

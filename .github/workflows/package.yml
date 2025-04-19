@@ -15,6 +15,9 @@ on:
   #     - completed
 
 jobs:
+  test-launcher:
+      uses: ./.github/workflows/test.yml   
+  
   package:
     name: package
     strategy:
@@ -48,11 +51,8 @@ jobs:
     runs-on: ${{ matrix.vmImage }}
 
     steps:
-      - uses: actions/checkout@v4
-  
-      - uses: ./.github/workflows/test.yml
-        
-
+      - uses: actions/checkout@v4  
+      
       - uses: fiskaltrust/middleware/.github/actions/build@main
         with:
           pattern: fiskaltrust.Launcher.sln
