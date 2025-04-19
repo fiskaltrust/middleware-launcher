@@ -22,7 +22,7 @@ jobs:
        pull-requests: write
 
   package:
-    needs: [test-launcher]
+    # needs: [test-launcher]
     name: package
     strategy:
       matrix:
