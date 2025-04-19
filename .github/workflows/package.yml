@@ -50,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
   
-      - uses: ./.github/actions/test
+      - uses: ./.github/workflows/test.yml
         
 
       - uses: fiskaltrust/middleware/.github/actions/build@main
