@@ -20,6 +20,7 @@ jobs:
       secrets: inherit
 
   package:
+    needs: [test-launcher]
     name: package
     strategy:
       matrix:
