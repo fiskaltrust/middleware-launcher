@@ -26,7 +26,8 @@ jobs:
     name: package
     strategy:
       matrix:
-        project: [fiskaltrust.Launcher, fiskaltrust.LauncherUpdater]
+        project: [fiskaltrust.Launcher]
+        # project: [fiskaltrust.Launcher, fiskaltrust.LauncherUpdater]
         include:
           - vmImage: windows-latest
             target: win-x64
@@ -56,7 +57,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4  
-      
+       
+      - name: Set build configuration
+        id: set-config
+        shell: bash
+        run: |
+         echo "GITHUB_REF=${GITHUB_REF}"
+         if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+          echo "config=Release" >> $GITHUB_OUTPUT
+         else
+          echo "config=Debug" >> $GITHUB_OUTPUT
+         fi
+
       - uses: fiskaltrust/middleware/.github/actions/build@main
         with:
           pattern: fiskaltrust.Launcher.sln
