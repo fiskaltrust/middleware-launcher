@@ -1,0 +1,85 @@
+name: Test Launcher
+
+on: 
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      commit:
+        type: string
+        required: false
+  # push:
+  #   branches:
+  #     - main
+  #     - refs/tags/*
+  # pull_request:
+  #   branches:
+  #     - main
+
+
+jobs:
+  test:
+    name: test
+    strategy:
+      matrix:
+          vmImage: [windows-latest]
+        # vmImage: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.vmImage }}
+    # outputs:
+    #   config: ${{ steps.set-config.outputs.config }}
+   
+    steps:
+    - name: Set build configuration
+      id: set-config
+      shell: bash
+      run: |
+         echo "GITHUB_REF=${GITHUB_REF}"
+         if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+          echo "config=Release" >> $GITHUB_OUTPUT
+         else
+          echo "config=Debug" >> $GITHUB_OUTPUT
+         fi
+    
+    - uses: actions/checkout@v4
+      
+    - name: build
+      uses: fiskaltrust/middleware/.github/actions/build@main
+      with:
+         pattern: fiskaltrust.Launcher.sln
+         configuration: ${{ steps.set-config.outputs.config }}
+
+    - name: Unit Tests
+      uses: fiskaltrust/middleware/.github/actions/test@main
+      with:
+        directory: test
+        pattern: "UnitTest"
+        args: '--no-build'      
+
+    - name: Integration Tests
+      uses: fiskaltrust/middleware/.github/actions/test@main
+      with:
+        directory: test
+        pattern: "IntegrationTest"
+        args: '--no-build'
+
+  publish-test-results:
+    name: Publish Tests Results
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+    if: always()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: Queue Test Results
+          comment_mode: always
+          files: "artifacts/**/*.trx"
+          commit: ${{ inputs.commit }}
