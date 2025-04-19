@@ -17,7 +17,9 @@ on:
 jobs:
   test-launcher:
       uses: ./.github/workflows/test.yml   
-      secrets: inherit
+      permissions:
+       checks: write
+       pull-requests: write
 
   package:
     needs: [test-launcher]
