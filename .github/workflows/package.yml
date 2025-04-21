@@ -80,11 +80,11 @@ jobs:
       #     mv ./Directory.build.props ./Directory.Build.props
       #     dotnet publish ./src/${{ matrix.project }}/${{ matrix.project }}.csproj -c ${{ needs.test.outputs.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net8.0 --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
       
-      - uses: fiskaltrust/middleware/.github/actions/sign@main
-        with:
-          certificate: 'codesigning.pfx'
-          password: '$(Code_Signing_Password)'
-          path: src
+      # - uses: fiskaltrust/middleware/.github/actions/sign@main
+      #   with:
+      #     certificate: 'codesigning.pfx'
+      #     password: '$(Code_Signing_Password)'
+      #     path: src
 
       - uses: fiskaltrust/middleware/.github/actions/package@main
         with:
