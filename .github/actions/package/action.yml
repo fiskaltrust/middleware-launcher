@@ -54,7 +54,7 @@ runs:
             }
                
            dotnet publish $csprojFile --configuration Debug -f net8.0 --output ./publish/drop-${{ inputs.target }} --no-build /p:DebugType=None /p:DebugSymbols=false
-           Move-Item -Path ./publish/drop-${{ inputs.target }}/${{ inputs.project }}* -Destination ./publish/raw-${{ inputs.target }}/
+           Move-Item -Path ./publish/drop-${{ inputs.target }}/$project* -Destination ./publish/raw-${{ inputs.target }}/
         }
        
 
