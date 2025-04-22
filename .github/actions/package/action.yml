@@ -74,7 +74,7 @@ runs:
       run: |
         $version = "v1.0.0"
 
-        New-Item -ItemType Directory -Force -Path ./publish/package-v2-${{ inputs.project }}
+        # New-Item -ItemType Directory -Force -Path ./publish/package-v2-${{ inputs.project }}
         $csprojFile = "${{ inputs.path }}/${{ inputs.project }}/${{ inputs.project }}.csproj"
 
         [xml]$csprojContent = Get-Content -Path $csprojFile
