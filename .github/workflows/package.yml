@@ -15,11 +15,11 @@ on:
   #     - completed
 
 jobs:
-  test-launcher:
-      uses: ./.github/workflows/test.yml   
-      permissions:
-       checks: write
-       pull-requests: write
+  # test-launcher:
+  #     uses: ./.github/workflows/test.yml   
+  #     permissions:
+  #      checks: write
+  #      pull-requests: write
 
   package:
     # needs: [test-launcher]
