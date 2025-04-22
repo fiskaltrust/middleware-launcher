@@ -7,10 +7,7 @@ inputs:
   project:
     required: true
     type: string
-  vmImage:
-    required: true
-    type: string
-
+  
 runs:
   using: "composite"
   steps:
@@ -39,14 +36,15 @@ runs:
         }
         else 
         {
-         $vmImage = "${{ inputs.vmImage }}"
-         if($vmImage.StartsWith("windows")) {
-            echo "version=$version" >> $env:GITHUB_OUTPUT
-         } 
-         else
-         {
-            bash -c "echo "version=$version" >> $GITHUB_OUTPUT ."
-         }
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+         # $vmImage = "${{ inputs.vmImage }}"
+         # if($vmImage.StartsWith("windows")) {
+         #    echo "version=$version" >> $env:GITHUB_OUTPUT
+         # } 
+         # else
+         # {
+         #    bash -c "echo "version=$version" >> $GITHUB_OUTPUT ."
+         # }
         }
        
 
