@@ -27,7 +27,7 @@ runs:
 
         $vmImage = "${{ inputs.vmImage }}"
         if($vmImage.StartsWith("windows")) {
-          Compress-Archive -Path ${{ inputs.path }}/* -DestinationPath $destinationFile
+          Compress-Archive -Path ${{ inputs.path }}* -DestinationPath $destinationFile
         } else {
           bash -c "cd ${{ inputs.path }} && zip -r $destinationFile ."
         }
