@@ -32,32 +32,37 @@ runs:
     - name: Publish v2 zip packages
       shell: pwsh
       run: |
-        $version = "v1.0.0"
+        $projects = "${{ inputs.project }}".Split(',')
+        foreach ($project in $projects) {
+           
+            $version = "v1.0.0"
+            New-Item -ItemType Directory -Force -Path ./publish/drop-${{ inputs.target }}
+            $csprojFile = "${{ inputs.path }}/${{ inputs.project }}/${{ inputs.project }}.csproj"
 
-        New-Item -ItemType Directory -Force -Path ./publish/drop-${{ inputs.target }}
-        $csprojFile = "${{ inputs.path }}/${{ inputs.project }}/${{ inputs.project }}.csproj"
+            [xml]$csprojContent = Get-Content -Path $csprojFile
+            foreach ($propertyGroup in $csprojContent.Project.PropertyGroup) {
+              if ($propertyGroup.MinVerTagPrefix) {
+                $version = minver --verbosity error -t $($propertyGroup.MinVerTagPrefix) -p ci
+                break
+              }
+            }
 
-        [xml]$csprojContent = Get-Content -Path $csprojFile
-        foreach ($propertyGroup in $csprojContent.Project.PropertyGroup) {
-          if ($propertyGroup.MinVerTagPrefix) {
-            $version = minver --verbosity error -t $($propertyGroup.MinVerTagPrefix) -p ci
-            break
-          }
+            Write-Host "Version: $version"
+            if($version -eq "") {
+              Write-Error "Version not found"
+              exit 1
+            }
+               
+           dotnet publish $csprojFile --configuration Debug -f net8.0 --output ./publish/drop-${{ inputs.target }} --no-build /p:DebugType=None /p:DebugSymbols=false
+           
         }
-
-        Write-Host "Version: $version"
-        if($version -eq "") {
-          Write-Error "Version not found"
-          exit 1
-        }
-        $target = "${{ inputs.target }}"
-        dotnet publish $csprojFile --configuration Debug -f net8.0 --output ./publish/drop-${{ inputs.target }} --no-build /p:DebugType=None /p:DebugSymbols=false
         Move-Item -Path ./publish/drop-${{ inputs.target }}/${{ inputs.project }}* -Destination ./publish/raw-${{ inputs.target }}/
-        # Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/$version.zip
+
+        $target = "${{ inputs.target }}"
         if($target.StartsWith("win")) {
-           Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/$version.zip
+          Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/$version.zip
         } else {
-           bash -c "cd ./publish/raw-${{ inputs.target }}/`nzip -r./publish/package-${{ inputs.target }}/$version.zip ./"
+          bash -c "cd ./publish/raw-${{ inputs.target }}/`nzip -r ./publish/package-${{ inputs.target }}/$version.zip ./"
         }
 
         $hash = Get-FileHash ./publish/package-${{ inputs.target }}/$version.zip -Algorithm SHA256
