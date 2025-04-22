@@ -36,8 +36,8 @@ runs:
         foreach ($project in $projects) {
            
             $version = "v1.0.0"
-            New-Item -ItemType Directory -Force -Path ./publish/drop-${{ inputs.target }}
-            $csprojFile = "${{ inputs.path }}/${{ inputs.project }}/${{ inputs.project }}.csproj"
+            # New-Item -ItemType Directory -Force -Path ./publish/drop-${{ inputs.target }}
+            $csprojFile = "${{ inputs.path }}/$project/$project.csproj"
 
             [xml]$csprojContent = Get-Content -Path $csprojFile
             foreach ($propertyGroup in $csprojContent.Project.PropertyGroup) {
@@ -54,9 +54,9 @@ runs:
             }
                
            dotnet publish $csprojFile --configuration Debug -f net8.0 --output ./publish/drop-${{ inputs.target }} --no-build /p:DebugType=None /p:DebugSymbols=false
-           
+           Move-Item -Path ./publish/drop-${{ inputs.target }}/${{ inputs.project }}* -Destination ./publish/raw-${{ inputs.target }}/
         }
-        Move-Item -Path ./publish/drop-${{ inputs.target }}/${{ inputs.project }}* -Destination ./publish/raw-${{ inputs.target }}/
+       
 
         $target = "${{ inputs.target }}"
         if($target.StartsWith("win")) {
