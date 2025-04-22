@@ -92,10 +92,15 @@ runs:
           Write-Error "Version not found"
           exit 1
         }
-
+        $target-os = "${{ inputs.target }}"
         dotnet publish $csprojFile --configuration Debug -f net8.0 --output ./publish/drop-${{ inputs.target }} --no-build /p:DebugType=None /p:DebugSymbols=false
         Move-Item -Path ./publish/drop-${{ inputs.target }}/${{ inputs.project }}* -Destination ./publish/raw-${{ inputs.target }}/
-        Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/$version.zip
+        # Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/$version.zip
+        if($target-os.StartsWith("win")) {
+           Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/$version.zip
+        } else {
+           bash -c "cd ./publish/raw-${{ inputs.target }}/`nzip -r./publish/package-${{ inputs.target }}/fiskaltrust.Launcher-$version.zip ./"
+        }
 
         $hash = Get-FileHash ./publish/package-${{ inputs.target }}/$version.zip -Algorithm SHA256
         $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
@@ -106,5 +111,5 @@ runs:
     - name: Upload v2 Package
       uses: actions/upload-artifact@v4
       with:
-        name: package-v2-${{ inputs.project }}
+        name: package-v2-${{ inputs.target }}
         path: ./publish/package-${{ inputs.target }}
