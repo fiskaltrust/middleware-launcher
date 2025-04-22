@@ -38,18 +38,7 @@ runs:
             Write-Error "Version not found"
             exit 1
         }
-        else 
-        {
-        echo "version=$version" >> $env:GITHUB_OUTPUT
-         # $vmImage = "${{ inputs.vmImage }}"
-         # if($vmImage.StartsWith("windows")) {
-         #    echo "version=$version" >> $env:GITHUB_OUTPUT
-         # } 
-         # else
-         # {
-         #    bash -c "echo "version=$version" >> $GITHUB_OUTPUT ."
-         # }
-        }
+        echo "version=$version" >> $env:GITHUB_OUTPUT   
        
 
        

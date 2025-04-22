@@ -109,7 +109,7 @@ jobs:
         with:
           path: ${{ steps.copy-executables.outputs.path }}
           vmImage : ${{ matrix.vmImage }}
-          packageName : "fiskaltrust.Launcher-${{ steps.set-version.outputs.version }}"
+          zipFileName : "fiskaltrust.Launcher-${{ steps.set-version.outputs.version }}"
           artifactName: "package-${{ matrix.target }}"
 
 

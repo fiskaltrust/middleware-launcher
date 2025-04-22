@@ -6,12 +6,11 @@ inputs:
   vmImage:
     required: true
     type: string
-  packageName:
-    required: false
+  zipFileName:
+    required: true
     type: string
-    default: "package"
   artifactName:
-    required: false
+    required: true
     type: string
     default: "package"
 
@@ -21,12 +20,10 @@ runs:
     - name: Publish zip packages
       shell: pwsh
       run: |       
-        $destinationPath = "./publish/package/"
-        if (Test-Path $destinationPath) {
-             Remove-Item $destinationPath -Recurse -Force
-        }
+        $destinationPath = "./publish/${{ inputs.artifactName }}/"       
         New-Item -ItemType Directory -Force -Path $destinationPath
-        $destinationFile = "$destinationPath/${{ inputs.packageName }}.zip"
+        $zipFileName = "${{ inputs.zipFileName }}"
+        $destinationFile = "${destinationPath}/${zipFileName}.zip"
 
         $vmImage = "${{ inputs.vmImage }}"
         if($vmImage.StartsWith("windows")) {
@@ -41,7 +38,7 @@ runs:
         $hashstring | Set-Content ${destinationFile}.hash
         ls $destinationPath
 
-    - name: Upload v2 Package
+    - name: Upload Package
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.artifactName }}
