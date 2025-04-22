@@ -56,6 +56,12 @@ runs:
         name: package-v1-${{ inputs.project }}
         path: ./publish/package-v1-${{ inputs.project }}
 
+    # - name: Publish ${{ matrix.project }}
+    #   shell: pwsh
+    #   run: |
+    #       mv ./Directory.build.props ./Directory.Build.props
+    #       dotnet publish ./src/${{ matrix.project }}/${{ matrix.project }}.csproj -c ${{ needs.test.outputs.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net8.0 --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
+
     - name: Publish v2 zip packages
       shell: pwsh
       run: |
@@ -78,7 +84,7 @@ runs:
           exit 1
         }
 
-        dotnet publish $csprojFile --configuration Debug -f net8 --output ./publish/raw/package-v2-${{ inputs.project }} --no-build /p:DebugType=None /p:DebugSymbols=false
+        dotnet publish $csprojFile --configuration Debug -f net8 --output ./publish/raw/package-v2-${{ inputs.project }} /p:DebugType=None /p:DebugSymbols=false
         Compress-Archive -Path ./publish/raw/package-v2-${{ inputs.project }}/* -DestinationPath ./publish/package-v2-${{ inputs.project }}/$version.zip
 
         $hash = Get-FileHash ./publish/package-v2-${{ inputs.project }}/$version.zip -Algorithm SHA256
