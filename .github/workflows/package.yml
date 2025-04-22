@@ -31,41 +31,41 @@ jobs:
             target: win-x64
             scriptFolder: 'windows'
 
-          - vmImage: windows-latest
-            target: win-x86
-            scriptFolder: 'windows'
+          # - vmImage: windows-latest
+          #   target: win-x86
+          #   scriptFolder: 'windows'
 
-          - vmImage: ubuntu-latest
-            target: linux-x64
-            scriptFolder: 'linux'
+          # - vmImage: ubuntu-latest
+          #   target: linux-x64
+          #   scriptFolder: 'linux'
 
-          - vmImage: ubuntu-latest
-            target: linux-arm
-            scriptFolder: 'linux'
+          # - vmImage: ubuntu-latest
+          #   target: linux-arm
+          #   scriptFolder: 'linux'
 
-          - vmImage: ubuntu-latest
-            target: linux-arm64
-            scriptFolder: 'linux'
+          # - vmImage: ubuntu-latest
+          #   target: linux-arm64
+          #   scriptFolder: 'linux'
 
-          - vmImage: macos-latest
-            target: osx-x64
-            scriptFolder: 'macos'
+          # - vmImage: macos-latest
+          #   target: osx-x64
+          #   scriptFolder: 'macos'
    
     runs-on: ${{ matrix.vmImage }}
 
     steps:
       - uses: actions/checkout@v4  
        
-      # - name: Set build configuration
-      #   id: set-config
-      #   shell: bash
-      #   run: |
-      #    echo "GITHUB_REF=${GITHUB_REF}"
-      #    if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-      #     echo "config=Release" >> $GITHUB_OUTPUT
-      #    else
-      #     echo "config=Debug" >> $GITHUB_OUTPUT
-      #    fi
+      - name: Set build configuration
+        id: set-config
+        shell: bash
+        run: |
+         echo "GITHUB_REF=${GITHUB_REF}"
+         if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+          echo "config=Release" >> $GITHUB_OUTPUT
+         else
+          echo "config=Debug" >> $GITHUB_OUTPUT
+         fi
 
       # - uses: fiskaltrust/middleware/.github/actions/build@main
       #   with:
@@ -83,6 +83,31 @@ jobs:
       #     certificate: 'codesigning.pfx'
       #     password: '$(Code_Signing_Password)'
       #     path: src
+    
+      - name: Copy executables
+        shell: pwsh
+        run: |
+           $project1 = "fiskaltrust.Launcher"
+           $project2 = "fiskaltrust.LauncherUpdater"
+           New-Item -ItemType Directory -Force -Path ./publish/raw-${{ matrix.target }}
+           dotnet publish src/$project1/$project1.csproj --configuration  ${{ steps.set-config.outputs.config }} -f net8.0 --output ./publish/drop-${{ matrix.target }} -r ${{ matrix.target }} --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
+           dotnet publish src/$project2/$project2.csproj --configuration  ${{ steps.set-config.outputs.config }} -f net8.0 --output ./publish/drop-${{ matrix.target }} -r ${{ matrix.target }} --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
+           Move-Item -Path ./publish/matrix-${{ inputs.target }}/$project1* -Destination ./publish/raw-${{ matrix.target }}/
+        
+      - uses: ./.github/actions/version
+        id: set-version
+        with:
+          project: fiskaltrust.Launcher
+          path: src
+          vmImage : ${{ matrix.vmImage }}
+
+      - uses: ./.github/actions/zip
+        with:
+          path: ./publish/raw-${{ matrix.target }}/
+          vmImage : ${{ matrix.vmImage }}
+          packageName : "fiskaltrust.Launcher-${{ steps.set-version.outputs.version }}"
+          artifactName: "package-${{ matrix.target }}"
+
 
       - uses: ./.github/actions/package
         with:

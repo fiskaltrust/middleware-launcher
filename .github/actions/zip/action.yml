@@ -1,0 +1,48 @@
+name: 'zip'
+inputs:
+  path:
+    required: true
+    type: string
+  vmImage:
+    required: true
+    type: string
+  packageName:
+    required: false
+    type: string
+    default: "package"
+  artifactName:
+    required: false
+    type: string
+    default: "package"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Publish zip packages
+      shell: pwsh
+      run: |       
+        $destinationPath = "./publish/package/"
+        if (Test-Path $destinationPath) {
+             Remove-Item $destinationPath -Recurse -Force
+        }
+        New-Item -ItemType Directory -Force -Path $destinationPath
+        $destinationFile = "$destinationPath/${{ inputs.packageName }}.zip"
+
+        $vmImage = "${{ inputs.vmImage }}"
+        if($vmImage.StartsWith("windows")) {
+          Compress-Archive -Path ${{ inputs.path }}/* -DestinationPath $destinationFile
+        } else {
+          bash -c "cd ${{ inputs.path }} && zip -r $destinationFile ."
+        }
+
+        $hash = Get-FileHash $destinationFile -Algorithm SHA256
+        $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
+        $hashstring = [System.Convert]::ToBase64String($hashbytes)
+        $hashstring | Set-Content $destinationFile.hash
+        ls $destinationPath
+
+    - name: Upload v2 Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifactName }}
+        path: $destinationPath
