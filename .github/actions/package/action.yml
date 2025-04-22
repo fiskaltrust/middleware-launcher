@@ -62,7 +62,7 @@ runs:
         if($target.StartsWith("win")) {
           Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/fiskaltrust.Launcher-$version.zip
         } else {
-          bash -c "cd ./publish/raw-${{ inputs.target }} && zip -r ./publish/package-${{ inputs.target }}/fiskaltrust.Launcher-$version.zip ./"
+          bash -c "cd ./publish/raw-${{ inputs.target }} && zip -r ../package-${{ inputs.target }}/fiskaltrust.Launcher-$version.zip ."
         }
 
         $hash = Get-FileHash ./publish/package-${{ inputs.target }}/fiskaltrust.Launcher-$version.zip -Algorithm SHA256
