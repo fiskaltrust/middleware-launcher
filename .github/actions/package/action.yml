@@ -17,48 +17,6 @@ runs:
       run: dotnet tool install --global minver-cli --version 6.0.0
       shell: pwsh
 
-    - name: Publish v1 Nuget packages
-      shell: pwsh
-      run: |
-        $version = "v1.0.0"
-
-        $csprojFile = "${{ inputs.path }}/${{ inputs.project }}/${{ inputs.project }}.csproj"
-        $nuspecFile = "${{ inputs.path }}/${{ inputs.project }}/.nuspec"
-
-        [xml]$csprojContent = Get-Content -Path $csprojFile
-        foreach ($propertyGroup in $csprojContent.Project.PropertyGroup) {
-          if ($propertyGroup.MinVerTagPrefix) {
-            $version = minver --verbosity error -t $($propertyGroup.MinVerTagPrefix) -p ci
-            break
-          }
-        }
-
-        Write-Host "Version: $version"
-        if($version -eq "") {
-          Write-Error "Version not found"
-          exit 1
-        }
-
-        $args = ""
-        if(Test-Path $nuspecFile) {
-          $xml = New-Object XML
-          $xml.Load($nuspecFile)
-          $element =  $xml.SelectSingleNode("/package/metadata/version")
-          $element.InnerText = $version
-          $xml.Save($nuspecFile)
-
-          $args += "/p:NuspecFile=.nuspec"
-        }
-
-        dotnet pack "${{ inputs.path }}/${{ inputs.project }}/${{ inputs.project }}.csproj" --no-restore --configuration Release --output ./publish/package-v1-${{ inputs.project }} $args
-
-
-    - name: Upload v1 Package
-      uses: actions/upload-artifact@v4
-      with:
-        name: package-v1-${{ inputs.project }}
-        path: ./publish/package-v1-${{ inputs.project }}
-
     - name: Create Directories
       shell: pwsh
       run: |
@@ -92,11 +50,11 @@ runs:
           Write-Error "Version not found"
           exit 1
         }
-        $target-os = "${{ inputs.target }}"
+        $target = "${{ inputs.target }}"
         dotnet publish $csprojFile --configuration Debug -f net8.0 --output ./publish/drop-${{ inputs.target }} --no-build /p:DebugType=None /p:DebugSymbols=false
         Move-Item -Path ./publish/drop-${{ inputs.target }}/${{ inputs.project }}* -Destination ./publish/raw-${{ inputs.target }}/
         # Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/$version.zip
-        if($target-os.StartsWith("win")) {
+        if($target.StartsWith("win")) {
            Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/$version.zip
         } else {
            bash -c "cd ./publish/raw-${{ inputs.target }}/`nzip -r./publish/package-${{ inputs.target }}/fiskaltrust.Launcher-$version.zip ./"
