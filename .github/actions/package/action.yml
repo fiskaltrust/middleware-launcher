@@ -53,7 +53,7 @@ runs:
               exit 1
             }
                
-           dotnet publish $csprojFile --configuration Debug -f net8.0 --output ./publish/drop-${{ inputs.target }}  -r ${{ inputs.target }}  --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true #--no-build /p:DebugType=None /p:DebugSymbols=false
+           dotnet publish $csprojFile --configuration Debug -f net8.0 --output ./publish/drop-${{ inputs.target }} /p:DebugType=None /p:DebugSymbols=false #--self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true #--no-build /p:DebugType=None /p:DebugSymbols=false
            Move-Item -Path ./publish/drop-${{ inputs.target }}/$project* -Destination ./publish/raw-${{ inputs.target }}/
         }
        

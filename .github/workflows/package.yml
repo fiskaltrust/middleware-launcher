@@ -35,9 +35,9 @@ jobs:
             target: win-x86
             scriptFolder: 'windows'
 
-          # - vmImage: ubuntu-latest
-          #   target: linux-x64
-          #   scriptFolder: 'linux'
+          - vmImage: ubuntu-latest
+            target: linux-x64
+            scriptFolder: 'linux'
 
           # - vmImage: ubuntu-latest
           #   target: linux-arm
