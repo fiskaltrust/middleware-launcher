@@ -86,7 +86,7 @@ jobs:
       #     password: '$(Code_Signing_Password)'
       #     path: src
 
-      - uses: ./.github/actions/package@main
+      - uses: ./.github/actions/package
         with:
           project: fiskaltrust.Launcher
           path: src
