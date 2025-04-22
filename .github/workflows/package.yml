@@ -109,8 +109,8 @@ jobs:
           artifactName: "package-${{ matrix.target }}"
 
 
-      - uses: ./.github/actions/package
-        with:
-          project: fiskaltrust.Launcher,fiskaltrust.LauncherUpdater
-          path: src
-          target : ${{ matrix.target }}
+      # - uses: ./.github/actions/package
+      #   with:
+      #     project: fiskaltrust.Launcher,fiskaltrust.LauncherUpdater
+      #     path: src
+      #     target : ${{ matrix.target }}
