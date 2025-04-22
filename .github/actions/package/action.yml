@@ -60,12 +60,12 @@ runs:
 
         $target = "${{ inputs.target }}"
         if($target.StartsWith("win")) {
-          Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/$version.zip
+          Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/fiskaltrust.Launcher-$version.zip
         } else {
-          bash -c "cd ./publish/raw-${{ inputs.target }}/`nzip -r ./publish/package-${{ inputs.target }}/$version.zip ./"
+          bash -c "cd ./publish/raw-${{ inputs.target }}/`nzip -r ./publish/package-${{ inputs.target }}/fiskaltrust.Launcher-$version.zip ./"
         }
 
-        $hash = Get-FileHash ./publish/package-${{ inputs.target }}/$version.zip -Algorithm SHA256
+        $hash = Get-FileHash ./publish/package-${{ inputs.target }}/fiskaltrust.Launcher-$version.zip -Algorithm SHA256
         $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
         $hashstring = [System.Convert]::ToBase64String($hashbytes)
         $hashstring | Set-Content ./publish/package-${{ inputs.target }}/$version.zip.hash
