@@ -39,38 +39,38 @@ jobs:
             target: linux-x64
             scriptFolder: 'linux'
 
-          # - vmImage: ubuntu-latest
-          #   target: linux-arm
-          #   scriptFolder: 'linux'
+          - vmImage: ubuntu-latest
+            target: linux-arm
+            scriptFolder: 'linux'
 
-          # - vmImage: ubuntu-latest
-          #   target: linux-arm64
-          #   scriptFolder: 'linux'
+          - vmImage: ubuntu-latest
+            target: linux-arm64
+            scriptFolder: 'linux'
 
-          # - vmImage: macos-latest
-          #   target: osx-x64
-          #   scriptFolder: 'macos'
+          - vmImage: macos-latest
+            target: osx-x64
+            scriptFolder: 'macos'
    
     runs-on: ${{ matrix.vmImage }}
 
     steps:
       - uses: actions/checkout@v4  
        
-      - name: Set build configuration
-        id: set-config
-        shell: bash
-        run: |
-         echo "GITHUB_REF=${GITHUB_REF}"
-         if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-          echo "config=Release" >> $GITHUB_OUTPUT
-         else
-          echo "config=Debug" >> $GITHUB_OUTPUT
-         fi
+      # - name: Set build configuration
+      #   id: set-config
+      #   shell: bash
+      #   run: |
+      #    echo "GITHUB_REF=${GITHUB_REF}"
+      #    if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+      #     echo "config=Release" >> $GITHUB_OUTPUT
+      #    else
+      #     echo "config=Debug" >> $GITHUB_OUTPUT
+      #    fi
 
-      - uses: fiskaltrust/middleware/.github/actions/build@main
-        with:
-          pattern: fiskaltrust.Launcher.sln
-          configuration: ${{ steps.set-config.outputs.config }}
+      # - uses: fiskaltrust/middleware/.github/actions/build@main
+      #   with:
+      #     pattern: fiskaltrust.Launcher.sln
+      #     configuration: ${{ steps.set-config.outputs.config }}
 
       # - name: Publish ${{ matrix.project }}
       #   shell: pwsh
