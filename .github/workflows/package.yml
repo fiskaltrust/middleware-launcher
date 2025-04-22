@@ -26,8 +26,6 @@ jobs:
     name: package
     strategy:
       matrix:
-        project: [fiskaltrust.Launcher]
-        # project: [fiskaltrust.Launcher, fiskaltrust.LauncherUpdater]
         include:
           - vmImage: windows-latest
             target: win-x64
@@ -90,3 +88,4 @@ jobs:
         with:
           project: fiskaltrust.Launcher
           path: src
+          target : ${{ matrix.target }}
