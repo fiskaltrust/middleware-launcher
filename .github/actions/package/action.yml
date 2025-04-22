@@ -1,4 +1,4 @@
-name: 'Build'
+name: 'package'
 inputs:
   path:
     required: true
@@ -61,7 +61,7 @@ runs:
       run: |
         New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/
         New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/package-$(target)/
-        # New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/scripts-$(target)/
+        New-Item -ItemType Directory -Path $(Build.ArtifactStagingDirectory)/scripts-$(target)/
       
     # - name: Publish ${{ matrix.project }}
     #   shell: pwsh
@@ -74,7 +74,7 @@ runs:
       run: |
         $version = "v1.0.0"
 
-        # New-Item -ItemType Directory -Force -Path ./publish/package-v2-${{ inputs.project }}
+        New-Item -ItemType Directory -Force -Path ./publish/package-v2-${{ inputs.project }}
         $csprojFile = "${{ inputs.path }}/${{ inputs.project }}/${{ inputs.project }}.csproj"
 
         [xml]$csprojContent = Get-Content -Path $csprojFile
@@ -92,7 +92,7 @@ runs:
         }
 
         dotnet publish $csprojFile --configuration Debug -f net8.0 --output $(Build.ArtifactStagingDirectory)/drop-$(target) --no-build /p:DebugType=None /p:DebugSymbols=false
-        Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
+        Move-Item -Path $(Build.ArtifactStagingDirectory)/drop-$(target)/${{ inputs.project }}* -Destination $(Build.ArtifactStagingDirectory)/raw-$(target)/
         Compress-Archive -Path $(Build.ArtifactStagingDirectory)/raw-$(target)/* -DestinationPath $(Build.ArtifactStagingDirectory)/package-$(target)/$version.zip
 
         $hash = Get-FileHash $(Build.ArtifactStagingDirectory)/package-$(target)/$version.zip -Algorithm SHA256
