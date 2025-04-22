@@ -62,21 +62,21 @@ runs:
     - name: Create Directories
       shell: pwsh
       run: |
-         New-Item -ItemType Directory -Force -Path ./publish/raw-$(inputs.target)
-         New-Item -ItemType Directory -Force -Path ./publish/package-$(inputs.target)
+         New-Item -ItemType Directory -Force -Path ./publish/raw-${{ inputs.target }}
+         New-Item -ItemType Directory -Force -Path ./publish/package-${{ inputs.target }}
       
     # - name: Publish ${{ matrix.project }}
     #   shell: pwsh
     #   run: |
     #       mv ./Directory.build.props ./Directory.Build.props
-    #       dotnet publish ./src/${{ matrix.project }}/${{ matrix.project }}.csproj -c ${{ needs.test.outputs.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(inputs.target) -r $(inputs.target) -f net8.0 --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
+    #       dotnet publish ./src/${{ matrix.project }}/${{ matrix.project }}.csproj -c ${{ needs.test.outputs.config }} -o $(Build.ArtifactStagingDirectory)/drop-${{ inputs.target }} -r ${{ inputs.target }} -f net8.0 --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
 
     - name: Publish v2 zip packages
       shell: pwsh
       run: |
         $version = "v1.0.0"
 
-        New-Item -ItemType Directory -Force -Path ./publish/drop-$(inputs.target)
+        New-Item -ItemType Directory -Force -Path ./publish/drop-${{ inputs.target }}
         $csprojFile = "${{ inputs.path }}/${{ inputs.project }}/${{ inputs.project }}.csproj"
 
         [xml]$csprojContent = Get-Content -Path $csprojFile
@@ -93,18 +93,18 @@ runs:
           exit 1
         }
 
-        dotnet publish $csprojFile --configuration Debug -f net8.0 --output ./publish/drop-$(inputs.target) --no-build /p:DebugType=None /p:DebugSymbols=false
-        Move-Item -Path ./publish/drop-$(inputs.target)/${{ inputs.project }}* -Destination ./publish/raw-$(inputs.target)/
-        Compress-Archive -Path ./publish/raw-$(inputs.target)/* -DestinationPath ./publish/package-$(inputs.target)/$version.zip
+        dotnet publish $csprojFile --configuration Debug -f net8.0 --output ./publish/drop-${{ inputs.target }} --no-build /p:DebugType=None /p:DebugSymbols=false
+        Move-Item -Path ./publish/drop-${{ inputs.target }}/${{ inputs.project }}* -Destination ./publish/raw-${{ inputs.target }}/
+        Compress-Archive -Path ./publish/raw-${{ inputs.target }}/* -DestinationPath ./publish/package-${{ inputs.target }}/$version.zip
 
-        $hash = Get-FileHash ./publish/package-$(inputs.target)/$version.zip -Algorithm SHA256
+        $hash = Get-FileHash ./publish/package-${{ inputs.target }}/$version.zip -Algorithm SHA256
         $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
         $hashstring = [System.Convert]::ToBase64String($hashbytes)
-        $hashstring | Set-Content ./publish/package-$(inputs.target)/$version.zip.hash
-        ls ./publish/package-$(inputs.target)
+        $hashstring | Set-Content ./publish/package-${{ inputs.target }}/$version.zip.hash
+        ls ./publish/package-${{ inputs.target }}
 
     - name: Upload v2 Package
       uses: actions/upload-artifact@v4
       with:
         name: package-v2-${{ inputs.project }}
-        path: ./publish/package-$(inputs.target)
+        path: ./publish/package-${{ inputs.target }}
