@@ -86,6 +86,6 @@ jobs:
 
       - uses: ./.github/actions/package
         with:
-          project: fiskaltrust.Launcher,fiskaltrust.LauncherUpdater
+          project: fiskaltrust.Launcher #,fiskaltrust.LauncherUpdater
           path: src
           target : ${{ matrix.target }}

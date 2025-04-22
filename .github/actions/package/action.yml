@@ -29,7 +29,7 @@ runs:
     #       mv ./Directory.build.props ./Directory.Build.props
     #       dotnet publish ./src/${{ matrix.project }}/${{ matrix.project }}.csproj -c ${{ needs.test.outputs.config }} -o $(Build.ArtifactStagingDirectory)/drop-${{ inputs.target }} -r ${{ inputs.target }} -f net8.0 --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
 
-    - name: Publish v2 zip packages
+    - name: Publish zip packages
       shell: pwsh
       run: |
         $projects = "${{ inputs.project }}".Split(',')
