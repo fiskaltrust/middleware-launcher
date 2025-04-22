@@ -117,4 +117,4 @@ jobs:
       #   with:
       #     project: fiskaltrust.Launcher,fiskaltrust.LauncherUpdater
       #     path: src
-      #     target : ${{ matrix.target }}
+      #     target : ${{ matrix.target }} 
