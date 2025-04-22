@@ -91,7 +91,7 @@ jobs:
            $project1 = "fiskaltrust.Launcher"
            $project2 = "fiskaltrust.LauncherUpdater"
            $path = "./publish/raw-${{ matrix.target }}/"
-           $target = ${{ matrix.target }}
+           $target = "${{ matrix.target }}"
            echo "path=$path" >> $env:GITHUB_OUTPUT
            New-Item -ItemType Directory -Force -Path ./publish/raw-${{ matrix.target }}
            dotnet publish src/$project1/$project1.csproj --configuration  ${{ steps.set-config.outputs.config }} -f net8.0 --output ./publish/drop-${{ matrix.target }} -r ${{ matrix.target }} --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
