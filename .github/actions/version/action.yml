@@ -38,7 +38,7 @@ runs:
             Write-Error "Version not found"
             exit 1
         }
-        echo "version=$version" >> $env:GITHUB_OUTPUT   
+        echo "version=${version}" >> $env:GITHUB_OUTPUT   
        
 
        
