@@ -21,7 +21,8 @@ runs:
       shell: pwsh
       id: create-zip
       run: |       
-        $destinationDir = "./publish/${{ inputs.artifactName }}/"       
+        $destinationDir = "./publish/${{ inputs.artifactName }}/" 
+        $partialdestinationDir = "${{ inputs.artifactName }}/" 
         New-Item -ItemType Directory -Force -Path $destinationDir
         $zipFileName = "${{ inputs.zipFileName }}"
         $destinationFile = Join-Path $destinationDir "$zipFileName.zip"
@@ -33,7 +34,8 @@ runs:
          $destinationFileUnix = $destinationFile -replace '\\', '/'
          $sourcePathUnix = "${{ inputs.path }}" -replace '\\', '/'
          #bash -c "mkdir -p '$destinationDir' && cd '$sourcePathUnix' && zip -r '$destinationFileUnix' ."
-         bash -c "cd '$sourcePathUnix' && zip -r $destinationFile ."
+         bash -c "cd '$sourcePathUnix' && zip -r $zipFileName.zip ."
+         Move-Item -Path (Join-Path $sourcePathUnix $zipFileName .zip) -Destination $destinationDir
          #bash -c "mkdir -p '${escapedZipDir}' && cd '${{ inputs.path }}' && zip -r '${escapedZipPath}' ."
         }
 
