@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <PublishReadyToRun>true</PublishReadyToRun>
     <PublishSingleFile>true</PublishSingleFile>
+	<MinVerTagPrefix>v</MinVerTagPrefix>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 

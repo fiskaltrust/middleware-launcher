@@ -3,9 +3,6 @@ inputs:
   path:
     required: true
     type: string
-  vmImage:
-    required: true
-    type: string
   zipFileName:
     required: true
     type: string
@@ -24,8 +21,7 @@ runs:
         $artifactName = "${{ inputs.artifactName }}"
         $sourcePath = "${{ inputs.path }}"
         $zipFileName = "${{ inputs.zipFileName }}"
-        $vmImage = "${{ inputs.vmImage }}" 
-        
+                
         $destinationPath = "./publish/$artifactName/" 
         New-Item -ItemType Directory -Force -Path $destinationPath
         $destinationFile = Join-Path $destinationPath "$zipFileName.zip"
