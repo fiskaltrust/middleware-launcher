@@ -32,8 +32,8 @@ runs:
         } else {
          $destinationFileUnix = $destinationFile -replace '\\', '/'
          $sourcePathUnix = "${{ inputs.path }}" -replace '\\', '/'
-         bash -c "mkdir -p '$destinationDir' && cd '$sourcePathUnix' && zip -r '$destinationFileUnix' ."
-         #bash -c "cd '${{ inputs.path }}' && zip -r $temp/${zipFileName}.zip ."
+         #bash -c "mkdir -p '$destinationDir' && cd '$sourcePathUnix' && zip -r '$destinationFileUnix' ."
+         bash -c "zip -r '$destinationFileUnix' $sourcePathUnix ."
          #bash -c "mkdir -p '${escapedZipDir}' && cd '${{ inputs.path }}' && zip -r '${escapedZipPath}' ."
         }
 
