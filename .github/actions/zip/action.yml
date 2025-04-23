@@ -21,10 +21,10 @@ runs:
       shell: pwsh
       id: create-zip
       run: |       
-        $destinationPath = "./publish/${{ inputs.artifactName }}/"       
-        New-Item -ItemType Directory -Force -Path $destinationPath
+        $destinationDir = "./publish/${{ inputs.artifactName }}/"       
+        New-Item -ItemType Directory -Force -Path $destinationDir
         $zipFileName = "${{ inputs.zipFileName }}"
-        $destinationFile = Join-Path $destinationPath "$zipFileName.zip"
+        $destinationFile = Join-Path $destinationDir "$zipFileName.zip"
 
         $vmImage = "${{ inputs.vmImage }}"
         if($vmImage.StartsWith("windows")) {
@@ -41,11 +41,11 @@ runs:
         $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
         $hashstring = [System.Convert]::ToBase64String($hashbytes)
         $hashstring | Set-Content "$destinationFile.hash"
-        echo "destinationPath=$destinationPath" >> $env:GITHUB_OUTPUT   
-        ls $destinationPath
+        echo "destinationDir=$destinationDir" >> $env:GITHUB_OUTPUT   
+        ls $destinationDir
 
     - name: Upload Package
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.artifactName }}
-        path: ${{ steps.create-zip.outputs.destinationPath }}
+        path: ${{ steps.create-zip.outputs.destinationDir }}
