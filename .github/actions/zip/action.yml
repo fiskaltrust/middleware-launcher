@@ -22,7 +22,6 @@ runs:
       id: create-zip
       run: |       
         $destinationDir = "./publish/${{ inputs.artifactName }}/" 
-        $partialdestinationDir = "${{ inputs.artifactName }}/" 
         New-Item -ItemType Directory -Force -Path $destinationDir
         $zipFileName = "${{ inputs.zipFileName }}"
         $destinationFile = Join-Path $destinationDir "$zipFileName.zip"
@@ -33,7 +32,7 @@ runs:
         } else {
          $sourcePathUnix = "${{ inputs.path }}" -replace '\\', '/'
          bash -c "cd '$sourcePathUnix' && zip -r $zipFileName.zip."
-         bash -c "mv '$sourcePathUnix/$zipFileName.zip' '$destinationDir'"         
+         bash -c "mv '$sourcePathUnix/${zipFileName}.zip' '$destinationDir'"         
         }
 
         $hash = Get-FileHash $destinationFile -Algorithm SHA256
