@@ -35,7 +35,7 @@ runs:
          $sourcePathUnix = "${{ inputs.path }}" -replace '\\', '/'
          #bash -c "mkdir -p '$destinationDir' && cd '$sourcePathUnix' && zip -r '$destinationFileUnix' ."
          bash -c "cd '$sourcePathUnix' && zip -r $zipFileName.zip ."
-         Move-Item -Path (Join-Path $sourcePathUnix $zipFileName .zip) -Destination $destinationDir
+         Move-Item -Path (Join-Path $sourcePathUnix ${zipFileName}.zip) -Destination $destinationDir
          #bash -c "mkdir -p '${escapedZipDir}' && cd '${{ inputs.path }}' && zip -r '${escapedZipPath}' ."
         }
 
