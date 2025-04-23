@@ -30,7 +30,7 @@ runs:
         New-Item -ItemType Directory -Force -Path $destinationPath
         $destinationFile = Join-Path $destinationPath "$zipFileName.zip"
 
-        if($vmImage.StartsWith("windows")) {
+        if($IsWindows) {
           Compress-Archive -Path (Join-Path ${{ inputs.path }} *) -DestinationPath $destinationFile
         } 
         else 
