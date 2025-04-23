@@ -27,15 +27,15 @@ runs:
 
         $vmImage = "${{ inputs.vmImage }}"
         if($vmImage.StartsWith("windows")) {
-          Compress-Archive -Path ${{ inputs.path }}* -DestinationPath $destinationFile
+          Compress-Archive -Path ${{ inputs.path }}* -DestinationPath ./publish/${{ inputs.artifactName }}/${{ inputs.zipFileName }}.zip
         } else {
           bash -c "cd ${{ inputs.path }} && zip -r $destinationFile ."
         }
 
-        $hash = Get-FileHash $destinationFile -Algorithm SHA256
+        $hash = Get-FileHash ./publish/${{ inputs.artifactName }}/${{ inputs.zipFileName }}.zip -Algorithm SHA256
         $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
         $hashstring = [System.Convert]::ToBase64String($hashbytes)
-        $hashstring | Set-Content ${destinationFile}.hash
+        $hashstring | Set-Content./publish/${{ inputs.artifactName }}/${{ inputs.zipFileName }}.zip.hash
         ls $destinationPath
 
     - name: Upload Package
