@@ -106,11 +106,17 @@ jobs:
           project: fiskaltrust.Launcher
           path: src          
 
-      - uses: ./.github/actions/zip
+      - uses: ./.github/actions/zip-hash
         with:
           path: ${{ steps.copy-executables.outputs.path }}
           zipFileName : "fiskaltrust.Launcher-${{ steps.set-version.outputs.version }}"
           artifactName: "package-${{ matrix.target }}"
+      
+      - uses: ./.github/actions/zip
+        with:
+          path: ./scripts/${{ matrix.scriptFolder }}/*
+          zipFileName : "fiskaltrust.Launcher-${{ steps.set-version.outputs.version }}"
+          artifactName: "scripts-${{ matrix.target }}"
 
 
       # - uses: ./.github/actions/package

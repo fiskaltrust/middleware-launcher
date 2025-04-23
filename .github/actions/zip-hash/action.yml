@@ -1,4 +1,4 @@
-name: 'zip'
+name: 'zip-hash'
 inputs:
   path:
     required: true
@@ -34,6 +34,11 @@ runs:
          bash -c "cd '$sourcePath' && zip -r $zipFileName.zip ."
          bash -c "mv '$sourcePath/${zipFileName}.zip' '$destinationPath'"                
         }
+
+        $hash = Get-FileHash $destinationFile -Algorithm SHA256
+        $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
+        $hashstring = [System.Convert]::ToBase64String($hashbytes)
+        $hashstring | Set-Content "$destinationFile.hash"
 
         echo "destinationPath=$destinationPath" >> $env:GITHUB_OUTPUT   
         ls $destinationPath
