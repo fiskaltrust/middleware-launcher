@@ -23,19 +23,19 @@ runs:
         $destinationPath = "./publish/${{ inputs.artifactName }}/"       
         New-Item -ItemType Directory -Force -Path $destinationPath
         $zipFileName = "${{ inputs.zipFileName }}"
-        $destinationFile = "${destinationPath}/${zipFileName}.zip"
+        $destinationFile = Join-Path $destinationPath "$zipFileName.zip"
 
         $vmImage = "${{ inputs.vmImage }}"
         if($vmImage.StartsWith("windows")) {
-          Compress-Archive -Path ${{ inputs.path }}* -DestinationPath ./publish/${{ inputs.artifactName }}/${{ inputs.zipFileName }}.zip
+          Compress-Archive -Path ${{ inputs.path }}* -DestinationPath $destinationFile
         } else {
           bash -c "cd ${{ inputs.path }} && zip -r $destinationFile ."
         }
 
-        $hash = Get-FileHash ./publish/${{ inputs.artifactName }}/${{ inputs.zipFileName }}.zip -Algorithm SHA256
+        $hash = Get-FileHash $destinationFile -Algorithm SHA256
         $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
         $hashstring = [System.Convert]::ToBase64String($hashbytes)
-        $hashstring | Set-Content ./publish/${{ inputs.artifactName }}/${{ inputs.zipFileName }}.zip.hash
+        $hashstring | Set-Content ${destinationFile}.hash
         ls $destinationPath
 
     - name: Upload Package
