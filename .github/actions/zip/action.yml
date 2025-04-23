@@ -31,8 +31,8 @@ runs:
           Compress-Archive -Path (Join-Path ${{ inputs.path }} *) -DestinationPath $destinationFile
         } else {
          $sourcePathUnix = "${{ inputs.path }}" -replace '\\', '/'
-         bash -c "cd '$sourcePathUnix' && zip -r $zipFileName.zip."
-         bash -c "mv '$sourcePathUnix/${zipFileName}.zip' '$destinationDir'"         
+         bash -c "cd '$sourcePathUnix' && zip -r $zipFileName.zip ."
+         bash -c "mv '$sourcePathUnix/${zipFileName}.zip' '$destinationDir' ."         
         }
 
         $hash = Get-FileHash $destinationFile -Algorithm SHA256
