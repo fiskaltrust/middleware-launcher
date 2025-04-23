@@ -33,7 +33,7 @@ runs:
          $destinationFileUnix = $destinationFile -replace '\\', '/'
          $sourcePathUnix = "${{ inputs.path }}" -replace '\\', '/'
          #bash -c "mkdir -p '$destinationDir' && cd '$sourcePathUnix' && zip -r '$destinationFileUnix' ."
-         bash -c "zip -r '$destinationFileUnix' $sourcePathUnix ."
+         bash -c "cd '$sourcePathUnix' && zip -r $destinationFile ."
          #bash -c "mkdir -p '${escapedZipDir}' && cd '${{ inputs.path }}' && zip -r '${escapedZipPath}' ."
         }
 
