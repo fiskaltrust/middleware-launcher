@@ -96,7 +96,8 @@ jobs:
            New-Item -ItemType Directory -Force -Path ./publish/raw-${{ matrix.target }}
            dotnet publish src/$project1/$project1.csproj --configuration  ${{ steps.set-config.outputs.config }} -f net8.0 --output ./publish/drop-${{ matrix.target }} -r ${{ matrix.target }} --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
            dotnet publish src/$project2/$project2.csproj --configuration  ${{ steps.set-config.outputs.config }} -f net8.0 --output ./publish/drop-${{ matrix.target }} -r ${{ matrix.target }} --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
-           Move-Item -Path ./publish/drop-$target/${project1}* -Destination $path
+           #Move-Item -Path ./publish/drop-$target/${project1}* -Destination $path
+           Get-ChildItem -Path "./publish/drop-$target/${project1}*" -File | Where-Object { $_.Extension -ne ".json" } | Move-Item -Destination $path
           
       - uses: ./.github/actions/version
         id: set-version
