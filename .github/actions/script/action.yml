@@ -1,0 +1,59 @@
+name: 'script'
+inputs:
+  path:
+    required: true
+    type: string
+  vmImage:
+    required: true
+    type: string
+  packageName:
+    required: false
+    type: string
+    default: "package"
+  artifactName:
+    required: false
+    type: string
+    default: "package"
+
+runs:
+  using: "composite"
+  steps:    
+    - name: Copy README.md to scripts artifacts
+      shell: pwsh
+      run: |
+        Copy-Item -Path ./README.md -Destination "./scripts-${{ inputs.target }}/README.md"
+
+    - name: Update README.md
+      shell: pwsh
+      run: |
+        $readmePath = "./scripts-${{ inputs.target }}/README.md"
+        $readmeContent = Get-Content $readmePath -Raw
+        $updatedContent = $readmeContent -replace '(?s)<!-- BEGIN (CONTRIBUTING|LICENSE) -->.*?<!-- END (CONTRIBUTING|LICENSE) -->\s*', ''
+        $updatedContent | Set-Content $readmePath
+
+    - name: Package scripts with README.md
+      shell: pwsh
+      run: |
+        $version = (Select-Xml -Path ./Directory.Build.props -XPath 'Project/PropertyGroup/Version').Node.InnerText
+        $artifactDir = "./scripts-${{ inputs.target }}"
+        $scriptTargetPath = "$artifactDir/fiskaltrust.Launcher.Scripts-$version.zip"
+
+        Copy-Item -Path "./scripts/${{ inputs.scriptFolder }}/*" -Destination $artifactDir -Recurse -Force
+
+        if ("${{ inputs.vmImage }}" -eq "windows-latest") {
+          Compress-Archive -Path "$artifactDir/*" -DestinationPath $scriptTargetPath
+        } else {
+          bash -c "chmod +x $artifactDir/*"
+          bash -c "cd $artifactDir && zip -r fiskaltrust.Launcher.Scripts-$version.zip ./"
+        }
+
+    - name: Clean up scripts directory
+      shell: pwsh
+      run: |
+        Get-ChildItem -Path "./scripts-${{ inputs.target }}/*" -Exclude *.zip | Remove-Item -Recurse -Force
+
+    - name: Upload v2 Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifactName }}
+        path: $destinationPath
