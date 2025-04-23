@@ -30,7 +30,7 @@ runs:
           Compress-Archive -Path (Join-Path ${{ inputs.path }} *) -DestinationPath $destinationFile
         } else {
           $escapedZipPath = $destinationFile -replace '\\', '/'
-          bash -c "cd '${{ inputs.path }}' && zip -r '$escapedZipPath'' ."
+          bash -c "cd '${{ inputs.path }}' && zip -r '$escapedZipPath' ."
         }
 
         $hash = Get-FileHash $destinationFile -Algorithm SHA256
