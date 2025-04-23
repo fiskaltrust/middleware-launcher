@@ -27,9 +27,10 @@ runs:
 
         $vmImage = "${{ inputs.vmImage }}"
         if($vmImage.StartsWith("windows")) {
-          Compress-Archive -Path ${{ inputs.path }}* -DestinationPath $destinationFile
+          Compress-Archive -Path (Join-Path ${{ inputs.path }} *) -DestinationPath $destinationFile
         } else {
-          bash -c "cd ${{ inputs.path }} && zip -r $destinationFile ."
+          $escapedZipPath = $destinationFile -replace '\\', '/'
+          bash -c "cd '${{ inputs.path }}' && zip -r '$escapedZipPath'' ."
         }
 
         $hash = Get-FileHash $destinationFile -Algorithm SHA256
