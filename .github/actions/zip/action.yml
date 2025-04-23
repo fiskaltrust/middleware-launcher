@@ -17,8 +17,9 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Publish zip packages
+    - name: create zip packages
       shell: pwsh
+      id: create-zip
       run: |       
         $destinationPath = "./publish/${{ inputs.artifactName }}/"       
         New-Item -ItemType Directory -Force -Path $destinationPath
@@ -29,8 +30,10 @@ runs:
         if($vmImage.StartsWith("windows")) {
           Compress-Archive -Path (Join-Path ${{ inputs.path }} *) -DestinationPath $destinationFile
         } else {
-         $escapedZipPath = $destinationFile -replace '\\', '/'
+         $escapedZipPath = $destinationPath -replace '\\', '/'
+         $temp = "${{ inputs.artifactName }}"
          $escapedZipDir = [System.IO.Path]::GetDirectoryName($escapedZipPath)
+         #bash -c "mkdir -p '${escapedZipDir}' && cd '${{ inputs.path }}' && zip -r ../$temp/ ."
          bash -c "mkdir -p '${escapedZipDir}' && cd '${{ inputs.path }}' && zip -r '${escapedZipPath}' ."
         }
 
@@ -38,10 +41,11 @@ runs:
         $hashbytes = $hash.Hash -split '([A-F0-9]{2})' | foreach-object { if ($_) {[System.Convert]::ToByte($_,16)}}
         $hashstring = [System.Convert]::ToBase64String($hashbytes)
         $hashstring | Set-Content "$destinationFile.hash"
+        echo "destinationPath=${$destinationPath}" >> $env:GITHUB_OUTPUT   
         ls $destinationPath
 
     - name: Upload Package
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.artifactName }}
-        path: ./publish/${{ inputs.artifactName }}
+        path: ${{ steps.create-zip.outputs.destinationPath }}
