@@ -30,13 +30,9 @@ runs:
         if($vmImage.StartsWith("windows")) {
           Compress-Archive -Path (Join-Path ${{ inputs.path }} *) -DestinationPath $destinationFile
         } else {
-         $destinationFileUnix = $destinationFile -replace '\\', '/'
          $sourcePathUnix = "${{ inputs.path }}" -replace '\\', '/'
-         #bash -c "mkdir -p '$destinationDir' && cd '$sourcePathUnix' && zip -r '$destinationFileUnix' ."
          bash -c "cd '$sourcePathUnix' && zip -r $zipFileName.zip ."
-         bash -c "mv '$sourcePathUnix/${zipFileName}.zip' '$destinationDir'"
-         #Move-Item -Path (Join-Path $sourcePathUnix ${zipFileName}.zip) -Destination $destinationDir
-         #bash -c "mkdir -p '${escapedZipDir}' && cd '${{ inputs.path }}' && zip -r '${escapedZipPath}' ."
+         bash -c "mv '$sourcePathUnix/${zipFileName}.zip' '$destinationDir'"    
              
         }
 
