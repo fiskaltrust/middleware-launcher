@@ -47,8 +47,8 @@ runs:
         echo "destinationPath=$destinationPath" >> $env:GITHUB_OUTPUT   
         ls $destinationPath
 
-    - name: Upload Package
+    - name: Upload zip package
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.artifactName }}
-        path: ${{ steps.create-zip.outputs.destinatioPath }}
+        path: ${{ steps.create-zip.outputs.destinationPath }}
