@@ -33,7 +33,7 @@ runs:
          $escapedZipPath = $destinationPath -replace '\\', '/'
          $temp = "${{ inputs.artifactName }}"
          $escapedZipDir = [System.IO.Path]::GetDirectoryName($escapedZipPath)
-         bash -c "cd '${{ inputs.path }}' && zip -r ../$temp/$zipFileName ."
+         bash -c "cd '${{ inputs.path }}' && zip -r ../$temp/${zipFileName}.zip ."
          #bash -c "mkdir -p '${escapedZipDir}' && cd '${{ inputs.path }}' && zip -r '${escapedZipPath}' ."
         }
 
