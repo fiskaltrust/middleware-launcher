@@ -30,9 +30,9 @@ runs:
         if($vmImage.StartsWith("windows")) {
           Compress-Archive -Path (Join-Path ${{ inputs.path }} *) -DestinationPath $destinationFile
         } else {
-         $sourcePathUnix = "${{ inputs.path }}" -replace '\\', '/'
-         bash -c "cd '$sourcePathUnix' && zip -r $zipFileName.zip ."
-         bash -c "mv '$sourcePathUnix/${zipFileName}.zip' '$destinationDir' ."         
+         $sourcePath = "${{ inputs.path }}" -replace '\\', '/'
+         bash -c "cd '$sourcePath' && zip -r ${zipFileName}.zip ."
+         bash -c "mv '$sourcePath/${zipFileName}.zip' '$destinationDir' ."         
         }
 
         $hash = Get-FileHash $destinationFile -Algorithm SHA256
