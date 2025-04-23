@@ -114,7 +114,7 @@ jobs:
       
       - uses: ./.github/actions/zip
         with:
-          path: ./scripts/${{ matrix.scriptFolder }}/*
+          path: ./scripts/${{ matrix.scriptFolder }}/
           zipFileName : "fiskaltrust.Launcher-${{ steps.set-version.outputs.version }}"
           artifactName: "scripts-${{ matrix.target }}"
 
