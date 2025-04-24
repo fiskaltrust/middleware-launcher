@@ -66,24 +66,7 @@ jobs:
          else
           echo "config=Debug" >> $GITHUB_OUTPUT
          fi
-
-      # - uses: fiskaltrust/middleware/.github/actions/build@main
-      #   with:
-      #     pattern: fiskaltrust.Launcher.sln
-      #     configuration: ${{ steps.set-config.outputs.config }}
-
-      # - name: Publish ${{ matrix.project }}
-      #   shell: pwsh
-      #   run: |
-      #     mv ./Directory.build.props ./Directory.Build.props
-      #     dotnet publish ./src/${{ matrix.project }}/${{ matrix.project }}.csproj -c ${{ needs.test.outputs.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net8.0 --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
-      
-      # - uses: fiskaltrust/middleware/.github/actions/sign@main
-      #   with:
-      #     certificate: 'codesigning.pfx'
-      #     password: '$(Code_Signing_Password)'
-      #     path: src
-    
+         
       - name: Copy executables
         shell: pwsh
         id: copy-executables
@@ -100,6 +83,12 @@ jobs:
            dotnet publish src/$project2/$project2.csproj --configuration  ${{ steps.set-config.outputs.config }} -f net8.0 --output ./publish/drop-${{ matrix.target }} -r ${{ matrix.target }} --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
            Get-ChildItem -Path "./publish/drop-$target/${project1}*" -File | Where-Object { $_.Extension -ne ".json" } | Move-Item -Destination $path
           
+      - uses: ./.github/actions/sign
+        with:
+          certificate: 'codesigning.pfx'
+          password: '$(Code_Signing_Password)'
+          path: ${{ steps.copy-executables.outputs.path }}
+
       - uses: ./.github/actions/version
         id: set-version
         with:
