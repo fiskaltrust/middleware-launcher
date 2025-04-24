@@ -113,12 +113,10 @@ jobs:
       - name: Copy README.md to scripts artifacts
         shell: pwsh
         run: |
-          Copy-Item -Path ./README.md -Destination "./scripts/${{ matrix.scriptFolder }}/README.md"
           $readmePath = "./scripts/${{ matrix.scriptFolder }}/README.md"
-          $readmeContent = Get-Content $readmePath -Raw
-          $updatedContent = $readmeContent -replace '(?s)<!-- BEGIN (CONTRIBUTING|LICENSE) -->.*?<!-- END (CONTRIBUTING|LICENSE) -->\s*', ''
-          $updatedContent | Set-Content $readmePath
-           
+          Copy-Item -Path ./README.md -Destination $readmePath
+          (Get-Content $readmePath -Raw) -replace '(?s)<!-- BEGIN (CONTRIBUTING|LICENSE) -->.*?<!-- END (CONTRIBUTING|LICENSE) -->\s*', '' | Set-Content $readmePath
+                     
       - uses: ./.github/actions/zip
         with:
           path: ./scripts/${{ matrix.scriptFolder }}/
