@@ -86,11 +86,17 @@ jobs:
            }
            Get-ChildItem -Path "$dropPath/${projects[0]}*" -File | Where-Object { $_.Extension -ne ".json" } | Move-Item -Destination $path
           
-      - uses: ./.github/actions/sign
+      # - uses: ./.github/actions/sign
+      #   with:
+      #     certificate: 'codesigning.pfx'
+      #     password: '$(Code_Signing_Password)'
+      #     path: ${{ steps.copy-executables.outputs.path }}
+
+      - name: Upload drop package
+        uses: actions/upload-artifact@v4
         with:
-          certificate: 'codesigning.pfx'
-          password: '$(Code_Signing_Password)'
-          path: ${{ steps.copy-executables.outputs.path }}
+         name: drop-${{ matrix.target }}
+         path: ./publish/drop-${{ matrix.target }}
 
       - uses: ./.github/actions/version
         id: set-version
