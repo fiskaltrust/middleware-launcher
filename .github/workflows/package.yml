@@ -71,17 +71,20 @@ jobs:
         shell: pwsh
         id: copy-executables
         run: |
-           $project1 = "fiskaltrust.Launcher"
-           $project2 = "fiskaltrust.LauncherUpdater"
-           $path = "./publish/raw-${{ matrix.target }}/"
+           $projects = @("fiskaltrust.Launcher", "fiskaltrust.LauncherUpdater")
            $target = "${{ matrix.target }}"
-
-           echo "path=$path" >> $env:GITHUB_OUTPUT
-           New-Item -ItemType Directory -Force -Path ./publish/raw-${{ matrix.target }}
-
-           dotnet publish src/$project1/$project1.csproj --configuration  ${{ steps.set-config.outputs.config }} -f net8.0 --output ./publish/drop-${{ matrix.target }} -r ${{ matrix.target }} --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
-           dotnet publish src/$project2/$project2.csproj --configuration  ${{ steps.set-config.outputs.config }} -f net8.0 --output ./publish/drop-${{ matrix.target }} -r ${{ matrix.target }} --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
-           Get-ChildItem -Path "./publish/drop-$target/${project1}*" -File | Where-Object { $_.Extension -ne ".json" } | Move-Item -Destination $path
+           $config = "${{ steps.set-config.outputs.config }}"
+           $dropPath = "./publish/drop-$target"
+           $rawPath = "./publish/raw-$target"
+           
+           echo "path=$rawPath" >> $env:GITHUB_OUTPUT
+           New-Item -ItemType Directory -Force -Path $rawPath
+           foreach ($project in $projects) 
+           {
+             $projPath = "src/$project/$project.csproj"
+             dotnet publish $projPath --configuration  $config -f net8.0 --output $dropPath -r $target --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
+           }
+           Get-ChildItem -Path "$dropPath/${projects[0]}*" -File | Where-Object { $_.Extension -ne ".json" } | Move-Item -Destination $path
           
       - uses: ./.github/actions/sign
         with:
