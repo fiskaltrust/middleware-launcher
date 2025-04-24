@@ -20,9 +20,20 @@ jobs:
   #     permissions:
   #      checks: write
   #      pull-requests: write
+  version:
+     runs-on: ubuntu-latest
+     outputs:
+      version: ${{ steps.set-version.outputs.version }}
+     steps:
+       - uses: ./.github/actions/version
+         id: set-version
+         with:
+          project: fiskaltrust.Launcher
+          path: src          
 
   package:
-    # needs: [test-launcher]
+    #needs: [test-launcher]
+    needs: [version]
     name: package
     strategy:
       matrix:
@@ -97,17 +108,11 @@ jobs:
         with:
          name: drop-${{ matrix.target }}
          path: ./publish/drop-${{ matrix.target }}
-
-      - uses: ./.github/actions/version
-        id: set-version
-        with:
-          project: fiskaltrust.Launcher
-          path: src          
-
+      
       - uses: ./.github/actions/zip-hash
         with:
           path: ${{ steps.copy-executables.outputs.path }}
-          zipFileName : "fiskaltrust.Launcher-${{ steps.set-version.outputs.version }}"
+          zipFileName : "fiskaltrust.Launcher-${{ steps.version.outputs.version }}"
           artifactName: "package-${{ matrix.target }}"
       
       - name: Copy README.md to scripts artifacts
@@ -120,12 +125,17 @@ jobs:
       - uses: ./.github/actions/zip
         with:
           path: ./scripts/${{ matrix.scriptFolder }}/
-          zipFileName : "fiskaltrust.Launcher-${{ steps.set-version.outputs.version }}"
+          zipFileName : "fiskaltrust.Launcher-${{ steps.version.outputs.version }}"
           artifactName: "scripts-${{ matrix.target }}"
-
 
       # - uses: ./.github/actions/package
       #   with:
       #     project: fiskaltrust.Launcher,fiskaltrust.LauncherUpdater
       #     path: src
       #     target : ${{ matrix.target }} 
+
+  deb-package:
+      needs: [version]
+      uses: ./.github/workflows/deb-package.yml   
+      with:
+        version: ${{ steps.version.outputs.version }}

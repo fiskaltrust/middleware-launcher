@@ -21,11 +21,9 @@ jobs:
     name: test
     strategy:
       matrix:
-          vmImage: [windows-latest]
-        # vmImage: [windows-latest, ubuntu-latest, macos-latest]
+          vmImage: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.vmImage }}
-    # outputs:
-    #   config: ${{ steps.set-config.outputs.config }}
+   
    
     steps:
     - name: Set build configuration
