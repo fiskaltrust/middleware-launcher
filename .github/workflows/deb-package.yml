@@ -55,7 +55,7 @@ jobs:
       run: | 
            $project = "fiskaltrust.Launcher"
            $target = "${{ matrix.target }}"
-           $version = ${{input.version}}
+           $version = ${{inputs.version}}
            $dropPath = ${{ steps.publish-deb.outputs.path }}
            $debPath = "./publish/deb-$target"    
            
