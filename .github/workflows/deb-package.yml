@@ -55,8 +55,8 @@ jobs:
       run: | 
            $project = "fiskaltrust.Launcher"
            $target = "${{ matrix.target }}"
-           $version = ${{inputs.version}}
-           $dropPath = ${{ steps.publish-deb.outputs.path }}
+           $version = "${{inputs.version}}"
+           $dropPath = "${{ steps.publish-deb.outputs.path }}"
            $debPath = "./publish/deb-$target"    
            
            $meta = Get-Content ./meta.json -Encoding UTF8 | ConvertFrom-Json

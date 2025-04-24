@@ -139,4 +139,4 @@ jobs:
       needs: [version]
       uses: ./.github/workflows/deb-package.yml   
       with:
-        version: "1.0.0" #${{ needs.version.outputs.version }}
+        version: ${{ needs.version.outputs.version }}
