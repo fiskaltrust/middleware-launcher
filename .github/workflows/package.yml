@@ -112,7 +112,7 @@ jobs:
       - uses: ./.github/actions/zip-hash
         with:
           path: ${{ steps.copy-executables.outputs.path }}
-          zipFileName : "fiskaltrust.Launcher-${{ steps.version.outputs.version }}"
+          zipFileName : "fiskaltrust.Launcher-${{ needs.version.outputs.version }}"
           artifactName: "package-${{ matrix.target }}"
       
       - name: Copy README.md to scripts artifacts
@@ -125,7 +125,7 @@ jobs:
       - uses: ./.github/actions/zip
         with:
           path: ./scripts/${{ matrix.scriptFolder }}/
-          zipFileName : "fiskaltrust.Launcher-${{ steps.version.outputs.version }}"
+          zipFileName : "fiskaltrust.Launcher-${{ needs.version.outputs.version }}"
           artifactName: "scripts-${{ matrix.target }}"
 
       # - uses: ./.github/actions/package
@@ -138,4 +138,4 @@ jobs:
       needs: [version]
       uses: ./.github/workflows/deb-package.yml   
       with:
-        version: ${{ needs.version.outputs.version }}
+        version: "1.0.0" #${{ needs.version.outputs.version }}
