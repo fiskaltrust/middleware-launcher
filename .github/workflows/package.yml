@@ -84,7 +84,7 @@ jobs:
              $projPath = "src/$project/$project.csproj"
              dotnet publish $projPath --configuration  $config -f net8.0 --output $dropPath -r $target --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
            }
-           Get-ChildItem -Path "$dropPath/${projects[0]}*" -File | Where-Object { $_.Extension -ne ".json" } | Move-Item -Destination $rawPath
+           Get-ChildItem -Path "$dropPath/${projects[0]}*" -File | Where-Object { $_.Extension -ne ".json" } | copy-Item -Destination $rawPath
           
       # - uses: ./.github/actions/sign
       #   with:
