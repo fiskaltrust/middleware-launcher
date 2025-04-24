@@ -25,6 +25,7 @@ jobs:
      outputs:
       version: ${{ steps.set-version.outputs.version }}
      steps:
+       - uses: actions/checkout@v4
        - uses: ./.github/actions/version
          id: set-version
          with:
