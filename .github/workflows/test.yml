@@ -6,22 +6,15 @@ on:
     inputs:
       commit:
         type: string
-        required: false
-  # push:
-  #   branches:
-  #     - main
-  #     - refs/tags/*
-  # pull_request:
-  #   branches:
-  #     - main
-
+        required: false 
 
 jobs:
   test:
     name: test
     strategy:
       matrix:
-          vmImage: [windows-latest, ubuntu-latest, macos-latest]
+          vmImage: [windows-latest]
+          #vmImage: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.vmImage }}
    
    

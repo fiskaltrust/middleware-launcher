@@ -8,15 +8,7 @@ on:
         required: false
       version:
         type: string
-        required: true
-  # push:
-  #   branches:
-  #     - main
-  #     - refs/tags/*
-  # pull_request:
-  #   branches:
-  #     - main
-
+        required: true 
 
 jobs:
   test:
