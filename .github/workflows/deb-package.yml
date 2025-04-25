@@ -29,7 +29,7 @@ jobs:
     steps:        
     - uses: actions/checkout@v4
       
-    - name: publish deb
+    - name: Publish fiskaltrust.Launcher app
       shell: pwsh
       id: publish-deb
       run: |
@@ -49,7 +49,7 @@ jobs:
       #     password: '$(Code_Signing_Password)'
       #     path: ${{ steps.publish-deb.outputs.path }}
 
-    - name: build deb package
+    - name: build Debian package
       shell: pwsh
       id: build-deb
       run: | 
@@ -88,6 +88,7 @@ jobs:
            New-Item -ItemType Directory -Path $debPath
            Move-Item "$base.deb" $debPath
            echo "path=$dropPath" >> $env:GITHUB_OUTPUT 
+
     - name: Upload deb package
       uses: actions/upload-artifact@v4
       with:
@@ -95,18 +96,18 @@ jobs:
          path: ${{ steps.build-deb.outputs.path }}    
 
   meta:
-    name: meta
+    name: Prepare meta.json
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      - name: meta
+      - name: Move meta.json to subfolder
         shell: pwsh
         run: |
-            New-Item -ItemType Directory -Path "meta"
-            Move-Item meta.json meta/meta.json
+          New-Item -ItemType Directory -Path "meta" -Force 
+          Move-Item meta.json meta/meta.json -Force
 
-      - name: Upload meta
+      - name: Upload meta artifact
         uses: actions/upload-artifact@v4
         with:
           name: meta
