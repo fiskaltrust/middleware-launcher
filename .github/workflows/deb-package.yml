@@ -30,7 +30,7 @@ jobs:
            #$config = "${{ steps.set-config.outputs.config }}"
            $dropPath = "./publish/drop-$target"         
            
-           echo "path=$dropPath" >> $env:GITHUB_OUTPUT           
+           echo "dropPath=$dropPath" >> $env:GITHUB_OUTPUT           
           
            $projPath = "src/$project/$project.csproj"
            dotnet publish $projPath --configuration  Release -f net8.0 --output $dropPath -r $target --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
@@ -39,7 +39,7 @@ jobs:
       #   with:
       #     certificate: 'codesigning.pfx'
       #     password: '$(Code_Signing_Password)'
-      #     path: ${{ steps.publish-deb.outputs.path }}
+      #     path: ${{ steps.publish-deb.outputs.dropPath }}
 
     - name: build Debian package
       shell: pwsh
@@ -48,7 +48,7 @@ jobs:
            $project = "fiskaltrust.Launcher"
            $target = "${{ matrix.target }}"
            $version = "${{inputs.version}}"
-           $dropPath = "${{ steps.publish-deb.outputs.path }}"
+           $dropPath = "${{ steps.publish-deb.outputs.dropPath }}"
            $debPath = "./publish/deb-$target"    
            
            $meta = Get-Content ./meta.json -Encoding UTF8 | ConvertFrom-Json
@@ -79,13 +79,13 @@ jobs:
 
            New-Item -ItemType Directory -Path $debPath
            Move-Item "$base.deb" $debPath
-           echo "path=$dropPath" >> $env:GITHUB_OUTPUT 
+           echo "debPath=$debPath" >> $env:GITHUB_OUTPUT 
 
     - name: Upload deb package
       uses: actions/upload-artifact@v4
       with:
          name: deb-${{ matrix.target }}
-         path: ${{ steps.build-deb.outputs.path }}    
+         path: ${{ steps.build-deb.outputs.debPath }}    
 
   meta:
     name: Prepare meta.json
