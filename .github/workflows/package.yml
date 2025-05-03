@@ -24,6 +24,10 @@ jobs:
       version: ${{ steps.set-version.outputs.version }}
      steps:
        - uses: actions/checkout@v4
+         with:
+          fetch-depth: 0
+          filter: tree:0
+
        - uses: ./.github/actions/version
          id: set-version
          with:
@@ -95,17 +99,12 @@ jobs:
            }
            Get-ChildItem -Path "$dropPath/${projects[0]}*" -File | Where-Object { $_.Extension -ne ".json" } | copy-Item -Destination $rawPath
           
-      # - uses: ./.github/actions/sign
+      # - uses: fiskaltrust/middleware/.github/actions/sign@main
       #   with:
       #     certificate: 'codesigning.pfx'
       #     password: '$(Code_Signing_Password)'
       #     path: ${{ steps.copy-executables.outputs.path }}
-
-      - name: Upload drop package
-        uses: actions/upload-artifact@v4
-        with:
-         name: drop-${{ matrix.target }}
-         path: ./publish/drop-${{ matrix.target }}
+      #     filter: 'fiskaltrust.Launcher*'     
       
       - name: Upload zip and hash of output package
         uses: ./.github/actions/zip-hash

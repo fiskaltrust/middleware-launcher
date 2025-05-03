@@ -35,11 +35,12 @@ jobs:
            $projPath = "src/$project/$project.csproj"
            dotnet publish $projPath --configuration  Release -f net8.0 --output $dropPath -r $target --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
       
-      # - uses: ./.github/actions/sign
+      # - uses: fiskaltrust/middleware/.github/actions/sign@main
       #   with:
       #     certificate: 'codesigning.pfx'
       #     password: '$(Code_Signing_Password)'
-      #     path: ${{ steps.publish-deb.outputs.dropPath }}
+      #     path: ${{ steps.publish-deb.outputs.dropPath }}      
+      #     filter: 'fiskaltrust.Launcher*'
 
     - name: build Debian package
       shell: pwsh
