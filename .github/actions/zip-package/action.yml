@@ -1,4 +1,4 @@
-name: 'zip'
+name: 'zip-package'
 inputs:
   path:
     required: true

@@ -1,4 +1,4 @@
-name: 'zip-hash'
+name: 'zip-hash-package'
 inputs:
   path:
     required: true
