@@ -99,12 +99,12 @@ jobs:
            }
            Get-ChildItem -Path "$dropPath/${projects[0]}*" -File | Where-Object { $_.Extension -ne ".json" } | copy-Item -Destination $rawPath
           
-      # - uses: fiskaltrust/middleware/.github/actions/sign@main
-      #   with:
-      #     certificate: 'codesigning.pfx'
-      #     password: '$(Code_Signing_Password)'
-      #     path: ${{ steps.copy-executables.outputs.path }}
-      #     filter: 'fiskaltrust.Launcher*'     
+      - uses: fiskaltrust/middleware/.github/actions/sign@main
+        with:
+          certificate: 'codesigning.pfx'
+          password: '$(Code_Signing_Password)'
+          path: ${{ steps.copy-executables.outputs.path }}
+          filter: 'fiskaltrust.Launcher*'     
       
       - name: Upload zip and hash of output package
         uses: ./.github/actions/zip-hash-package
