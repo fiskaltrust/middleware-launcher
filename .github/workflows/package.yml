@@ -48,21 +48,21 @@ jobs:
             target: win-x86
             scriptFolder: 'windows'
 
-          # - vmImage: ubuntu-latest
-          #   target: linux-x64
-          #   scriptFolder: 'linux'
+          - vmImage: ubuntu-latest
+            target: linux-x64
+            scriptFolder: 'linux'
 
-          # - vmImage: ubuntu-latest
-          #   target: linux-arm
-          #   scriptFolder: 'linux'
+          - vmImage: ubuntu-latest
+            target: linux-arm
+            scriptFolder: 'linux'
 
-          # - vmImage: ubuntu-latest
-          #   target: linux-arm64
-          #   scriptFolder: 'linux'
+          - vmImage: ubuntu-latest
+            target: linux-arm64
+            scriptFolder: 'linux'
 
-          # - vmImage: macos-latest
-          #   target: osx-x64
-          #   scriptFolder: 'macos'
+          - vmImage: macos-latest
+            target: osx-x64
+            scriptFolder: 'macos'
    
     runs-on: ${{ matrix.vmImage }}
 
@@ -98,11 +98,13 @@ jobs:
              dotnet publish $projPath --configuration  $config -f net8.0 --output $dropPath -r $target --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
            }
            Get-ChildItem -Path "$dropPath/${projects[0]}*" -File | Where-Object { $_.Extension -ne ".json" } | copy-Item -Destination $rawPath
-          
-      - uses: fiskaltrust/middleware/.github/actions/sign@main
+      
+      - name: Run Sign Action on Windows only
+        if: runner.os == 'Windows'   
+        uses: fiskaltrust/middleware/.github/actions/sign@main
         with:
-          certificate: 'codesigning.pfx'
-          password: '$(Code_Signing_Password)'
+          certificate: '${{ secrets.SIGNING_CERTIFICATE }}'
+          password: '${{ secrets.SIGNING_CERT_PASSWORD }}'
           path: ${{ steps.copy-executables.outputs.path }}
           filter: 'fiskaltrust.Launcher*'     
       
