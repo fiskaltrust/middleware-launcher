@@ -41,7 +41,8 @@ jobs:
       with:
         directory: test
         pattern: "UnitTest"
-        args: '--no-build'      
+        args: '--no-build' 
+        artifactName: "UnitTest-${{ matrix.vmImage }}.test-results"
 
     - name: Integration Tests
       uses: fiskaltrust/middleware/.github/actions/test@main
@@ -49,6 +50,7 @@ jobs:
         directory: test
         pattern: "IntegrationTest"
         args: '--no-build'
+        artifactName: "IntegrationTest-${{ matrix.vmImage }}.test-results"
 
   publish-test-results:
     name: Publish Tests Results
