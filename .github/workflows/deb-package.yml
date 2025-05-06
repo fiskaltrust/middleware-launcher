@@ -27,7 +27,6 @@ jobs:
       run: |
            $project = "fiskaltrust.Launcher"   
            $target = "${{ matrix.target }}"
-           #$config = "${{ steps.set-config.outputs.config }}"
            $dropPath = "./publish/drop-$target"         
            
            echo "dropPath=$dropPath" >> $env:GITHUB_OUTPUT           
@@ -35,12 +34,12 @@ jobs:
            $projPath = "src/$project/$project.csproj"
            dotnet publish $projPath --configuration  Release -f net8.0 --output $dropPath -r $target --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
       
-      # - uses: fiskaltrust/middleware/.github/actions/sign@main
-      #   with:
-      #     certificate: 'codesigning.pfx'
-      #     password: '$(Code_Signing_Password)'
-      #     path: ${{ steps.publish-deb.outputs.dropPath }}      
-      #     filter: 'fiskaltrust.Launcher*'
+    - uses: fiskaltrust/middleware/.github/actions/sign@main
+      with:
+        certificate: 'codesigning.pfx'
+        password: '$(Code_Signing_Password)'
+        path: ${{ steps.publish-deb.outputs.dropPath }}      
+        filter: 'fiskaltrust.Launcher*'
 
     - name: build Debian package
       shell: pwsh
