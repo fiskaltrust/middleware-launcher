@@ -1,0 +1,99 @@
+name: deb package
+on: 
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      commit:
+        type: string
+        required: false
+      version:
+        type: string
+        required: true 
+
+jobs:
+  test:
+    name: deb-package
+    strategy:
+      matrix:
+         target: [linux-x64, linux-arm, linux-arm64]
+    runs-on: ubuntu-latest
+    
+    steps:        
+    - uses: actions/checkout@v4
+      
+    - name: Publish fiskaltrust.Launcher app
+      shell: pwsh
+      id: publish-deb
+      run: |
+           $project = "fiskaltrust.Launcher"   
+           $target = "${{ matrix.target }}"
+           $dropPath = "./publish/drop-$target"         
+           
+           echo "dropPath=$dropPath" >> $env:GITHUB_OUTPUT           
+          
+           $projPath = "src/$project/$project.csproj"
+           dotnet publish $projPath --configuration  Release -f net8.0 --output $dropPath -r $target --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
+    
+    - name: build Debian package
+      shell: pwsh
+      id: build-deb
+      run: | 
+           $project = "fiskaltrust.Launcher"
+           $target = "${{ matrix.target }}"
+           $version = "${{inputs.version}}"
+           $dropPath = "${{ steps.publish-deb.outputs.dropPath }}"
+           $debPath = "./publish/deb-$target"    
+           
+           $meta = Get-Content ./meta.json -Encoding UTF8 | ConvertFrom-Json
+           $arch = $meta.deb.architectures."$target"
+                   
+           $base = "./publish/deb/$($meta.package.name)_$version-1_$arch"
+           New-Item -ItemType Directory -Path "$base";
+           New-Item -ItemType Directory -Path "$base/usr/bin";
+           New-Item -ItemType Directory -Path "$base/DEBIAN";
+
+           Move-Item $dropPath/$project "$base/usr/bin/"
+
+           @(
+            "Package: $($meta.package.name)";
+            "Version: $version";
+            "Maintainer: $($meta.package.maintainer)";
+            "Depends: $($meta.deb.depends -join ', ')";
+            "Architecture: $arch";
+            "Homepage: $($meta.package.homepage)";
+            "Description: $($meta.package.description)"
+           ) -join "`n" | Set-Content -Path "$base/DEBIAN/control"
+
+           dpkg --build $base
+
+           dpkg-deb --info "$base.deb" | Write-Host
+
+           dpkg-deb --contents "$base.deb" | Write-Host
+
+           New-Item -ItemType Directory -Path $debPath
+           Move-Item "$base.deb" $debPath
+           echo "debPath=$debPath" >> $env:GITHUB_OUTPUT 
+
+    - name: Upload deb package
+      uses: actions/upload-artifact@v4
+      with:
+         name: deb-${{ matrix.target }}
+         path: ${{ steps.build-deb.outputs.debPath }}    
+
+  meta:
+    name: Prepare meta.json
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Move meta.json to subfolder
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "meta" -Force 
+          Move-Item meta.json meta/meta.json -Force
+
+      - name: Upload meta artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meta
+          path: meta

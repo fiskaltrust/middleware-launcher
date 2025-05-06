@@ -1,0 +1,45 @@
+name: 'zip-package'
+inputs:
+  path:
+    required: true
+    type: string
+  zipFileName:
+    required: true
+    type: string
+  artifactName:
+    required: true
+    type: string
+    default: "package"
+
+runs:
+  using: "composite"
+  steps:
+    - name: create zip packages
+      shell: pwsh
+      id: create-zip
+      run: | 
+        $artifactName = "${{ inputs.artifactName }}"
+        $sourcePath = "${{ inputs.path }}"
+        $zipFileName = "${{ inputs.zipFileName }}"
+                
+        $destinationPath = "./publish/$artifactName/" 
+        New-Item -ItemType Directory -Force -Path $destinationPath
+        $destinationFile = Join-Path $destinationPath "$zipFileName.zip"
+
+        if($IsWindows) {
+          Compress-Archive -Path (Join-Path ${{ inputs.path }} *) -DestinationPath $destinationFile
+        } 
+        else 
+        {
+         bash -c "cd '$sourcePath' && zip -r $zipFileName.zip ."
+         bash -c "mv '$sourcePath/${zipFileName}.zip' '$destinationPath'"                
+        }
+
+        echo "destinationPath=$destinationPath" >> $env:GITHUB_OUTPUT   
+        ls $destinationPath
+
+    - name: Upload zip package
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifactName }}
+        path: ${{ steps.create-zip.outputs.destinationPath }}
