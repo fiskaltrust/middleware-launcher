@@ -10,12 +10,11 @@ on:
 
 jobs:
   test:
-    name: test
     strategy:
       matrix:
           vmImage: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.vmImage }}
-   
+    name: test-${{ matrix.vmImage }}
    
     steps:
     - name: Set build configuration
