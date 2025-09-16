@@ -97,53 +97,48 @@ namespace fiskaltrust.Launcher.Commands
 
             var launcherConfiguration = new LauncherConfiguration();
 
+            Log.Verbose("Reading legacy config file.");
+            if (File.Exists(options.LegacyConfigurationFile))
+            {
+                try
+                {
+                    var legacyConfig = await LegacyConfigFileReader.ReadLegacyConfigFile(options.LegacyConfigurationFile);
+                    launcherConfiguration.OverwriteWith(legacyConfig);
+                    Log.Verbose("Legacy configuration loaded successfully from \"{LegacyConfigurationFile}\".", options.LegacyConfigurationFile);
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Could not parse legacy configuration file \"{LegacyConfigurationFile}\".", options.LegacyConfigurationFile);
+                }
+            }
+            else
+            {
+                Log.Verbose("Legacy configuration file \"{LegacyConfigurationFile}\" does not exist.", options.LegacyConfigurationFile);
+            }
+
             Log.Verbose("Reading launcher config file.");
-            try
+            if (File.Exists(options.LauncherConfigurationFile))
             {
-                options.LauncherConfigurationFile = Path.GetFullPath(options.LauncherConfigurationFile);
-                launcherConfiguration =
-                    LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(options.LauncherConfigurationFile));
-            }
-            catch (Exception e)
-            {
-                if (!(options.MergeLegacyConfigIfExists && File.Exists(options.LegacyConfigurationFile)))
+                try
                 {
-                    if (File.Exists(options.LauncherConfigurationFile))
-                    {
-                        Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".",
-                            options.LauncherConfigurationFile);
-                    }
-                    else
-                    {
-                        Log.Warning("Launcher configuration file \"{LauncherConfigurationFile}\" does not exist.",
-                            options.LauncherConfigurationFile);
-                    }
-
-                    Log.Warning("Using command line parameters only.", options.LauncherConfigurationFile);
+                    options.LauncherConfigurationFile = Path.GetFullPath(options.LauncherConfigurationFile);
+                    var newConfig = LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(options.LauncherConfigurationFile));
+                    launcherConfiguration.OverwriteWith(newConfig);
+                    Log.Verbose("New launcher configuration loaded successfully from \"{LauncherConfigurationFile}\".", options.LauncherConfigurationFile);
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".", options.LauncherConfigurationFile);
                 }
             }
-
-            Log.Verbose("Merging legacy launcher config file.");
-            var legacyFileBackupPath = options.LegacyConfigurationFile + ".legacy";
-            if (options.MergeLegacyConfigIfExists && File.Exists(options.LegacyConfigurationFile) && !File.Exists(legacyFileBackupPath))
+            else
             {
-                var legacyConfig = await LegacyConfigFileReader.ReadLegacyConfigFile(options.LegacyConfigurationFile);
-                launcherConfiguration.OverwriteWith(legacyConfig);
-
-                var configFileDirectory = Path.GetDirectoryName(Path.GetFullPath(options.LauncherConfigurationFile));
-                if (configFileDirectory is not null)
-                {
-                    Directory.CreateDirectory(configFileDirectory);
-                }
-
-                await File.WriteAllTextAsync(options.LauncherConfigurationFile, legacyConfig.Serialize());
-
-                var fi = new FileInfo(options.LegacyConfigurationFile);
-                fi.CopyTo(legacyFileBackupPath);
+                Log.Verbose("Launcher configuration file \"{LauncherConfigurationFile}\" does not exist.", options.LauncherConfigurationFile);
             }
 
             Log.Verbose("Merging launcher cli args.");
             launcherConfiguration.OverwriteWith(options.ArgsLauncherConfiguration);
+            
             await EnsureServiceDirectoryExists(launcherConfiguration);
 
             if (!launcherConfiguration.UseOffline!.Value &&
