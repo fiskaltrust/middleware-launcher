@@ -19,7 +19,7 @@ jobs:
 
   version:
      needs: [test-launcher]
-     runs-on: ubuntu-latest
+     runs-on: ubuntu-22.04  # Pinned to avoid Ubuntu 24.04 HTTP/networking issues - https://github.com/actions/runner-images/issues/10636
      outputs:
       version: ${{ steps.set-version.outputs.version }}
      steps:
@@ -47,16 +47,16 @@ jobs:
           - vmImage: windows-latest
             target: win-x86
             scriptFolder: 'windows'
-
-          - vmImage: ubuntu-latest
+            
+          - vmImage: ubuntu-22.04  # Changed from ubuntu-latest
             target: linux-x64
             scriptFolder: 'linux'
-
-          - vmImage: ubuntu-latest
+        
+          - vmImage: ubuntu-22.04  # Changed from ubuntu-latest
             target: linux-arm
             scriptFolder: 'linux'
-
-          - vmImage: ubuntu-latest
+        
+          - vmImage: ubuntu-22.04  # Changed from ubuntu-latest
             target: linux-arm64
             scriptFolder: 'linux'
 

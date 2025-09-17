@@ -1,61 +1,64 @@
 name: Test Launcher
 
-on: 
+on:
   workflow_dispatch:
   workflow_call:
     inputs:
       commit:
         type: string
-        required: false 
+        required: false
 
 jobs:
   test:
     strategy:
       matrix:
-          vmImage: [windows-latest, ubuntu-latest, macos-latest]
+        # Pin to stable versions due to runner image issues:
+        # ubuntu-22.04: Ubuntu 24.04 has HTTP/networking issues - https://github.com/actions/runner-images/issues/10636
+        # macos-14: macOS 15 has DNS resolution problems - https://github.com/actions/runner-images/issues/12520
+        vmImage: [windows-latest, ubuntu-22.04, macos-14]
     runs-on: ${{ matrix.vmImage }}
     name: test-${{ matrix.vmImage }}
-   
-    steps:
-    - name: Set build configuration
-      id: set-config
-      shell: bash
-      run: |
-         echo "GITHUB_REF=${GITHUB_REF}"
-         if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-          echo "config=Release" >> $GITHUB_OUTPUT
-         else
-          echo "config=Debug" >> $GITHUB_OUTPUT
-         fi
     
-    - uses: actions/checkout@v4
-      
-    - name: build
-      uses: fiskaltrust/middleware/.github/actions/build@main
-      with:
-         pattern: fiskaltrust.Launcher.sln
-         configuration: ${{ steps.set-config.outputs.config }}
+    steps:
+      - name: Set build configuration
+        id: set-config
+        shell: bash
+        run: |
+          echo "GITHUB_REF=${GITHUB_REF}"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+           echo "config=Release" >> $GITHUB_OUTPUT
+          else
+           echo "config=Debug" >> $GITHUB_OUTPUT
+          fi
 
-    - name: Unit Tests
-      uses: fiskaltrust/middleware/.github/actions/test@main
-      with:
-        directory: test
-        pattern: "UnitTest"
-        args: '--no-build' 
-        artifactName: "UnitTest-${{ matrix.vmImage }}.test-results"
+      - uses: actions/checkout@v4
 
-    - name: Integration Tests
-      uses: fiskaltrust/middleware/.github/actions/test@main
-      with:
-        directory: test
-        pattern: "IntegrationTest"
-        args: '--no-build'
-        artifactName: "IntegrationTest-${{ matrix.vmImage }}.test-results"
+      - name: build
+        uses: fiskaltrust/middleware/.github/actions/build@main
+        with:
+          pattern: fiskaltrust.Launcher.sln
+          configuration: ${{ steps.set-config.outputs.config }}
+
+      - name: Unit Tests
+        uses: fiskaltrust/middleware/.github/actions/test@main
+        with:
+          directory: test
+          pattern: "UnitTest"
+          args: '--no-build'
+          artifactName: "UnitTest-${{ matrix.vmImage }}.test-results"
+
+      - name: Integration Tests
+        uses: fiskaltrust/middleware/.github/actions/test@main
+        with:
+          directory: test
+          pattern: "IntegrationTest"
+          args: '--no-build'
+          artifactName: "IntegrationTest-${{ matrix.vmImage }}.test-results"
 
   publish-test-results:
     name: Publish Tests Results
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # Pinned to avoid Ubuntu 24.04 HTTP/networking issues
     permissions:
       checks: write
       pull-requests: write
