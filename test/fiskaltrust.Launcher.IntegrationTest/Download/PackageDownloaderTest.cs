@@ -68,9 +68,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
             var platforms = new string[] {
                 "win-x86",
                 "win-x64",
-                "linux-x86",
                 "linux-x64",
-                "osx-x86",
                 "osx-x64",
                 // TODO: Add linux-arm and linux-arm64 after deployment went through
             };
