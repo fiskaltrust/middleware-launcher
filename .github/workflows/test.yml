@@ -13,9 +13,8 @@ jobs:
     strategy:
       matrix:
         # Pin to stable versions due to runner image issues:
-        # ubuntu-22.04: Ubuntu 24.04 has HTTP/networking issues - https://github.com/actions/runner-images/issues/10636
         # macos-14: macOS 15 has DNS resolution problems - https://github.com/actions/runner-images/issues/12520
-        vmImage: [windows-latest, ubuntu-22.04, macos-14]
+        vmImage: [windows-latest, ubuntu-latest, macos-14]
     runs-on: ${{ matrix.vmImage }}
     name: test-${{ matrix.vmImage }}
     
@@ -58,7 +57,7 @@ jobs:
   publish-test-results:
     name: Publish Tests Results
     needs: test
-    runs-on: ubuntu-22.04  # Pinned to avoid Ubuntu 24.04 HTTP/networking issues
+    runs-on: ubuntu-latest
     permissions:
       checks: write
       pull-requests: write
