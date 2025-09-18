@@ -12,9 +12,7 @@ jobs:
   test:
     strategy:
       matrix:
-        # Pin to stable versions due to runner image issues:
-        # macos-14: macOS 15 has DNS resolution problems - https://github.com/actions/runner-images/issues/12520
-        vmImage: [windows-latest, ubuntu-latest, macos-14]
+        vmImage: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.vmImage }}
     name: test-${{ matrix.vmImage }}
     

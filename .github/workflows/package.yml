@@ -60,7 +60,7 @@ jobs:
             target: linux-arm64
             scriptFolder: 'linux'
 
-          - vmImage: macos-14  # Pinned to avoid DNS resolution issues in macos-15 https://github.com/actions/runner-images/issues/12520 
+          - vmImage: macos-latest
             target: osx-x64
             scriptFolder: 'macos'
     
