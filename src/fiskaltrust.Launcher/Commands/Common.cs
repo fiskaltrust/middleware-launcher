@@ -41,7 +41,6 @@ namespace fiskaltrust.Launcher.Commands
                     getDefaultValue: () => Paths.LauncherConfigurationFileName));
                 AddOption(new Option<string>("--legacy-configuration-file",
                     getDefaultValue: () => Paths.LegacyConfigurationFileName));
-                AddOption(new Option<bool>("--merge-legacy-config-if-exists", getDefaultValue: () => true));
             }
         }
     }
@@ -49,18 +48,16 @@ namespace fiskaltrust.Launcher.Commands
     public class CommonOptions
     {
         public CommonOptions(LauncherConfiguration argsLauncherConfiguration, string launcherConfigurationFile,
-            string legacyConfigurationFile, bool mergeLegacyConfigIfExists)
+            string legacyConfigurationFile)
         {
             ArgsLauncherConfiguration = argsLauncherConfiguration;
             LauncherConfigurationFile = launcherConfigurationFile;
             LegacyConfigurationFile = legacyConfigurationFile;
-            MergeLegacyConfigIfExists = mergeLegacyConfigIfExists;
         }
 
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; }
         public string LauncherConfigurationFile { get; set; }
         public string LegacyConfigurationFile { get; set; }
-        public bool MergeLegacyConfigIfExists { get; set; }
     }
 
     public record CommonProperties
