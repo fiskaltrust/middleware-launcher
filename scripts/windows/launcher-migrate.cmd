@@ -84,7 +84,6 @@ move fiskaltrust.InstallState .backup\ >nul
 move install-service.cmd .backup\ >nul
 move test.cmd .backup\ >nul
 move uninstall-service.cmd .backup\ >nul
-copy fiskaltrust.exe.config .backup\ >nul
 
 fiskaltrust.Launcher.exe install --service-name %ftServiceName%
 

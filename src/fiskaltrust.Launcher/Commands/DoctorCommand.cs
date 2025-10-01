@@ -36,13 +36,11 @@ namespace fiskaltrust.Launcher.Commands
             ArgsLauncherConfiguration = argsLauncherConfiguration;
             LauncherConfigurationFile = launcherConfigurationFile;
             LegacyConfigurationFile = legacyConfigurationFile;
-            MergeLegacyConfigIfExists = mergeLegacyConfigIfExists;
         }
 
         public LauncherConfiguration ArgsLauncherConfiguration { get; set; }
         public string LauncherConfigurationFile { get; set; }
         public string LegacyConfigurationFile { get; set; }
-        public bool MergeLegacyConfigIfExists { get; set; }
     }
 
     public class DoctorServices
@@ -76,7 +74,7 @@ namespace fiskaltrust.Launcher.Commands
                     launcherConfiguration = await checkUp.CheckAwait("Parse launcher configuration", async () => LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(commonOptions.LauncherConfigurationFile))) ?? new LauncherConfiguration();
                 }
 
-                if (commonOptions.MergeLegacyConfigIfExists && File.Exists(commonOptions.LegacyConfigurationFile))
+                if (File.Exists(commonOptions.LegacyConfigurationFile))
                 {
                     var legacyConfig = await checkUp.CheckAwait("Parse legacy configuration file", async () => await LegacyConfigFileReader.ReadLegacyConfigFile(commonOptions.LegacyConfigurationFile));
                     if (legacyConfig is not null)

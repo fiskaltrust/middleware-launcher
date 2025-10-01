@@ -55,8 +55,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.SelfUpdate
                             ServiceFolder = launcherConfiguration.ServiceFolder,
                             Sandbox = true
                         },
-                        $"{launcherConfiguration.ServiceFolder}launcher.configuration.json", "null",
-                        true),
+                        $"{launcherConfiguration.ServiceFolder}launcher.configuration.json", "null"),
                     new RunOptions { },
                     builder.Build(),
                     RunHandler.HandleAsync);
