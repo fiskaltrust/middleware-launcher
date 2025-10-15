@@ -80,6 +80,7 @@ We build the launcher for the following platforms:
 | Linux   | `arm64`      |
 | Linux   | `x64`        |
 | MacOS   | `x64`        |
+| MacOS   | `arm64`        |
 | Windows | `x64`        |
 | Windows | `x86`        |
 
