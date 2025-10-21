@@ -58,18 +58,23 @@ stages:
                   dotnet publish ./src/${{ project }}/${{ project }}.csproj -c ${{ parameters.config }} -o $(Build.ArtifactStagingDirectory)/drop-$(target) -r $(target) -f net8.0 --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
                 displayName: "[${{ project }}] Publish"
 
-          - task: codesigning@2
-            displayName: 'Code Signing'
-            inputs:
-              secureFileId: 'codesigning.pfx'
-              signCertPassword: '$(Code_Signing_Password)'
-              filePaths: |
-                $(Build.ArtifactStagingDirectory)/**/*fiskaltrust*
-                ./src/**/*fiskaltrust*.exe
-                ./src/**/*fiskaltrust*.dll
-                ./src/**/fiskaltrust.Launcher.dll
-                ./src/**/fiskaltrust.Launcher.exe
-                ./src/**/fiskaltrust.LauncherUpdater.exe
+          - pwsh: dotnet tool install --global AzureSignTool
+            # condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+            displayName: Install AzureSignTool
+
+          - pwsh: |
+              Get-ChildItem -Path "$(Build.SourcesDirectory)" -Filter *fiskaltrust* -Recurse | ForEach-Object {
+                azuresigntool sign `
+                --azure-key-vault-url "$(AZURE_KEY_VAULT_URL)" `
+                --azure-key-vault-certificate "$(AZURE_KEY_VAULT_CERTIFICATE)" `
+                --azure-key-vault-client-id "$(AZURE_CLIENT_ID)" `
+                --azure-key-vault-tenant-id "$(AZURE_TENANT_ID)" `
+                --azure-key-vault-client-secret "$env:AZURE_CLIENT_SECRET" `
+                $_.FullName
+              }
+            env:
+              AZURE_CLIENT_SECRET: $(AZURE_CLIENT_SECRET)
+            # condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
 
           - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
             artifact: drop-$(target)
