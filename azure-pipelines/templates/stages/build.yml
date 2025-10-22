@@ -59,11 +59,14 @@ stages:
                 displayName: "[${{ project }}] Publish"
 
           - pwsh: dotnet tool install --global AzureSignTool
-            # condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+            condition: startsWith($(target), "win-") # startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
             displayName: Install AzureSignTool
 
           - pwsh: |
-              Get-ChildItem -Path "$(Build.SourcesDirectory)" -Filter *fiskaltrust* -Recurse | ForEach-Object {
+              & {
+                Get-ChildItem -Path "$(Build.SourcesDirectory)" -Filter *fiskaltrust*.exe -Recurse
+                Get-ChildItem -Path "$(Build.SourcesDirectory)" -Filter *fiskaltrust*.dll -Recurse
+              } | ForEach-Object {
                 azuresigntool sign `
                 --azure-key-vault-url "$(AZURE_KEY_VAULT_URL)" `
                 --azure-key-vault-certificate "$(AZURE_KEY_VAULT_CERTIFICATE)" `
@@ -74,7 +77,7 @@ stages:
               }
             env:
               AZURE_CLIENT_SECRET: $(AZURE_CLIENT_SECRET)
-            # condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+            condition: startsWith($(target), "win-") # startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
 
           - publish: $(Build.ArtifactStagingDirectory)/drop-$(target)
             artifact: drop-$(target)
