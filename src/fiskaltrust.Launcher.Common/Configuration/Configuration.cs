@@ -7,7 +7,6 @@ using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.DataProtection;
 using Serilog;
-using fiskaltrust.Launcher.Configuration;
 
 namespace fiskaltrust.Launcher.Common.Configuration
 {

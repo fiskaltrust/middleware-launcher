@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using System.Xml.Linq;
 
-namespace fiskaltrust.Launcher.Configuration
+namespace fiskaltrust.Launcher.Common.Configuration
 {
     public class LegacyConfigFileReader
     {
