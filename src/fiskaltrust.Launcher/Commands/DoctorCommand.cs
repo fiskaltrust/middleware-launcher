@@ -69,17 +69,21 @@ namespace fiskaltrust.Launcher.Commands
 
                 LauncherConfiguration launcherConfiguration = new();
 
-                if (File.Exists(commonOptions.LauncherConfigurationFile))
-                {
-                    launcherConfiguration = await checkUp.CheckAwait("Parse launcher configuration", async () => LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(commonOptions.LauncherConfigurationFile))) ?? new LauncherConfiguration();
-                }
-
                 if (File.Exists(commonOptions.LegacyConfigurationFile))
                 {
                     var legacyConfig = await checkUp.CheckAwait("Parse legacy configuration file", async () => await LegacyConfigFileReader.ReadLegacyConfigFile(commonOptions.LegacyConfigurationFile));
                     if (legacyConfig is not null)
                     {
                         launcherConfiguration.OverwriteWith(legacyConfig);
+                    }
+                }
+
+                if (File.Exists(commonOptions.LauncherConfigurationFile))
+                {
+                    var config = await checkUp.CheckAwait("Parse launcher configuration", async () => LauncherConfiguration.Deserialize(await File.ReadAllTextAsync(commonOptions.LauncherConfigurationFile)));
+                    if (config is not null)
+                    {
+                        launcherConfiguration.OverwriteWith(config);
                     }
                 }
 

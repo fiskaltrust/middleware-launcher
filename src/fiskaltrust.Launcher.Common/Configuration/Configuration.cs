@@ -353,7 +353,54 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
             return null;
         }
+
+        public static async Task<LauncherConfiguration> ReadFromFilesAsync(string launcherConfigurationFile, string legacyConfigurationFile)
+        {
+            var launcherConfiguration = new LauncherConfiguration();
+
+            Log.Verbose("Reading legacy config file.");
+            if (File.Exists(legacyConfigurationFile))
+            {
+                try
+                {
+                    var legacyConfig = await LegacyConfigFileReader.ReadLegacyConfigFile(legacyConfigurationFile);
+                    launcherConfiguration.OverwriteWith(legacyConfig);
+                    Log.Verbose("Legacy configuration loaded successfully from \"{LegacyConfigurationFile}\".", legacyConfigurationFile);
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Could not parse legacy configuration file \"{LegacyConfigurationFile}\".", legacyConfigurationFile);
+                }
+            }
+            else
+            {
+                Log.Verbose("Legacy configuration file \"{LegacyConfigurationFile}\" does not exist.", legacyConfigurationFile);
+            }
+
+            Log.Verbose("Reading launcher config file.");
+            if (File.Exists(launcherConfigurationFile))
+            {
+                try
+                {
+                    launcherConfigurationFile = Path.GetFullPath(launcherConfigurationFile);
+                    var newConfig = Deserialize(await File.ReadAllTextAsync(launcherConfigurationFile));
+                    launcherConfiguration.OverwriteWith(newConfig);
+                    Log.Verbose("New launcher configuration loaded successfully from \"{LauncherConfigurationFile}\".", launcherConfigurationFile);
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".", launcherConfigurationFile);
+                }
+            }
+            else
+            {
+                Log.Verbose("Launcher configuration file \"{LauncherConfigurationFile}\" does not exist.", launcherConfigurationFile);
+            }
+
+            return launcherConfiguration;
+        }
     }
+
     public record LauncherConfigurationInCashBoxConfiguration
     {
         [JsonPropertyName("launcher")]

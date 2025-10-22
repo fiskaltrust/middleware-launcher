@@ -1,9 +1,9 @@
 ﻿using fiskaltrust.Launcher.Common.Configuration;
-using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using System.Xml.Linq;
 
-namespace fiskaltrust.Launcher.Configuration
+namespace fiskaltrust.Launcher.Common.Configuration
 {
     public class LegacyConfigFileReader
     {
@@ -79,7 +79,7 @@ namespace fiskaltrust.Launcher.Configuration
             }
             else if (key == "loglevel")
             {
-                launcherConfiguration.LogLevel = Enum.Parse<LogLevel>(value);
+                launcherConfiguration.LogLevel = Enum.Parse<LogLevel>(value, ignoreCase: true);
             }
             else if (key == "connectiontimeout")
             {

@@ -9,6 +9,7 @@ using DiffPlex.DiffBuilder.Model;
 using fiskaltrust.Launcher.Extensions;
 using Microsoft.AspNetCore.DataProtection;
 using System.CommandLine.NamingConventionBinder;
+using fiskaltrust.Launcher.Common.Constants;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -17,13 +18,20 @@ namespace fiskaltrust.Launcher.Commands
     {
         public ConfigCommand() : base("config")
         {
-            AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => "launcher.configuration.json"));
             AddOption(new Option<string?>("--launcher-version"));
+
+            AddOption(new Option<Guid?>("--cashbox-id"));
+            AddOption(new Option<string?>("--access-token"));
+            AddOption(new Option<bool>("--sandbox"));
+            AddOption(new Option<string?>("--log-folder"));
 
             var logLevelOption = new Option<LogLevel?>("--log-level", "Set the log level of the application.");
             logLevelOption.AddAlias("-v");
             logLevelOption.AddAlias("--verbosity");
             AddOption(logLevelOption);
+
+            AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => Paths.LauncherConfigurationFileName));
+            AddOption(new Option<string>("--legacy-configuration-file", getDefaultValue: () => Paths.LegacyConfigurationFileName));
 
             AddCommand(new ConfigSetCommand()
             {
@@ -182,7 +190,6 @@ namespace fiskaltrust.Launcher.Commands
         {
             AddOption(new Option<string?>("--access-token"));
             AddOption(new Option<string?>("--cashbox-configuration-file"));
-            AddOption(new Option<string?>("--legacy-config-file"));
         }
     }
 
@@ -190,7 +197,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public string? AccessToken { get; set; }
         public string? LauncherConfigurationFile { get; set; }
-        public string? LegacyConfigFile { get; set; }
+        public string? LegacyConfigurationFile { get; set; }
         public string? CashBoxConfigurationFile { get; set; }
     }
 
@@ -213,20 +220,20 @@ namespace fiskaltrust.Launcher.Commands
                 }
             }
 
-            if (configGetOptions.LegacyConfigFile is not null)
+            if (configGetOptions.LegacyConfigurationFile is not null && File.Exists(configGetOptions.LegacyConfigurationFile))
             {
-                LauncherConfiguration? legacyConfiguration = await ReadLauncherConfiguration(configGetOptions.LegacyConfigFile, configGetOptions.AccessToken, LegacyConfigFileReader.ReadLegacyConfigFile!);
+                LauncherConfiguration? legacyConfiguration = await LegacyConfigFileReader.ReadLegacyConfigFile(configGetOptions.LegacyConfigurationFile);
 
                 if (legacyConfiguration is not null)
                 {
-                    Log.Information($"Legacy configuration {{LegacyConfigFile}}\n{legacyConfiguration.Serialize(true, true)}", configGetOptions.LegacyConfigFile);
+                    Log.Information($"Legacy configuration {{LegacyConfigFile}}\n{legacyConfiguration.Serialize(true, true)}", configGetOptions.LegacyConfigurationFile);
                 }
             }
 
             configGetOptions.CashBoxConfigurationFile ??= localConfiguration?.CashboxConfigurationFile;
             if (configGetOptions.CashBoxConfigurationFile is not null && File.Exists(configGetOptions.CashBoxConfigurationFile))
             {
-                LauncherConfiguration? remoteConfiguration = await ConfigGetHandler.ReadLauncherConfiguration(configGetOptions.CashBoxConfigurationFile, configGetOptions.AccessToken, LauncherConfigurationInCashBoxConfiguration.Deserialize);
+                LauncherConfiguration? remoteConfiguration = await ReadLauncherConfiguration(configGetOptions.CashBoxConfigurationFile, configGetOptions.AccessToken, LauncherConfigurationInCashBoxConfiguration.Deserialize);
 
                 if (remoteConfiguration is not null)
                 {
