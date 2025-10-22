@@ -30,7 +30,7 @@ namespace fiskaltrust.Launcher.Commands
             logLevelOption.AddAlias("--verbosity");
             AddOption(logLevelOption);
 
-            AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => Paths.LegacyConfigurationFileName));
+            AddOption(new Option<string>("--launcher-configuration-file", getDefaultValue: () => Paths.LauncherConfigurationFileName));
             AddOption(new Option<string>("--legacy-configuration-file", getDefaultValue: () => Paths.LegacyConfigurationFileName));
 
             AddCommand(new ConfigSetCommand()
