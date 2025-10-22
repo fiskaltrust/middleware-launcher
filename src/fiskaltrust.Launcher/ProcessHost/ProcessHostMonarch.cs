@@ -71,10 +71,11 @@ namespace fiskaltrust.Launcher.ProcessHost
             _process.OutputDataReceived += ReceiveStdOut;
             _process.ErrorDataReceived += ReceiveStdOut;
 
-            //if (Debugger.IsAttached && _packageType == PackageType.Queue)
-            //{
-            //    _process.StartInfo.Arguments += " --debugging";
-            //}
+            if (Debugger.IsAttached && _packageType == PackageType.Queue)
+            {
+                _process.StartInfo.Arguments += " --debugging";
+                _logger.LogInformation("Debugging enabled for Queue package {package} {id}. Waiting for debugger to attach.", _packageConfiguration.Package, _packageConfiguration.Id);
+            }
         }
 
         private void ReceiveStdOut(object sender, DataReceivedEventArgs e)
