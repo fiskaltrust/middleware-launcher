@@ -63,10 +63,8 @@ stages:
             displayName: Install AzureSignTool
 
           - pwsh: |
-              & {
-                Get-ChildItem -Path "$(Build.SourcesDirectory)" -Filter *fiskaltrust*.exe -Recurse
-                Get-ChildItem -Path "$(Build.SourcesDirectory)" -Filter *fiskaltrust*.dll -Recurse
-              } | ForEach-Object {
+              Get-ChildItem -Path "$(Build.ArtifactStagingDirectory)/drop-$(target)" -Filter *.exe -Recurse | ForEach-Object {
+                Write-Host "Signing $($_.FullName)"
                 azuresigntool sign `
                 --azure-key-vault-url "$(AZURE_KEY_VAULT_URL)" `
                 --azure-key-vault-certificate "$(AZURE_KEY_VAULT_CERTIFICATE)" `
