@@ -33,7 +33,7 @@ jobs:
         with:
           project: fiskaltrust.Launcher
           path: src
-  
+
   package:
     needs: [version]
     name: package
@@ -42,28 +42,28 @@ jobs:
         include:
           - vmImage: windows-latest
             target: win-x64
-            scriptFolder: 'windows'
+            scriptFolder: "windows"
 
           - vmImage: windows-latest
             target: win-x86
-            scriptFolder: 'windows'
+            scriptFolder: "windows"
 
           - vmImage: ubuntu-latest
             target: linux-x64
-            scriptFolder: 'linux'
+            scriptFolder: "linux"
 
           - vmImage: ubuntu-latest
             target: linux-arm
-            scriptFolder: 'linux'
+            scriptFolder: "linux"
 
           - vmImage: ubuntu-latest
             target: linux-arm64
-            scriptFolder: 'linux'
+            scriptFolder: "linux"
 
           - vmImage: macos-latest
             target: osx-x64
-            scriptFolder: 'macos'
-    
+            scriptFolder: "macos"
+
     runs-on: ${{ matrix.vmImage }}
 
     steps:
@@ -89,7 +89,7 @@ jobs:
           $config = "${{ steps.set-config.outputs.config }}"
           $dropPath = "./publish/drop-$target"
           $rawPath = "./publish/raw-$target"
-          
+
           echo "path=$rawPath" >> $env:GITHUB_OUTPUT
           New-Item -ItemType Directory -Force -Path $rawPath
           foreach ($project in $projects) 
@@ -103,16 +103,19 @@ jobs:
         if: runner.os == 'Windows'
         uses: fiskaltrust/middleware/.github/actions/sign@main
         with:
-          certificate: '${{ secrets.SIGNING_CERTIFICATE }}'
-          password: '${{ secrets.SIGNING_CERT_PASSWORD }}'
           path: ${{ steps.copy-executables.outputs.path }}
-          filter: 'fiskaltrust.Launcher*'
+          filter: "fiskaltrust.Launcher*"
+          azureKeyVaultUrl: "${{ vars.CODESIGNING_AZURE_KEY_VAULT_URL }}"
+          azureKeyVaultCertificate: "${{ vars.CODESIGNING_AZURE_KEY_VAULT_CERTIFICATE }}"
+          azureKeyVaultClientId: "${{ secrets.CODESIGNING_AZURE_KEY_VAULT_CLIENT_ID }}"
+          azureKeyVaultTenantId: "${{ secrets.CODESIGNING_AZURE_KEY_VAULT_TENANT_ID }}"
+          azureKeyVaultClientSecret: "${{ secrets.CODESIGNING_AZURE_KEY_VAULT_SECRET }}"
 
       - name: Upload zip and hash of output package
         uses: ./.github/actions/zip-hash-package
         with:
           path: ${{ steps.copy-executables.outputs.path }}
-          zipFileName : "fiskaltrust.Launcher-${{ needs.version.outputs.version }}"
+          zipFileName: "fiskaltrust.Launcher-${{ needs.version.outputs.version }}"
           artifactName: "package-${{ matrix.target }}"
 
       - name: Copy README.md to scripts artifacts
@@ -126,9 +129,9 @@ jobs:
         uses: ./.github/actions/zip-package
         with:
           path: ./scripts/${{ matrix.scriptFolder }}/
-          zipFileName : "fiskaltrust.Launcher-${{ needs.version.outputs.version }}"
+          zipFileName: "fiskaltrust.Launcher-${{ needs.version.outputs.version }}"
           artifactName: "scripts-${{ matrix.target }}"
-  
+
   deb-package:
     needs: [version]
     uses: ./.github/workflows/deb-package.yml
