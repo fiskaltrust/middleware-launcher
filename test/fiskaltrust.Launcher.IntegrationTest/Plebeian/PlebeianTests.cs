@@ -28,6 +28,38 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebeian
 
     public class PlebeianTests
     {
+        private static string? GetHostForBinding(Binding binding)
+        {
+            try
+            {
+                return binding switch
+                {
+                    Binding.Localhost => "localhost",
+                    Binding.Loopback => "127.0.0.1",
+                    Binding.Ip => GetLocalIpAddress(),
+                    Binding.Hostname => Dns.GetHostName(),
+                    _ => throw new NotImplementedException(),
+                };
+            }
+            catch (System.Net.Sockets.SocketException)
+            {
+                // On macOS CI, DNS resolution might fail, fallback to localhost for IP binding
+                return binding == Binding.Ip ? "127.0.0.1" : null;
+            }
+        }
+
+        private static string? GetLocalIpAddress()
+        {
+            var hostName = Dns.GetHostName();
+            var addresses = Dns.GetHostAddresses(hostName)
+                .Where(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && i != IPAddress.Parse("127.0.0.1"))
+                .Select(i => i.ToString())
+                .FirstOrDefault();
+
+            // If no IP found, fallback to loopback
+            return addresses ?? "127.0.0.1";
+        }
+
         [SkippableTheory]
         [InlineData(Binding.Localhost, true, new[] { 0, 1, 2 })]
         [InlineData(Binding.Localhost, false, new[] { 4, 5, 6 })]
@@ -42,14 +74,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebeian
             Skip.If(!OperatingSystem.IsWindows() && useHttpSysBinding, "HttpSysBinding is only supported on windows");
             Skip.If(OperatingSystem.IsWindows() && useHttpSysBinding && binding is not Binding.Localhost && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
 
-            string? host = binding switch
-            {
-                Binding.Localhost => "localhost",
-                Binding.Loopback => "127.0.0.1",
-                Binding.Ip => Dns.GetHostAddresses(Dns.GetHostName()).Where(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && i != IPAddress.Parse("127.0.0.1")).Select(i => i.ToString()).FirstOrDefault(),
-                Binding.Hostname => Dns.GetHostName(),
-                _ => throw new NotImplementedException(),
-            };
+            string? host = GetHostForBinding(binding);
 
             Skip.If(host is null, "Could not get host");
 
@@ -111,14 +136,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebeian
             Skip.If(!OperatingSystem.IsWindows() && useHttpSysBinding, "HttpSysBinding is only supported on windows");
             Skip.If(OperatingSystem.IsWindows() && useHttpSysBinding && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
 
-            string? host = binding switch
-            {
-                Binding.Localhost => "localhost",
-                Binding.Loopback => "127.0.0.1",
-                Binding.Ip => Dns.GetHostAddresses(Dns.GetHostName()).Where(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && i != IPAddress.Parse("127.0.0.1")).Select(i => i.ToString()).FirstOrDefault(),
-                Binding.Hostname => Dns.GetHostName(),
-                _ => throw new NotImplementedException(),
-            };
+            string? host = GetHostForBinding(binding);
 
             Skip.If(host is null, "Could not get host");
 
@@ -175,14 +193,7 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebeian
             Skip.If(!OperatingSystem.IsWindows(), "HttpSysBinding is only supported on windows");
             Skip.If(OperatingSystem.IsWindows() && !Runtime.IsAdministrator!.Value, $"Test needs to be run as an administrator with HttpSysBinding and {binding} binding");
 
-            string? host = binding switch
-            {
-                Binding.Localhost => "localhost",
-                Binding.Loopback => "127.0.0.1",
-                Binding.Ip => Dns.GetHostAddresses(Dns.GetHostName()).Where(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && i != IPAddress.Parse("127.0.0.1")).Select(i => i.ToString()).FirstOrDefault(),
-                Binding.Hostname => Dns.GetHostName(),
-                _ => throw new NotImplementedException(),
-            };
+            string? host = GetHostForBinding(binding);
 
             Skip.If(host is null, "Could not get host");
 
