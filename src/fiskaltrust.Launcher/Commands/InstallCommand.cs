@@ -55,13 +55,14 @@ namespace fiskaltrust.Launcher.Commands
                 "--access-token", commonProperties.LauncherConfiguration.AccessToken!,
                 "--sandbox", commonProperties.LauncherConfiguration.Sandbox!.Value.ToString(),
                 "--launcher-configuration-file", $"\"{commonOptions.LauncherConfigurationFile}\"",
+                "--legacy-configuration-file", $"\"{commonOptions.LegacyConfigurationFile}\"",
             }.Concat(installServices.SubArguments.Args));
 
             ServiceInstaller? installer = null;
 
             if (OperatingSystem.IsLinux())
             {
-                installer = new LinuxSystemD(installOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}", 
+                installer = new LinuxSystemD(installOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}",
                     installServices.LauncherExecutablePath, commonProperties.LauncherConfiguration.ServiceFolder);
             }
             if (OperatingSystem.IsWindows())
