@@ -21,14 +21,14 @@ namespace fiskaltrust.Launcher.Common.Constants
         {
             get
             {
-                if (OperatingSystem.IsWindows())
+                var legacyConfigurationFileName = "fiskaltrust.mono.exe.config";
+
+                if (!File.Exists(legacyConfigurationFileName))
                 {
-                    return "fiskaltrust.exe.config";
+                    legacyConfigurationFileName = "fiskaltrust.exe.config";
                 }
-                else
-                {
-                    return "fiskaltrust.mono.exe.config";
-                }
+
+                return legacyConfigurationFileName;
             }
         }
 
