@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   package:
-    uses: ./.github/workflows/package-test.yml 
+    uses: ./.github/workflows/package-test.yaml 
     secrets: inherit
   release:
     needs: [package]
