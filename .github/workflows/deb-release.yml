@@ -1,0 +1,162 @@
+name: Release Debian Packages
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  STORAGE_ACCOUNT: ${{ secrets.STORAGE_ACCOUNT }}
+  SERVICE_CONNECTION: ${{ secrets.AZURE_CREDENTIALS }} # federated identity (OIDC)
+  TARGETS: |
+    linux-x64
+    linux-arm
+    linux-arm64
+
+jobs:
+  release-deb:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install apt-utils
+      run: sudo apt-get update && sudo apt-get install -y apt-utils
+
+    - name: Setup Azure CLI
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Download PGP Private Key
+      run: |
+        mkdir -p ~/.gnupg
+        echo "$PGP_PRIVATE_KEY" > private.gpg
+      env:
+        PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
+
+    - name: Import GPG Key
+      run: |
+        gpg --batch --import private.gpg
+        echo "cert-digest-algo SHA256" >> ~/.gnupg/gpg.conf
+        echo "digest-algo SHA256" >> ~/.gnupg/gpg.conf
+
+    - name: Download Meta Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: meta
+        path: meta
+
+    # Download all deb-* artifacts
+    - name: Download DEB Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Load meta.json
+      id: meta
+      run: |
+        content=$(cat meta/meta.json)
+        echo "json=$content" >> $GITHUB_OUTPUT
+
+    - name: Create repo folder structure
+      run: |
+        mkdir -p apt-repo/pool/main
+        mkdir -p apt-repo/dists/stable/main
+
+    # LOOP OVER TARGETS
+    - name: Process Debian packages per target
+      shell: bash
+      run: |
+        set -e
+
+        meta='${{ steps.meta.outputs.json }}'
+
+        for target in $TARGETS; do
+          echo "=== Processing $target ==="
+
+          arch=$(echo "$meta" | jq -r ".deb.architectures.\"$target\"")
+
+          mkdir -p "apt-repo/dists/stable/main/binary-$arch"
+
+          # Copy artifacts
+          cp -r "artifacts/deb-$target/." "apt-repo/pool/main/"
+
+          # Download existing Packages from Azure
+          az storage blob download \
+            --account-name "$STORAGE_ACCOUNT" \
+            -c apt-repo \
+            -n "dists/stable/main/binary-$arch/Packages" \
+            -f "apt-repo/dists/stable/main/binary-$arch/Packages" \
+            --auth-mode login || true
+
+          # Remove already released files
+          if [[ -f apt-repo/dists/stable/main/binary-$arch/Packages ]]; then
+            packages_content=$(cat apt-repo/dists/stable/main/binary-$arch/Packages)
+            for file in apt-repo/pool/main/*; do
+              filename=$(basename "$file")
+              if [[ "$packages_content" == *"$filename"* ]]; then
+                echo "WARNING: $filename already released; removing..."
+                rm "$file"
+              fi
+            done
+          fi
+
+          # Update Packages file
+          apt-ftparchive --arch "$arch" packages apt-repo/pool/main \
+            >> apt-repo/dists/stable/main/binary-$arch/Packages
+
+          gzip -k -f apt-repo/dists/stable/main/binary-$arch/Packages
+        done
+
+    - name: Generate Release File
+      run: |
+        meta='${{ steps.meta.outputs.json }}'
+        cd apt-repo/dists/stable
+
+        architectures=$(echo "$meta" | jq -r '.deb.architectures | to_entries | .[].value' | tr '\n' ' ')
+
+        {
+          echo "Origin: $(echo "$meta" | jq -r '.deb.repository.origin')"
+          echo "Suite: stable"
+          echo "Codename: stable"
+          echo "Version: 1.0"
+          echo "Components: main"
+          echo "Description: $(echo "$meta" | jq -r '.deb.repository.description')"
+          echo "Architectures: $architectures"
+        } > Release
+
+        apt-ftparchive release . >> Release
+
+    - name: Sign Release files
+      run: |
+        cd apt-repo/dists/stable
+        gpg --batch --yes --default-key fiskaltrust -abs Release > Release.gpg
+        gpg --batch --yes --default-key fiskaltrust -abs --clearsign Release > InRelease
+
+    - name: Upload pool/
+      run: |
+        az storage blob upload-batch \
+          --account-name "$STORAGE_ACCOUNT" \
+          -d apt-repo \
+          --destination-path "pool" \
+          -s "apt-repo/pool" \
+          --overwrite \
+          --auth-mode login
+
+    - name: Upload dists/
+      run: |
+        az storage blob upload-batch \
+          --account-name "$STORAGE_ACCOUNT" \
+          -d apt-repo \
+          --destination-path "dists" \
+          -s "apt-repo/dists" \
+          --overwrite \
+          --auth-mode login

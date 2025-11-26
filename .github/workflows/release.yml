@@ -2,9 +2,9 @@ name: Release Launcher
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - refs/tags/*
+  # push:
+  #   branches:
+  #     - refs/tags/*
   
 permissions:
   checks: write
@@ -14,7 +14,10 @@ permissions:
 
 jobs:
   package:
-    uses: ./.github/workflows/package.yml 
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/workflows/package.yml 
   release:
     needs: [package]
     strategy:
