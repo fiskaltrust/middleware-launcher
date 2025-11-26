@@ -15,6 +15,7 @@ permissions:
 jobs:
   package:
     uses: ./.github/workflows/package-test.yml 
+    secrets: inherit
   release:
     needs: [package]
     strategy:
