@@ -13,8 +13,8 @@ permissions:
   contents: read
 
 jobs:
-  # package:
-  #   uses: ./.github/workflows/package-test.yml 
+  package:
+    uses: ./.github/workflows/package-test.yml 
   release:
     needs: [package]
     strategy:
