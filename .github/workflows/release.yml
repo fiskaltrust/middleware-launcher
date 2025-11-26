@@ -1,8 +1,7 @@
 name: Release Launcher
 
 on:
-  workflow_dispatch:
-  workflow_call:
+  workflow_dispatch:  
   # push:
   #   branches:
   #     - refs/tags/*
