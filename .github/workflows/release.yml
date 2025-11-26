@@ -14,10 +14,7 @@ permissions:
 
 jobs:
   package:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/workflows/package.yml 
+    uses: ./.github/workflows/package.yml 
   # release:
   #   needs: [package]
   #   strategy:
