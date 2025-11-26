@@ -1,0 +1,61 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      target:
+        type: string
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  packages:
+    name: Deploy Packages
+    runs-on: ubuntu-latest
+    needs: []
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download zip Package
+        uses: actions/download-artifact@v4
+        with:
+          name: package-${{ inputs.target }}
+          path: artifacts/package-${{ inputs.target }}
+
+      - name: Download scripts Package
+        uses: actions/download-artifact@v4
+        with:
+          name: scripts-${{ inputs.target }}
+          path: artifacts/scripts-${{ inputs.target }}
+      - pwsh: |
+          Get-ChildItem "artifacts/package-${{ inputs.target }}/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
+          Get-ChildItem "artifacts/scripts-${{ inputs.target }}/scripts-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher.Scripts-", "") }
+          displayName: Rename Package Artifacts
+      - name: Deploy zip Packages
+        uses: ./.github/actions/deploy-packages
+        #fiskaltrust/middleware/.github/actions/deploy-v2-packages@main
+        with:
+          directory: artifacts/package-${{ inputs.target }}
+          storageAccountName: stdevwesteuropepackages
+          clientId: ${{ secrets.AZURE_CLIENT_ID }}
+          tenantId: ${{ secrets.AZURE_TENANT_ID }}
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Script Packages
+        uses: ./.github/actions/deploy-packages
+        #fiskaltrust/middleware/.github/actions/deploy-v2-packages@main
+        with:
+          directory: artifacts/scripts-${{ inputs.target }}
+          storageAccountName: stdevwesteuropepackages
+          clientId: ${{ secrets.AZURE_CLIENT_ID }}
+          tenantId: ${{ secrets.AZURE_TENANT_ID }}
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+         
+         
