@@ -34,10 +34,13 @@ jobs:
         with:
           name: scripts-${{ inputs.target }}
           path: artifacts/scripts-${{ inputs.target }}
-      - pwsh: |
-          Get-ChildItem "artifacts/package-${{ inputs.target }}/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
-          Get-ChildItem "artifacts/scripts-${{ inputs.target }}/scripts-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher.Scripts-", "") }
-          displayName: Rename Package Artifacts
+
+      - name: Rename Package Artifacts
+        shell: pwsh
+        run: |
+            Get-ChildItem "artifacts/package-${{ inputs.target }}/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
+            Get-ChildItem "artifacts/scripts-${{ inputs.target }}/scripts-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher.Scripts-", "") }
+      
       - name: Deploy zip Packages
         uses: ./.github/actions/deploy-packages
         #fiskaltrust/middleware/.github/actions/deploy-v2-packages@main
