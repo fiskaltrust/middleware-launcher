@@ -2,7 +2,7 @@ name: Package Launcher
 
 on:
   workflow_call:
-   inputs:
+    inputs:
       commit:
         type: string
         required: false
