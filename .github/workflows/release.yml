@@ -2,9 +2,9 @@ name: Release Launcher
 
 on:
   workflow_dispatch:  
-  # push:
-  #   branches:
-  #     - refs/tags/*
+  push:
+    branches:
+      - refs/tags/*
   
 permissions:
   checks: write
