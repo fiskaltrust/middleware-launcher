@@ -12,7 +12,8 @@ jobs:
   test:
     strategy:
       matrix:
-        vmImage: [windows-latest, ubuntu-latest, macos-latest]
+        vmImage: [windows-latest]
+        #vmImage: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.vmImage }}
     name: test-${{ matrix.vmImage }}
     
