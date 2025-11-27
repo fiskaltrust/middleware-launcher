@@ -45,13 +45,11 @@ jobs:
             target: osx-x64
             scriptFolder: "macos"
 
-    runs-on: ${{ matrix.vmImage }}
-
-    steps:
-      - uses: actions/checkout@v4   
-      - uses: ./.github/workflows/package.yml
-        with:
-          environment: Sandbox
-          target: ${{ matrix.target }}
+   
+    uses: ./.github/workflows/deply.yml
+    with:
+        environment: Sandbox
+        target: ${{ matrix.target }}
+        vmImage: ${{ matrix.vmImage }}
      
 

@@ -9,6 +9,9 @@ on:
       target:
         type: string
         required: true
+      vmImage:
+        type: string
+        required: true
 
 permissions:
   id-token: write
@@ -17,7 +20,7 @@ permissions:
 jobs:
   packages:
     name: Deploy Packages
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.vmImage }}
     needs: []
     environment: ${{ inputs.environment }}
     steps:
