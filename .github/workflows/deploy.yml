@@ -5,13 +5,7 @@ on:
     inputs:
       environment:
         type: string
-        required: true
-      target:
-        type: string
-        required: true
-      vmImage:
-        type: string
-        required: true
+        required: true      
 
 permissions:
   id-token: write
@@ -20,7 +14,33 @@ permissions:
 jobs:
   packages:
     name: Deploy Packages
-    runs-on: ${{ inputs.vmImage }}
+    strategy:
+      matrix:
+        include:
+          - vmImage: windows-latest
+            target: win-x64
+            scriptFolder: "windows"
+
+          - vmImage: windows-latest
+            target: win-x86
+            scriptFolder: "windows"
+
+          - vmImage: ubuntu-latest
+            target: linux-x64
+            scriptFolder: "linux"
+
+          - vmImage: ubuntu-latest
+            target: linux-arm
+            scriptFolder: "linux"
+
+          - vmImage: ubuntu-latest
+            target: linux-arm64
+            scriptFolder: "linux"
+
+          - vmImage: macos-latest
+            target: osx-x64
+            scriptFolder: "macos"
+    runs-on: ${{ matrix.vmImage }}
     needs: []
     environment: ${{ inputs.environment }}
     steps:
@@ -29,26 +49,26 @@ jobs:
       - name: Download zip Package
         uses: actions/download-artifact@v4
         with:
-          name: package-${{ inputs.target }}
-          path: artifacts/package-${{ inputs.target }}
+          name: package-${{ matrix.target }}
+          path: artifacts/package-${{ matrix.target }}
 
       - name: Download scripts Package
         uses: actions/download-artifact@v4
         with:
-          name: scripts-${{ inputs.target }}
-          path: artifacts/scripts-${{ inputs.target }}
+          name: scripts-${{ matrix.target }}
+          path: artifacts/scripts-${{ matrix.target }}
 
       - name: Rename Package Artifacts
         shell: pwsh
         run: |
-            Get-ChildItem "artifacts/package-${{ inputs.target }}/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
-            Get-ChildItem "artifacts/scripts-${{ inputs.target }}/scripts-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher.Scripts-", "") }
+            Get-ChildItem "artifacts/package-${{ matrix.target }}/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
+            Get-ChildItem "artifacts/scripts-${{ matrix.target }}/scripts-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher.Scripts-", "") }
       
       - name: Deploy zip Packages
         uses: ./.github/actions/deploy-packages
         #fiskaltrust/middleware/.github/actions/deploy-v2-packages@main
         with:
-          directory: artifacts/package-${{ inputs.target }}
+          directory: artifacts/package-${{ matrix.target }}
           storageAccountName: stdevwesteuropepackages
           clientId: ${{ secrets.AZURE_CLIENT_ID }}
           tenantId: ${{ secrets.AZURE_TENANT_ID }}
@@ -58,7 +78,7 @@ jobs:
         uses: ./.github/actions/deploy-packages
         #fiskaltrust/middleware/.github/actions/deploy-v2-packages@main
         with:
-          directory: artifacts/scripts-${{ inputs.target }}
+          directory: artifacts/scripts-${{ matrix.target }}
           storageAccountName: stdevwesteuropepackages
           clientId: ${{ secrets.AZURE_CLIENT_ID }}
           tenantId: ${{ secrets.AZURE_TENANT_ID }}
