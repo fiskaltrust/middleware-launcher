@@ -2,13 +2,17 @@ name: Package Launcher
 
 on:
   workflow_call:
-  push:
-    branches:
-      - main
-      - refs/tags/*
-  pull_request:
-    branches:
-      - main
+   inputs:
+      commit:
+        type: string
+        required: false
+  # push:
+  #   branches:
+  #     - main
+  #     - refs/tags/*
+  # pull_request:
+  #   branches:
+  #     - main
 
 jobs:
   test-launcher:
