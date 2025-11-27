@@ -4,12 +4,14 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
       - refs/tags/*
       - Release-pipeline   
-  pull_request:
-    branches:
-      - main
+
+permissions:
+  checks: write
+  pull-requests: write
+  id-token: write
+  contents: read
 
 jobs:
   package:
