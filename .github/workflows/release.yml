@@ -12,14 +12,9 @@ on:
       - main
 
 jobs:
-  test-launcher:
-    uses: ./.github/workflows/test.yml
-    permissions:
-      checks: write
-      pull-requests: write
-  # package:
-  #   uses: ./.github/workflows/package.yml
-  #   secrets: inherit
+  package:
+    uses: ./.github/workflows/package.yml
+    secrets: inherit
   # release:
   #   needs: [package]
   #   strategy:
