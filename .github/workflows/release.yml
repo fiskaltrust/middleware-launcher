@@ -6,12 +6,6 @@ on:
     branches:
       - refs/tags/*
 
-permissions:
-  checks: write
-  pull-requests: write
-  id-token: write
-  contents: read
-
 jobs:
   test-launcher:
     uses: ./.github/workflows/test.yml
