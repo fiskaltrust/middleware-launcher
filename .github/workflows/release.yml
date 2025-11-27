@@ -13,9 +13,9 @@ permissions:
   contents: read
 
 jobs:
-  # package:
-  #   uses: ./.github/workflows/package.yml 
-  #   secrets: inherit
+  package:
+    uses: ./.github/workflows/package.yml 
+    secrets: inherit
   release:
     needs: [package]
     strategy:
