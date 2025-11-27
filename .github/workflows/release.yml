@@ -51,5 +51,6 @@ jobs:
         environment: Sandbox
         target: ${{ matrix.target }}
         vmImage: ${{ matrix.vmImage }}
+    secrets: inherit
      
 
