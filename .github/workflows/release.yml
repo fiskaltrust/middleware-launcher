@@ -2,11 +2,11 @@ name: Release Launcher
 
 on:
   workflow_dispatch:
-  workflow_call:
   push:
     branches:
       - main
       - refs/tags/*
+      - Release-pipeline   
   pull_request:
     branches:
       - main
