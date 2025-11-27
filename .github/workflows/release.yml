@@ -13,43 +13,43 @@ permissions:
   contents: read
 
 jobs:
-  package:
-    uses: ./.github/workflows/package.yml
-  # release:
-  #   needs: [package]
-  #   strategy:
-  #     matrix:
-  #       include:
-  #         - vmImage: windows-latest
-  #           target: win-x64
-  #           scriptFolder: "windows"
+  # package:
+  #   uses: ./.github/workflows/package.yml
+  release:
+    #needs: [package]
+    strategy:
+      matrix:
+        include:
+          - vmImage: windows-latest
+            target: win-x64
+            scriptFolder: "windows"
 
-  #         - vmImage: windows-latest
-  #           target: win-x86
-  #           scriptFolder: "windows"
+          - vmImage: windows-latest
+            target: win-x86
+            scriptFolder: "windows"
 
-  #         - vmImage: ubuntu-latest
-  #           target: linux-x64
-  #           scriptFolder: "linux"
+          - vmImage: ubuntu-latest
+            target: linux-x64
+            scriptFolder: "linux"
 
-  #         - vmImage: ubuntu-latest
-  #           target: linux-arm
-  #           scriptFolder: "linux"
+          - vmImage: ubuntu-latest
+            target: linux-arm
+            scriptFolder: "linux"
 
-  #         - vmImage: ubuntu-latest
-  #           target: linux-arm64
-  #           scriptFolder: "linux"
+          - vmImage: ubuntu-latest
+            target: linux-arm64
+            scriptFolder: "linux"
 
-  #         - vmImage: macos-latest
-  #           target: osx-x64
-  #           scriptFolder: "macos"
+          - vmImage: macos-latest
+            target: osx-x64
+            scriptFolder: "macos"
 
    
-  #   uses: ./.github/workflows/deply.yml
-  #   with:
-  #       environment: Sandbox
-  #       target: ${{ matrix.target }}
-  #       vmImage: ${{ matrix.vmImage }}
-  #   secrets: inherit
+    uses: ./.github/workflows/deply.yml
+    with:
+        environment: Sandbox
+        target: ${{ matrix.target }}
+        vmImage: ${{ matrix.vmImage }}
+    secrets: inherit
      
 
