@@ -1,4 +1,4 @@
-name: 'Deploy v2 Packages'
+name: 'Deploy Packages'
 
 permissions:
   id-token: write
@@ -36,8 +36,12 @@ runs:
 
     - name: Azure CLI script
       uses: azure/cli@v2
+      env:
+        STORAGE_ACCOUNT: ${{ inputs.storageAccountName }}
+        DIRECTORY: ${{ inputs.directory }}
+        TARGET: ${{ inputs.target }}
       with:
         azcliversion: latest
         inlineScript: |
-          az storage blob upload-batch --account-name ${{ inputs.storageAccountName }} --auth-mode login -d "packages" --destination-path "${{ inputs.target }}/fiskaltrust.Launcher/" -s "${{ inputs.directory }}" --pattern "*.zip*"
+          az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" --auth-mode login -d "packages" --destination-path "$TARGET/fiskaltrust.Launcher/" -s "$DIRECTORY" --pattern "*.zip*"
           #az storage blob upload-batch --account-name ${{ inputs.storageAccountName }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}/" --pattern "*.zip*"
