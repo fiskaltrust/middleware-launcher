@@ -21,9 +21,7 @@ jobs:
     needs: [package] 
     uses: ./.github/workflows/deploy.yml
     with:
-        environment: Sandbox
-        target: ${{ matrix.target }}
-        vmImage: ${{ matrix.vmImage }}
+        environment: Sandbox       
     secrets: inherit
      
 
