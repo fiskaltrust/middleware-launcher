@@ -11,6 +11,9 @@ inputs:
   storageAccountName:
     required: true
     type: string
+  target:
+    required: true
+    type: string  
   tenantId:
     required: true
     type: string
@@ -36,5 +39,5 @@ runs:
       with:
         azcliversion: latest
         inlineScript: |
-          az storage blob upload-batch --account-name ${{ inputs.storageAccountName }} --auth-mode login -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher/" -s "${{ inputs.directory }}" --pattern "*.zip*"
+          az storage blob upload-batch --account-name ${{ inputs.storageAccountName }} --auth-mode login -d "packages" --destination-path "${{ inputs.target }}/fiskaltrust.Launcher/" -s "${{ inputs.directory }}" --pattern "*.zip*"
           #az storage blob upload-batch --account-name ${{ inputs.storageAccountName }} -d "packages" --destination-path "${{ target }}/fiskaltrust.Launcher/" -s "$(Pipeline.Workspace)/${{ parameters.artifact }}/package-${{ target }}/" --pattern "*.zip*"
