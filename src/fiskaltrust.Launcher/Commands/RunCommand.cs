@@ -7,6 +7,10 @@ using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using fiskaltrust.Launcher.Common.Extensions;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using LoggerExtensions = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions;
 
 
 namespace fiskaltrust.Launcher.Commands
@@ -60,6 +64,8 @@ namespace fiskaltrust.Launcher.Commands
     {
         public static async Task<int> HandleAsync(CommonOptions commonOptions, CommonProperties commonProperties, RunOptions _, RunServices runServices)
         {
+            var logger = LoggerExtensions.CreateFromSerilog();
+
             var builder = WebApplication.CreateBuilder();
 
             builder.Host
@@ -108,17 +114,17 @@ namespace fiskaltrust.Launcher.Commands
             app.UseEndpoints(endpoints => endpoints.MapGrpcService<ProcessHostService>());
 #pragma warning restore ASP0014
 
-            await runServices.SelfUpdater.PrepareSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, app.Services.GetRequiredService<PackageDownloader>());
+            await runServices.SelfUpdater.PrepareSelfUpdate(logger, commonProperties.LauncherConfiguration, app.Services.GetRequiredService<PackageDownloader>());
 
             try
             {
                 await app.RunAsync(runServices.Lifetime.ApplicationLifetime.ApplicationStopping);
 
-                await runServices.SelfUpdater.StartSelfUpdate(Log.Logger, commonProperties.LauncherConfiguration, commonOptions.LauncherConfigurationFile);
+                await runServices.SelfUpdater.StartSelfUpdate(logger, commonProperties.LauncherConfiguration, commonOptions.LauncherConfigurationFile);
             }
             catch (Exception e)
             {
-                Log.Error(e, "An unhandled exception occured.");
+                logger.AnUnhandledExceptionOccurred(e);
                 return 1;
             }
             finally

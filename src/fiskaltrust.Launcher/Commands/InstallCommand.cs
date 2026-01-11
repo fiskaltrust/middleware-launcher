@@ -1,7 +1,10 @@
 using System.CommandLine;
-using Serilog;
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.ServiceInstallation;
 using fiskaltrust.Launcher.Helpers;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using LoggerExtensions = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -49,6 +52,8 @@ namespace fiskaltrust.Launcher.Commands
     {
         public static async Task<int> HandleAsync(CommonOptions commonOptions, CommonProperties commonProperties, InstallOptions installOptions, InstallServices installServices)
         {
+            var logger = LoggerExtensions.CreateFromSerilog();
+
             var commandArgs = "run ";
             commandArgs += string.Join(" ", new[] {
                 "--cashbox-id", commonProperties.LauncherConfiguration.CashboxId!.Value.ToString(),
@@ -63,11 +68,11 @@ namespace fiskaltrust.Launcher.Commands
             if (OperatingSystem.IsLinux())
             {
                 installer = new LinuxSystemD(installOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}",
-                    installServices.LauncherExecutablePath, commonProperties.LauncherConfiguration.ServiceFolder);
+                    installServices.LauncherExecutablePath, commonProperties.LauncherConfiguration.ServiceFolder, logger);
             }
             if (OperatingSystem.IsWindows())
             {
-                installer = new WindowsService(installOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}", installServices.LauncherExecutablePath);
+                installer = new WindowsService(installOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}", installServices.LauncherExecutablePath, logger);
             }
 
             if (installer is not null)
@@ -75,7 +80,7 @@ namespace fiskaltrust.Launcher.Commands
                 return await installer.InstallService(commandArgs, installOptions.ServiceDisplayName, installOptions.DelayedStart).ConfigureAwait(false);
             }
 
-            Log.Error("The launcher can only install itsself as a sevice on windows and linux(systemd). On other OSs it has to be done manually. See: {link}", ""); // TODO
+            logger.ServiceInstallationManualRequired(""); // TODO
             return 1;
         }
     }

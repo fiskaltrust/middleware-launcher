@@ -14,16 +14,17 @@ using ProtoBuf.Grpc.Client;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Constants;
 using System.Diagnostics;
-using System.Net.Sockets;
 using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Services.Interfaces;
 using fiskaltrust.ifPOS.v1.it;
 using fiskaltrust.Launcher.Helpers;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
+using Microsoft.Extensions.Logging;
 using fiskaltrust.Launcher.Factories;
 using fiskaltrust.ifPOS.v1.at;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using LoggerExtensions = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -106,6 +107,8 @@ namespace fiskaltrust.Launcher.Commands
                 .WriteTo.GrpcSink(packageConfiguration, processHostService)
                 .CreateLogger();
 
+            var logger = LoggerExtensions.CreateFromSerilog();
+
             System.Text.Encoding.RegisterProvider(new LauncherEncodingProvider());
 
             var builder = Host.CreateDefaultBuilder()
@@ -171,9 +174,9 @@ namespace fiskaltrust.Launcher.Commands
                     }
                     catch (Exception e)
                     {
-                        Log.Error(e, "Could not load {Type}.", nameof(IMiddlewareBootstrapper));
+                        logger.CouldNotLoadMiddlewareBootstrapper(e, nameof(IMiddlewareBootstrapper));
                         throw;
-                    } // Will also be detected and logged propperly later
+                    } // Will also be detected and logged properly later
                 });
 
             try
@@ -183,7 +186,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e, "An unhandled exception occured.");
+                logger.AnUnhandledExceptionOccurred(e);
                 throw;
             }
             finally
@@ -229,5 +232,3 @@ namespace fiskaltrust.Launcher.Commands
         }
     }
 }
-
-

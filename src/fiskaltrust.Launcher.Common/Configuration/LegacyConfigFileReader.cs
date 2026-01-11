@@ -1,7 +1,9 @@
-﻿using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Extensions;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using System.Xml.Linq;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace fiskaltrust.Launcher.Common.Configuration
 {
@@ -9,6 +11,8 @@ namespace fiskaltrust.Launcher.Common.Configuration
     {
         public static async Task<LauncherConfiguration> ReadLegacyConfigFile(string path)
         {
+            var logger = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions.CreateFromSerilog();
+
             using var fsSource = new FileStream(path, FileMode.Open, FileAccess.Read);
             var launcherConfiguration = new LauncherConfiguration();
             try
@@ -25,29 +29,28 @@ namespace fiskaltrust.Launcher.Common.Configuration
                     {
                         if (key == "proxy")
                         {
-                            Log.Warning("Proxy settings can currently not be migrated from legacy config files. Please set the proxy with the '{executable} config set --proxy' command.",
-                                OperatingSystem.IsWindows() ? "fiskaltrust.Launcher.exe" : "./fiskaltrust.Launcher");
+                            logger.ProxySettingsCannotBeMigrated(OperatingSystem.IsWindows() ? "fiskaltrust.Launcher.exe" : "./fiskaltrust.Launcher");
                         }
                         else
                         {
-                            SetProperies(launcherConfiguration, key!, value!);
+                            SetProperies(launcherConfiguration, key!, value!, logger);
                         }
                     }
                 }
             }
             catch (Exception e)
             {
-                Log.Error(e, "Error when reading legacy config file {path}.", path);
+                logger.ErrorReadingLegacyConfig(e, path);
             }
             finally
             {
                 fsSource.Close();
             }
-            Log.Information("Read legacy config file {path}.", path);
+            logger.ReadLegacyConfig(path);
             return launcherConfiguration;
         }
 
-        private static void SetProperies(LauncherConfiguration launcherConfiguration, string key, string value)
+        private static void SetProperies(LauncherConfiguration launcherConfiguration, string key, string value, ILogger logger)
         {
             if (key == "cashboxid")
             {
@@ -91,8 +94,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
             }
             else
             {
-                Log.Warning("The legacy configuration option '{key}' cannot be automatically parsed. Please use the '{executable} config set --help' argument to list compatible options.",
-                    key, OperatingSystem.IsWindows() ? "fiskaltrust.Launcher.exe" : "./fiskaltrust.Launcher");
+                logger.LegacyConfigOptionCannotBeParsed(key, OperatingSystem.IsWindows() ? "fiskaltrust.Launcher.exe" : "./fiskaltrust.Launcher");
             }
         }
     }

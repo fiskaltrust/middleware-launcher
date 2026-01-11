@@ -1,7 +1,8 @@
-
 using System.Diagnostics;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Download;
+using Microsoft.Extensions.Logging;
 using Serilog.Context;
 
 namespace fiskaltrust.Launcher.Helpers
@@ -27,13 +28,13 @@ namespace fiskaltrust.Launcher.Helpers
             _executablePath = executablePath;
         }
 
-        public async Task PrepareSelfUpdate(Serilog.ILogger logger, LauncherConfiguration launcherConfiguration, PackageDownloader packageDownloader)
+        public async Task PrepareSelfUpdate(ILogger logger, LauncherConfiguration launcherConfiguration, PackageDownloader packageDownloader)
         {
 #if EnableSelfUpdate
-            logger.Debug("SelfUpdate Enabled.");
+            logger.SelfUpdateEnabled();
             var configuredVersion = launcherConfiguration.LauncherVersion;
 #else
-            logger.Debug("SelfUpdate Disabled.");
+            logger.SelfUpdateDisabled();
             var configuredVersion = new SemanticVersioning.Range("*");
 #endif
             if (configuredVersion is not null && Common.Constants.Version.CurrentVersion is not null)
@@ -47,49 +48,49 @@ namespace fiskaltrust.Launcher.Helpers
                     {
                         if (Common.Constants.Version.CurrentVersion < launcherVersion)
                         {
-                            logger.Information("A new Launcher version is set.");
+                            logger.NewLauncherVersionSet();
                         }
                         else
                         {
-                            logger.Information("An older Launcher version is set.");
+                            logger.OlderLauncherVersionSet();
                         }
                     }
                     else
                     {
                         if (Common.Constants.Version.CurrentVersion < launcherVersion)
                         {
-                            logger.Information("A new Launcher version is found for configured range \"{range}\".", configuredVersion);
+                            logger.NewLauncherVersionFoundForRange(configuredVersion.ToString());
                         }
                         else
                         {
-                            logger.Information("An older Launcher version is found for configured range \"{range}\".", configuredVersion);
+                            logger.OlderLauncherVersionFoundForRange(configuredVersion.ToString());
                         }
                     }
 #else
-                    logger.Information("A new launcher version {new} is available.", launcherVersion);
+                    logger.NewLauncherVersionAvailable(launcherVersion.ToString());
 #endif
 
 
 #if EnableSelfUpdate
-                    logger.Information("Downloading new version {new}.", launcherVersion);
+                    logger.DownloadingNewVersion(launcherVersion.ToString());
 
                     try
                     {
                         await packageDownloader.DownloadLauncherAsync(launcherVersion);
                         if (Common.Constants.Version.CurrentVersion < launcherVersion)
                         {
-                            logger.Information("Launcher will be updated to version {new} on shutdown.", launcherVersion);
+                            logger.LauncherWillBeUpdatedOnShutdown(launcherVersion.ToString());
                         }
                         else
                         {
-                            logger.Information("Launcher will be downgraded to version {old} on shutdown.", launcherVersion);
+                            logger.LauncherWillBeDowngradedOnShutdown(launcherVersion.ToString());
                         }
 
                         _updatePending = true;
                     }
                     catch (Exception e)
                     {
-                        logger.Error(e, "Could not download new Launcher version.");
+                        logger.CouldNotDownloadNewLauncherVersion(e);
                     }
 #endif
                 }
@@ -97,7 +98,7 @@ namespace fiskaltrust.Launcher.Helpers
         }
 
 
-        public async Task StartSelfUpdate(Serilog.ILogger logger, LauncherConfiguration launcherConfiguration, string launcherConfigurationFile)
+        public async Task StartSelfUpdate(ILogger logger, LauncherConfiguration launcherConfiguration, string launcherConfigurationFile)
         {
 #if EnableSelfUpdate
             if (_updatePending)
@@ -121,13 +122,13 @@ namespace fiskaltrust.Launcher.Helpers
 
                 process.Start();
 
-                logger.Information("Launcher update starting in the background.");
+                logger.LauncherUpdateStartingInBackground();
 
                 await Task.Delay(TimeSpan.FromSeconds(3));
 
                 if (process.HasExited)
                 {
-                    logger.Error("Launcher Update failed. See {LogFolder} for the update log.", launcherConfiguration.LogFolder);
+                    logger.LauncherUpdateFailed(launcherConfiguration.LogFolder!);
                     var withEnrichedContext = (Action log) =>
                     {
                         using var enrichedContext = LogContext.PushProperty("EnrichedContext", " LauncherUpdater");
@@ -137,12 +138,12 @@ namespace fiskaltrust.Launcher.Helpers
                     var stdOut = await process.StandardOutput.ReadToEndAsync();
                     if (!string.IsNullOrEmpty(stdOut))
                     {
-                        withEnrichedContext(() => logger.Information(stdOut));
+                        withEnrichedContext(() => logger.LogInformation("{StdOut}", stdOut));
                     }
                     var stdErr = await process.StandardError.ReadToEndAsync();
                     if (!string.IsNullOrEmpty(stdErr))
                     {
-                        withEnrichedContext(() => logger.Error(stdErr));
+                        withEnrichedContext(() => logger.LogError("{StdErr}", stdErr));
                     }
                 }
             }

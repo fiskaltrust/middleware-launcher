@@ -3,8 +3,11 @@ using System.Diagnostics;
 using System.Text;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Extensions;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Context;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using LoggerExtensions = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions;
 
 var processIdOption = new Option<int>(name: "--launcher-process-id");
 var launcherConfiguration = new Option<string>("--launcher-configuration");
@@ -47,15 +50,17 @@ async static Task<int> RootCommandHandler(int processId, string from, string to,
         .Enrich.FromLogContext()
         .CreateLogger();
 
-    cancellationToken.Register(() => Log.Warning("Shutdown requested."));
+    var logger = LoggerExtensions.CreateFromSerilog();
+
+    cancellationToken.Register(() => logger.ShutdownRequested());
 
     Log.Debug("Launcher Configuration: {@LauncherConfiguration}", launcherConfiguration.Redacted());
 
     try
     {
-        await RunSelfUpdate(processId, from, to);
+        await RunSelfUpdate(processId, from, to, logger);
 
-        Log.Information("Running launcher health check.");
+        logger.RunningLauncherHealthCheck();
 
         var process = new Process();
         process.StartInfo.UseShellExecute = false;
@@ -85,33 +90,33 @@ async static Task<int> RootCommandHandler(int processId, string from, string to,
         var stdOut = await process.StandardOutput.ReadToEndAsync();
         if (!string.IsNullOrEmpty(stdOut))
         {
-            withEnrichedContext(() => Log.Information("\n" + stdOut));
+            withEnrichedContext(() => logger.UpdaterDoctorStdOut(stdOut));
         }
 
         var stdErr = await process.StandardError.ReadToEndAsync();
         if (!string.IsNullOrEmpty(stdErr))
         {
-            withEnrichedContext(() => Log.Error("\n" + stdErr));
+            withEnrichedContext(() => logger.UpdaterDoctorStdErr(stdErr));
         }
 
         if (process.ExitCode != 0 || doctorCancelled)
         {
-            Log.Error("Launcher healthcheck after update failed.");
+            logger.LauncherHealthcheckFailed();
 
             RollbackSelfUpdate(to);
-            Log.Warning("Rolled back update."); ;
+            logger.RolledBackUpdate();
 
             return 1;
         }
         else
         {
-            Log.Information("Launcher update successful");
+            logger.LauncherUpdateSuccessful();
             return 0;
         }
     }
     catch (Exception e)
     {
-        Log.Error(e, "An exception occured.");
+        logger.UpdaterExceptionOccurred(e);
         return 1;
     }
     finally
@@ -136,7 +141,7 @@ static string LauncherConfigurationToArgs(LauncherConfiguration launcherConfigur
     return result;
 }
 
-async static Task RunSelfUpdate(int processId, string from, string to)
+async static Task RunSelfUpdate(int processId, string from, string to, ILogger logger)
 {
     Process? launcherProcess = null;
     try
@@ -147,11 +152,11 @@ async static Task RunSelfUpdate(int processId, string from, string to)
 
     if (launcherProcess is not null)
     {
-        Log.Information("Waiting for launcher to shut down.");
+        logger.WaitingForLauncherToShutDown();
         await launcherProcess.WaitForExitAsync();
     }
 
-    Log.Information("Copying launcher executable from \"{from}\" to \"{to}\".", from, to);
+    logger.CopyingLauncherExecutable(from, to);
 
     var backup = $"{to}.backup";
     var update = $"{to}.update";
