@@ -531,11 +531,6 @@ public static partial class LoggerExtensions
     {
         return new SerilogLoggerFactory(Serilog.Log.Logger).CreateLogger("fiskaltrust.Launcher");
     }
-
-    public static ILogger CreateFromSerilog(Serilog.ILogger serilogLogger)
-    {
-        return new SerilogLoggerFactory(serilogLogger).CreateLogger("fiskaltrust.Launcher");
-    }
-
+    
     #endregion
 }
