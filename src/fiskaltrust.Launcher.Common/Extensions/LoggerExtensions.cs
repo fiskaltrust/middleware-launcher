@@ -192,19 +192,19 @@ public static partial class LoggerExtensions
     public static partial void CouldNotUninstallService(this ILogger logger, string serviceName);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Run as admin to install service. See: {Link}")]
-    public static partial void RunAsAdminToInstallService(this ILogger logger, string link);
+    public static partial void RunAsAdminToInstallService(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/launchers/desktop#installing-and-uninstalling-as-a-service");    
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Run as admin to uninstall service. See: {Link}")]
-    public static partial void RunAsAdminToUninstallService(this ILogger logger, string link);
+    public static partial void RunAsAdminToUninstallService(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/launchers/desktop#installing-and-uninstalling-as-a-service");
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Wrong Operating system.")]
     public static partial void WrongOperatingSystem(this ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "The launcher can only install itself as a service on windows and linux(systemd). On other OSs it has to be done manually. See: {Link}")]
-    public static partial void ServiceInstallationManualRequired(this ILogger logger, string link);
+    public static partial void ServiceInstallationManualRequired(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/launchers/desktop#installing-and-uninstalling-as-a-service");
 
     [LoggerMessage(Level = LogLevel.Error, Message = "For non windows or linux(systemd) service uninstallation see: {Link}")]
-    public static partial void ServiceUninstallationManualRequired(this ILogger logger, string link);
+    public static partial void ServiceUninstallationManualRequired(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/launchers/desktop#installing-and-uninstalling-as-a-service");
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Could not install service \"{ServiceName}\".")]
     public static partial void CouldNotInstallService(this ILogger logger, string serviceName);
