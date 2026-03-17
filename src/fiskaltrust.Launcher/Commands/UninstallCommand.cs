@@ -40,7 +40,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public static async Task<int> HandleAsync(CommonOptions _, CommonProperties commonProperties, UninstallOptions uninstallOptions, UninstallServices uninstallServices)
         {
-            var logger = LoggerExtensions.CreateFromSerilog();
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
 
             ServiceInstaller? installer = null;
             if (OperatingSystem.IsLinux())

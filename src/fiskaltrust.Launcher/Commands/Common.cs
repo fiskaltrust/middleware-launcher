@@ -93,8 +93,7 @@ namespace fiskaltrust.Launcher.Commands
                 .WriteTo.Sink(collectionSink)
                 .CreateLogger();
 
-            // Create ILogger from Serilog for use with LoggerExtensions
-            var logger = LoggerExtensions.CreateFromSerilog();
+            var logger = Log.Logger.ToDotnetLogger();
 
             var launcherConfiguration = await LauncherConfiguration.ReadFromFilesAsync(options.LauncherConfigurationFile, options.LegacyConfigurationFile);
 
@@ -196,8 +195,7 @@ namespace fiskaltrust.Launcher.Commands
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
-            // Update logger to use the new Serilog configuration
-            logger = LoggerExtensions.CreateFromSerilog();
+            logger = Log.Logger.ToDotnetLogger();
 
             foreach (var logEvent in collectionSink.Events)
             {
@@ -285,7 +283,7 @@ namespace fiskaltrust.Launcher.Commands
 
         public static async Task<ECDiffieHellman> LoadCurve(LauncherConfiguration launcherConfiguration, ILogger? logger = null, bool dryRun = false)
         {
-            logger ??= LoggerExtensions.CreateFromSerilog();
+            logger ??= Serilog.Log.Logger.ToDotnetLogger();
 
             Log.Verbose("Loading Curve.");
             var dataProtector = DataProtectionExtensions.Create(launcherConfiguration)

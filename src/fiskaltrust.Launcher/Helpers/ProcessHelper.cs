@@ -44,7 +44,7 @@ public static class ProcessHelper
 
         if (process.ExitCode != 0)
         {
-            var logger = LoggerExtensions.CreateFromSerilog();
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
             logger.ProcessExitedWithCode(fileName, process.ExitCode);
         }
 

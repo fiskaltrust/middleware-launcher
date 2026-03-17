@@ -69,7 +69,7 @@ namespace fiskaltrust.Launcher.Commands
                     .AddLoggingConfiguration()
                     .CreateLogger();
 
-                var logger = LoggerExtensions.CreateFromSerilog();
+                var logger = Serilog.Log.Logger.ToDotnetLogger();
 
                 LauncherConfiguration launcherConfiguration = new();
 
@@ -277,7 +277,7 @@ namespace fiskaltrust.Launcher.Commands
             catch (Exception e)
             {
                 checkUp.Failed = true;
-                var logger = LoggerExtensions.CreateFromSerilog();
+                var logger = Serilog.Log.Logger.ToDotnetLogger();
                 logger.DoctorFoundErrors(e);
             }
 
@@ -287,7 +287,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             else
             {
-                var logger = LoggerExtensions.CreateFromSerilog();
+                var logger = Serilog.Log.Logger.ToDotnetLogger();
                 logger.DoctorFoundNoIssues();
                 return 0;
             }

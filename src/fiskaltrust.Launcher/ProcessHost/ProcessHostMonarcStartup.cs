@@ -160,7 +160,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private void StartupLogging()
         {
-            _logger.LauncherVersionInfo(Common.Constants.Version.CurrentVersion.ToString());
+            _logger.LauncherVersionInfo(Common.Constants.Version.CurrentVersion?.ToString());
             _logger.OsInfo(Environment.OSVersion.VersionString, Environment.Is64BitOperatingSystem ? "64Bit" : "32Bit");
             if (OperatingSystem.IsWindows())
             {

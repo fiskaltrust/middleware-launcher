@@ -50,7 +50,7 @@ async static Task<int> RootCommandHandler(int processId, string from, string to,
         .Enrich.FromLogContext()
         .CreateLogger();
 
-    var logger = LoggerExtensions.CreateFromSerilog();
+    var logger = Serilog.Log.Logger.ToDotnetLogger();
 
     cancellationToken.Register(() => logger.ShutdownRequested());
 

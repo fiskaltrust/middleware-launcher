@@ -313,7 +313,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         }
         public void Encrypt(IDataProtector dataProtector)
         {
-            var logger = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions.CreateFromSerilog();
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
             MapFieldsWithAttribute<EncryptAttribute>((value, name) =>
             {
                 if (value is null) return null;
@@ -331,7 +331,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         }
         public void Decrypt(IDataProtector dataProtector)
         {
-            var logger = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions.CreateFromSerilog();
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
             MapFieldsWithAttribute<EncryptAttribute>((value, name) =>
             {
                 try
@@ -359,7 +359,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         public static async Task<LauncherConfiguration> ReadFromFilesAsync(string launcherConfigurationFile, string legacyConfigurationFile)
         {
-            var logger = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions.CreateFromSerilog();
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
             var launcherConfiguration = new LauncherConfiguration();
 
             Log.Verbose("Reading legacy config file.");

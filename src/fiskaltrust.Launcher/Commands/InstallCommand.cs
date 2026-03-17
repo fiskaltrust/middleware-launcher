@@ -52,7 +52,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public static async Task<int> HandleAsync(CommonOptions commonOptions, CommonProperties commonProperties, InstallOptions installOptions, InstallServices installServices)
         {
-            var logger = LoggerExtensions.CreateFromSerilog();
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
 
             var commandArgs = "run ";
             commandArgs += string.Join(" ", new[] {

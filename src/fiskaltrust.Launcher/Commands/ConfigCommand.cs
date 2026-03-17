@@ -74,7 +74,7 @@ namespace fiskaltrust.Launcher.Commands
                 .AddLoggingConfiguration()
                 .CreateLogger();
 
-            var logger = LoggerExtensions.CreateFromSerilog();
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
 
             LauncherConfiguration launcherConfiguration;
             string rawLauncherConfigurationOld = "{\n}";
@@ -213,7 +213,7 @@ namespace fiskaltrust.Launcher.Commands
                 .AddLoggingConfiguration()
                 .CreateLogger();
 
-            var logger = LoggerExtensions.CreateFromSerilog();
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
 
             LauncherConfiguration? localConfiguration = null;
             if (configGetOptions.LauncherConfigurationFile is not null)

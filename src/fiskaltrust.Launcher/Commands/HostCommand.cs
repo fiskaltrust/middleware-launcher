@@ -107,7 +107,7 @@ namespace fiskaltrust.Launcher.Commands
                 .WriteTo.GrpcSink(packageConfiguration, processHostService)
                 .CreateLogger();
 
-            var logger = LoggerExtensions.CreateFromSerilog();
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
 
             System.Text.Encoding.RegisterProvider(new LauncherEncodingProvider());
 
