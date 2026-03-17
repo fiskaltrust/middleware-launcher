@@ -105,17 +105,17 @@ public static partial class LoggerExtensions
 
     #region Cashbox Configuration
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Could not create cashbox-configuration-file folder. See: {Link}")]
-    public static partial void CouldNotCreateCashboxConfigFolder(this ILogger logger, Exception? exception, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/cashbox-failures");
+    [LoggerMessage(Level = LogLevel.Error, Message = "Could not create cashbox-configuration-file folder.")]
+    public static partial void CouldNotCreateCashboxConfigFolder(this ILogger logger, Exception? exception, string link = "");
 
     [LoggerMessage(Level = LogLevel.Error, Message = "{Message}")]
     public static partial void CouldNotDownloadCashboxConfig(this ILogger logger, Exception? exception, string message);
 
-    [LoggerMessage(Level = LogLevel.Critical, Message = "Could not read Cashbox configuration file. See: {Link}")]
-    public static partial void CouldNotReadCashboxConfig(this ILogger logger, Exception? exception, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/cashbox-failures");
+    [LoggerMessage(Level = LogLevel.Critical, Message = "Could not read Cashbox configuration file.")]
+    public static partial void CouldNotReadCashboxConfig(this ILogger logger, Exception? exception, string link = "");
 
-    [LoggerMessage(Level = LogLevel.Critical, Message = "Could not parse Cashbox configuration. See: {Link}")]
-    public static partial void CouldNotParseCashboxConfig(this ILogger logger, Exception? exception, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/cashbox-failures");
+    [LoggerMessage(Level = LogLevel.Critical, Message = "Could not parse Cashbox configuration.")]
+    public static partial void CouldNotParseCashboxConfig(this ILogger logger, Exception? exception, string link = "");
 
     #endregion
 
@@ -124,26 +124,26 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Information, Message = "Downloading package {Name}.")]
     public static partial void DownloadingPackage(this ILogger logger, string name);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Cannot get latest {Package} version from SemVer Range in offline mode. See: {Link}")]
-    public static partial void CannotGetLatestVersionOfflineMode(this ILogger logger, string package, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/network-troubleshooting");
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Cannot get latest {Package} version from SemVer Range in offline mode.")]
+    public static partial void CannotGetLatestVersionOfflineMode(this ILogger logger, string package, string link = "");
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not get latest {Package} version from SemVer Range {Range}. See: {Link}")]
-    public static partial void CouldNotGetLatestVersion(this ILogger logger, Exception? exception, string package, string range, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/network-troubleshooting");
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not get latest {Package} version from SemVer Range {Range}. ")]
+    public static partial void CouldNotGetLatestVersion(this ILogger logger, Exception? exception, string package, string range, string link = "");
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Package {Name} not found in download cache. See: {Link}")]
-    public static partial void PackageNotFoundInCache(this ILogger logger, string name, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/network-requirements");
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Package {Name} not found in download cache.")]
+    public static partial void PackageNotFoundInCache(this ILogger logger, string name, string link = "");
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "File hash for {Name} incorrect. See: {Link}")]
-    public static partial void FileHashIncorrect(this ILogger logger, string name, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/network-requirements");
+    [LoggerMessage(Level = LogLevel.Warning, Message = "File hash for {Name} incorrect.")]
+    public static partial void FileHashIncorrect(this ILogger logger, string name, string link = "");
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Package {Name} did not contain the needed files.")]
     public static partial void PackageMissingNeededFiles(this ILogger logger, string name);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Hash file not found. See: {Link}")]
-    public static partial void HashFileNotFound(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/network-requirements");
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Hash file not found.")]
+    public static partial void HashFileNotFound(this ILogger logger, string link = "");
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Incorrect Hash. See: {Link}")]
-    public static partial void IncorrectHash(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/network-requirements");
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Incorrect Hash.")]
+    public static partial void IncorrectHash(this ILogger logger, string link = "");
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Found package in download cache.")]
     public static partial void FoundPackageInCache(this ILogger logger);
@@ -157,8 +157,8 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Information, Message = "Copied package {FileName} to cache.")]
     public static partial void CopiedPackageToCache(this ILogger logger, string fileName);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Could not download package. See: {Link}")]
-    public static partial void CouldNotDownloadPackage(this ILogger logger, Exception? exception, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/network-troubleshooting");
+    [LoggerMessage(Level = LogLevel.Error, Message = "Could not download package.")]
+    public static partial void CouldNotDownloadPackage(this ILogger logger, Exception? exception, string link = "");
 
     #endregion
 
@@ -191,20 +191,20 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not uninstall service \"{ServiceName}\".")]
     public static partial void CouldNotUninstallService(this ILogger logger, string serviceName);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Run as admin to install service. See: {Link}")]
-    public static partial void RunAsAdminToInstallService(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/launchers/desktop#installing-and-uninstalling-as-a-service");    
+    [LoggerMessage(Level = LogLevel.Error, Message = "Run as admin to install service. ")]
+    public static partial void RunAsAdminToInstallService(this ILogger logger, string link = "");    
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Run as admin to uninstall service. See: {Link}")]
-    public static partial void RunAsAdminToUninstallService(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/launchers/desktop#installing-and-uninstalling-as-a-service");
+    [LoggerMessage(Level = LogLevel.Error, Message = "Run as admin to uninstall service. ")]
+    public static partial void RunAsAdminToUninstallService(this ILogger logger, string link = "");
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Wrong Operating system. See: {Link}")]
-    public static partial void WrongOperatingSystem(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/supported-environments");
+    [LoggerMessage(Level = LogLevel.Error, Message = "Wrong Operating system. ")]
+    public static partial void WrongOperatingSystem(this ILogger logger, string link = "");
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "The launcher can only install itself as a service on windows and linux(systemd). On other OSs it has to be done manually. See: {Link}")]
-    public static partial void ServiceInstallationManualRequired(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/launchers/desktop#installing-and-uninstalling-as-a-service");
+    [LoggerMessage(Level = LogLevel.Error, Message = "The launcher can only install itself as a service on windows and linux(systemd). On other OSs it has to be done manually. ")]
+    public static partial void ServiceInstallationManualRequired(this ILogger logger, string link = "");
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "For non windows or linux(systemd) service uninstallation see: {Link}")]
-    public static partial void ServiceUninstallationManualRequired(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/launchers/desktop#installing-and-uninstalling-as-a-service");
+    [LoggerMessage(Level = LogLevel.Error, Message = "For non windows or linux(systemd) service uninstallation ")]
+    public static partial void ServiceUninstallationManualRequired(this ILogger logger, string link = "");
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Could not install service \"{ServiceName}\".")]
     public static partial void CouldNotInstallService(this ILogger logger, string serviceName);
@@ -213,8 +213,8 @@ public static partial class LoggerExtensions
 
     #region Linux SystemD
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Systemd is not running on this machine. No service installation is possible. See: {Link}")]
-    public static partial void SystemdNotRunning(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/supported-environments");
+    [LoggerMessage(Level = LogLevel.Error, Message = "Systemd is not running on this machine. No service installation is possible. ")]
+    public static partial void SystemdNotRunning(this ILogger logger, string link = "");
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Service is already installed and cannot be installed twice for one cashbox.")]
     public static partial void ServiceAlreadyInstalled(this ILogger logger);
@@ -225,8 +225,8 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Error, Message = "Service is not installed!")]
     public static partial void ServiceNotInstalled(this ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Service installation works only for systemd setup. See: {Link}")]
-    public static partial void ServiceInstallationOnlyForSystemd(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/supported-environments");
+    [LoggerMessage(Level = LogLevel.Error, Message = "Service installation works only for systemd setup. ")]
+    public static partial void ServiceInstallationOnlyForSystemd(this ILogger logger, string link = "");
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Installing service via systemd.")]
     public static partial void InstallingServiceViaSystemd(this ILogger logger);
@@ -265,8 +265,8 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Information, Message = "Stopping Package.")]
     public static partial void StoppingPackage(this ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Error Starting Hosting. See: {Link}")]
-    public static partial void ErrorStartingHosting(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/troubleshooting-guide");
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error Starting Hosting.")]
+    public static partial void ErrorStartingHosting(this ILogger logger, string link = "");
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Exception when calling StopBegin and StopEnd hooks.")]
     public static partial void ExceptionCallingStopHooks(this ILogger logger, Exception? exception);
@@ -277,8 +277,8 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Debug, Message = "Helper StartBegin() and StartEnd().")]
     public static partial void HelperStartBeginAndEnd(this ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Error Starting Monarchs. See: {Link}")]
-    public static partial void ErrorStartingMonarchs(this ILogger logger, Exception? exception, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/troubleshooting-guide");
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error Starting Monarchs. ")]
+    public static partial void ErrorStartingMonarchs(this ILogger logger, Exception? exception, string link = "");
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Could not start {Package} {Id}.")]
     public static partial void CouldNotStartPackage(this ILogger logger, Exception? exception, string package, string id);
@@ -295,8 +295,8 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Information, Message = "Shutting down launcher.")]
     public static partial void ShuttingDownLauncher(this ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "ProcessHost {Id} had crashed. See: {Link}")]
-    public static partial void ProcessHostCrashed(this ILogger logger, Exception? exception, string id, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/troubleshooting-guide");
+    [LoggerMessage(Level = LogLevel.Warning, Message = "ProcessHost {Id} had crashed.")]
+    public static partial void ProcessHostCrashed(this ILogger logger, Exception? exception, string id, string link = "");
 
     [LoggerMessage(Level = LogLevel.Information, Message = "fiskaltrust.Launcher: {Version}")]
     public static partial void LauncherVersionInfo(this ILogger logger, string version);
@@ -319,8 +319,8 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Information, Message = "Host {Package} {Id} has shutdown.")]
     public static partial void HostHasShutdown(this ILogger logger, string package, string id);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Host {Package} {Id} has crashed. See: {Link}")]
-    public static partial void HostHasCrashed(this ILogger logger, string package, string id, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/troubleshooting-guide");
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Host {Package} {Id} has crashed.")]
+    public static partial void HostHasCrashed(this ILogger logger, string package, string id, string link = "");
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Error while starting {Package} {Id}.\n{Error}")]
     public static partial void ErrorWhileStartingPackage(this ILogger logger, string package, string id, string error);
@@ -362,8 +362,8 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Warning, Message = "UseHttpSysBinding is enabled but the fiskaltrust.Launcher was not started as an Administrator. Url binding may fail.")]
     public static partial void UseHttpSysBindingNotAdmin(this ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "UseHttpSysBinding is only supported on Windows. See: {Link}")]
-    public static partial void UseHttpSysBindingOnlyWindows(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/supported-environments");
+    [LoggerMessage(Level = LogLevel.Warning, Message = "UseHttpSysBinding is only supported on Windows.")]
+    public static partial void UseHttpSysBindingOnlyWindows(this ILogger logger, string link = "");
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "net.pipe url support will be added in an upcoming version of the launcher 2.0.")]
     public static partial void NetPipeUrlSupportComingSoon(this ILogger logger);
@@ -405,8 +405,8 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Information, Message = "Launcher will be downgraded to version {Old} on shutdown.")]
     public static partial void LauncherWillBeDowngradedOnShutdown(this ILogger logger, string old);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Could not download new Launcher version. See: {Link}")]
-    public static partial void CouldNotDownloadNewLauncherVersion(this ILogger logger, Exception? exception, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/network-troubleshooting");
+    [LoggerMessage(Level = LogLevel.Error, Message = "Could not download new Launcher version.")]
+    public static partial void CouldNotDownloadNewLauncherVersion(this ILogger logger, Exception? exception, string link = "");
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Launcher update starting in the background.")]
     public static partial void LauncherUpdateStartingInBackground(this ILogger logger);
@@ -482,11 +482,11 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Warning, Message = "Error loading or decrypting ECDH curve: {ErrorMessage}. Regenerating new curve.")]
     public static partial void ErrorLoadingEcdhCurveRegenerating(this ILogger logger, string errorMessage);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Fallback config encryption mechanism is used on linux. See: {Link}")]
-    public static partial void FallbackConfigEncryptionLinux(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/supported-environments");
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Fallback config encryption mechanism is used on linux.")]
+    public static partial void FallbackConfigEncryptionLinux(this ILogger logger, string link = "");
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Fallback config encryption mechanism is used on macos. See: {Link}")]
-    public static partial void FallbackConfigEncryptionMacos(this ILogger logger, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/middleware/supported-environments");
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Fallback config encryption mechanism is used on macos.")]
+    public static partial void FallbackConfigEncryptionMacos(this ILogger logger, string link = "");
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Fallback config encryption mechanism used.")]
     public static partial void FallbackConfigEncryptionUsed(this ILogger logger);
@@ -514,8 +514,8 @@ public static partial class LoggerExtensions
 
     #region General
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "An unhandled exception occurred. See: {Link}")]
-    public static partial void AnUnhandledExceptionOccurred(this ILogger logger, Exception? exception, string link = "https://docs.fiskaltrust.cloud/docs/posdealers/technical-operations/troubleshooting/troubleshooting-guide");
+    [LoggerMessage(Level = LogLevel.Error, Message = "An unhandled exception occurred.")]
+    public static partial void AnUnhandledExceptionOccurred(this ILogger logger, Exception? exception, string link = "");
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Could not load {Type}.")]
     public static partial void CouldNotLoadMiddlewareBootstrapper(this ILogger logger, Exception? exception, string type);
