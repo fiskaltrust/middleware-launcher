@@ -1,15 +1,17 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
-using Serilog;
-using fiskaltrust.Launcher.Common.Configuration;
-using fiskaltrust.Launcher.Common.Extensions;
-using fiskaltrust.Launcher.Configuration;
+using System.CommandLine.NamingConventionBinder;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
+using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Constants;
+using fiskaltrust.Launcher.Common.Extensions;
+using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Extensions;
 using Microsoft.AspNetCore.DataProtection;
-using System.CommandLine.NamingConventionBinder;
-using fiskaltrust.Launcher.Common.Constants;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using LoggerExtensions = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -72,6 +74,8 @@ namespace fiskaltrust.Launcher.Commands
                 .AddLoggingConfiguration()
                 .CreateLogger();
 
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
+
             LauncherConfiguration launcherConfiguration;
             string rawLauncherConfigurationOld = "{\n}";
 
@@ -80,12 +84,12 @@ namespace fiskaltrust.Launcher.Commands
             {
                 if (configSetOptions.ArgsLauncherConfiguration.AccessToken is null)
                 {
-                    Log.Warning("Launcher configuration file {file} does not exist.", configSetOptions.LauncherConfigurationFile);
-                    Log.Error("Please specify the --access-token parameter or an existing launcher configuration file containing an access token.");
+                    logger.LauncherConfigFileNotExist(configSetOptions.LauncherConfigurationFile);
+                    logger.SpecifyAccessTokenParameter();
                     return 1;
                 }
 
-                Log.Warning("Launcher configuration file {file} does not exist. Creating new file.", configSetOptions.LauncherConfigurationFile);
+                logger.LauncherConfigFileNotExistCreating(configSetOptions.LauncherConfigurationFile);
                 launcherConfiguration = new LauncherConfiguration();
 
                 dataProtector = DataProtectionExtensions.Create(configSetOptions.ArgsLauncherConfiguration).CreateProtector(LauncherConfiguration.DATA_PROTECTION_DATA_PURPOSE);
@@ -98,13 +102,13 @@ namespace fiskaltrust.Launcher.Commands
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "Could not read launcher configuration");
+                    logger.CouldNotReadLauncherConfigGeneral(e);
                     return 1;
                 }
 
                 if (configSetOptions.ArgsLauncherConfiguration.AccessToken is null && launcherConfiguration?.AccessToken is null)
                 {
-                    Log.Error("Please specify the --access-token parameter or set it in the provided launcher configuration file.");
+                    logger.SpecifyAccessTokenInConfig();
                     return 1;
                 }
 
@@ -116,7 +120,7 @@ namespace fiskaltrust.Launcher.Commands
                 }
                 catch (Exception e)
                 {
-                    Log.Warning(e, "Error decrypting launcher configuration file.");
+                    logger.ErrorDecryptingLauncherConfig(e);
                 }
 
                 try
@@ -125,7 +129,7 @@ namespace fiskaltrust.Launcher.Commands
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "Error reserializing launcher configuration file.");
+                    logger.ErrorReserialisingLauncherConfig(e);
                     return 1;
                 }
             }
@@ -141,7 +145,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                Log.Warning(e, "Error encrypting launcher configuration file.");
+                logger.ErrorEncryptingLauncherConfig(e);
             }
 
             try
@@ -150,11 +154,11 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e, "Could not write launcher configuration");
+                logger.CouldNotWriteLauncherConfig(e);
                 return 1;
             }
 
-            Log.Information("Set values in launcher configuration file {file}.", configSetOptions.LauncherConfigurationFile);
+            logger.SetValuesInLauncherConfig(configSetOptions.LauncherConfigurationFile);
 
             var diff = InlineDiffBuilder.Diff(rawLauncherConfigurationOld, rawLauncherConfigurationNew);
             var savedColor = Console.ForegroundColor;
@@ -209,14 +213,16 @@ namespace fiskaltrust.Launcher.Commands
                 .AddLoggingConfiguration()
                 .CreateLogger();
 
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
+
             LauncherConfiguration? localConfiguration = null;
             if (configGetOptions.LauncherConfigurationFile is not null)
             {
-                localConfiguration = await ReadLauncherConfiguration(configGetOptions.LauncherConfigurationFile, configGetOptions.AccessToken, LauncherConfiguration.Deserialize);
+                localConfiguration = await ReadLauncherConfiguration(configGetOptions.LauncherConfigurationFile, configGetOptions.AccessToken, LauncherConfiguration.Deserialize, logger);
 
                 if (localConfiguration is not null)
                 {
-                    Log.Information($"Local configuration {{LauncherConfigurationFile}}\n{localConfiguration.Serialize(true, true)}", configGetOptions.LauncherConfigurationFile);
+                    logger.LocalConfigurationInfo(configGetOptions.LauncherConfigurationFile!, localConfiguration.Serialize(true, true));
                 }
             }
 
@@ -226,25 +232,25 @@ namespace fiskaltrust.Launcher.Commands
 
                 if (legacyConfiguration is not null)
                 {
-                    Log.Information($"Legacy configuration {{LegacyConfigFile}}\n{legacyConfiguration.Serialize(true, true)}", configGetOptions.LegacyConfigurationFile);
+                    logger.LegacyConfigurationInfo(configGetOptions.LegacyConfigurationFile!, legacyConfiguration.Serialize(true, true));
                 }
             }
 
             configGetOptions.CashBoxConfigurationFile ??= localConfiguration?.CashboxConfigurationFile;
             if (configGetOptions.CashBoxConfigurationFile is not null && File.Exists(configGetOptions.CashBoxConfigurationFile))
             {
-                LauncherConfiguration? remoteConfiguration = await ReadLauncherConfiguration(configGetOptions.CashBoxConfigurationFile, configGetOptions.AccessToken, LauncherConfigurationInCashBoxConfiguration.Deserialize);
+                LauncherConfiguration? remoteConfiguration = await ReadLauncherConfiguration(configGetOptions.CashBoxConfigurationFile, configGetOptions.AccessToken, LauncherConfigurationInCashBoxConfiguration.Deserialize, logger);
 
                 if (remoteConfiguration is not null)
                 {
-                    Log.Information($"Remote configuration from {{CashBoxConfigurationFile}}\n{remoteConfiguration.Serialize(true, true)}", configGetOptions.CashBoxConfigurationFile);
+                    logger.RemoteConfigurationInfo(configGetOptions.CashBoxConfigurationFile!, remoteConfiguration.Serialize(true, true));
                 }
             }
 
             return 0;
         }
 
-        public static async Task<LauncherConfiguration?> ReadLauncherConfiguration(string launcherConfigurationFile, string? accessToken, Func<string, Task<LauncherConfiguration?>> deserialize)
+        public static async Task<LauncherConfiguration?> ReadLauncherConfiguration(string launcherConfigurationFile, string? accessToken, Func<string, Task<LauncherConfiguration?>> deserialize, ILogger logger)
         {
             LauncherConfiguration? launcherConfiguration = null;
             try
@@ -253,7 +259,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e, "Could not read launcher configuration {file}.", launcherConfigurationFile);
+                logger.CouldNotReadLauncherConfig(e, launcherConfigurationFile);
             }
 
             if (launcherConfiguration is null)
@@ -263,7 +269,7 @@ namespace fiskaltrust.Launcher.Commands
 
             if (accessToken is null && launcherConfiguration!.AccessToken is null)
             {
-                Log.Warning("To decrypt the encrypted values from the configuration file specify the --access-token parameter or set it in the provided launcher configuration file.");
+                logger.ToDecryptSpecifyAccessToken();
             }
             else
             {
@@ -275,13 +281,13 @@ namespace fiskaltrust.Launcher.Commands
                 }
                 catch (Exception e)
                 {
-                    Log.Warning(e, "Error decrypting launcher configuration file {file}.", launcherConfigurationFile);
+                    logger.ErrorDecryptingLauncherConfig(e, launcherConfigurationFile);
                 }
             }
 
             return launcherConfiguration;
         }
 
-        public static Task<LauncherConfiguration?> ReadLauncherConfiguration(string launcherConfigurationFile, string? accessToken, Func<string, LauncherConfiguration?> deserialize) => ReadLauncherConfiguration(launcherConfigurationFile, accessToken, (content) => Task.FromResult(deserialize(content)));
+        public static Task<LauncherConfiguration?> ReadLauncherConfiguration(string launcherConfigurationFile, string? accessToken, Func<string, LauncherConfiguration?> deserialize, ILogger logger) => ReadLauncherConfiguration(launcherConfigurationFile, accessToken, (content) => Task.FromResult(deserialize(content)), logger);
     }
 }

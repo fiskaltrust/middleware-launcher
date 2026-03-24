@@ -1,5 +1,6 @@
 using System.Security.Policy;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Download;
 using fiskaltrust.Launcher.Extensions;
@@ -39,7 +40,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            _lifetime.ApplicationLifetime.ApplicationStopping.Register(() => _logger.LogInformation("Shutting down launcher."));
+            _lifetime.ApplicationLifetime.ApplicationStopping.Register(() => _logger.ShuttingDownLauncher());
 
             StartupLogging();
 
@@ -64,17 +65,17 @@ namespace fiskaltrust.Launcher.ProcessHost
             }
             catch (Exception e)
             {
-                if (e is not AlreadyLoggedException) { _logger.LogError(e, "Error Starting Monarchs"); }
+                if (e is not AlreadyLoggedException) { _logger.ErrorStartingMonarchs(e); }
                 _lifetime.ApplicationLifetime.StopApplication();
                 return;
             }
 
             if (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Started all packages.");
+                _logger.StartedAllPackages();
                 if (!WindowsServiceHelpers.IsWindowsService())
                 {
-                    _logger.LogInformation("Press CTRL+C to exit.");
+                    _logger.PressCtrlCToExit();
                 }
                 _lifetime.ServiceStartupCompleted();
             }
@@ -99,7 +100,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             {
                 foreach (var failed in _hosts.Where(h => !h.Value.GetStopped().IsCompletedSuccessfully).Select(h => (h.Key, h.Value.GetStopped().Exception)))
                 {
-                    _logger.LogWarning(failed.Exception, "ProcessHost {Id} had crashed.", failed.Key);
+                    _logger.ProcessHostCrashed(failed.Exception, failed.Key.ToString());
                 }
             }
             _lifetime.ApplicationLifetime.StopApplication();
@@ -118,7 +119,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Could not download package.");
+                _logger.CouldNotDownloadPackage(e);
                 throw new AlreadyLoggedException();
             }
 
@@ -142,31 +143,31 @@ namespace fiskaltrust.Launcher.ProcessHost
                 await monarch.Start(cancellationToken);
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                    _logger.LogInformation("Started {Package} {Id}.", configuration.Package, configuration.Id);
+                    _logger.StartedPackage(configuration.Package, configuration.Id.ToString());
                 }
             }
             catch (TaskCanceledException)
             {
-                _logger.LogError("Could not start {Package} {Id}.", configuration.Package, configuration.Id);
+                _logger.CouldNotStartPackage(null, configuration.Package, configuration.Id.ToString());
                 // not throwing here keeps the launcher alive even when theres a package completely failed
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Could not start {Package} {Id}.", configuration.Package, configuration.Id);
+                _logger.CouldNotStartPackage(e, configuration.Package, configuration.Id.ToString());
                 throw new AlreadyLoggedException();
             }
         }
 
         private void StartupLogging()
         {
-            _logger.LogInformation("fiskaltrust.Launcher: {version}", Common.Constants.Version.CurrentVersion);
-            _logger.LogInformation("OS:                   {OS}, {Bit}", Environment.OSVersion.VersionString, Environment.Is64BitOperatingSystem ? "64Bit" : "32Bit");
+            _logger.LauncherVersionInfo(Common.Constants.Version.CurrentVersion?.ToString());
+            _logger.OsInfo(Environment.OSVersion.VersionString, Environment.Is64BitOperatingSystem ? "64Bit" : "32Bit");
             if (OperatingSystem.IsWindows())
             {
-                _logger.LogInformation("Admin User:           {admin}", Runtime.IsAdministrator!);
+                _logger.AdminUserInfo(Runtime.IsAdministrator!.ToString()!);
             }
-            _logger.LogInformation("CWD:                  {CWD}", Path.GetFullPath("./"));
-            _logger.LogInformation("CashBoxId:            {CashBoxId}", _launcherConfiguration.CashboxId);
+            _logger.CwdInfo(Path.GetFullPath("./"));
+            _logger.CashboxIdInfo(_launcherConfiguration.CashboxId?.ToString() ?? string.Empty);
         }
     }
 }

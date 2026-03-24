@@ -10,6 +10,7 @@ using fiskaltrust.Launcher.Services;
 using fiskaltrust.Launcher.Services.Interfaces;
 using fiskaltrust.Middleware.Abstractions;
 using fiskaltrust.storage.serialization.V0;
+using fiskaltrust.Launcher.Common.Extensions;
 
 namespace fiskaltrust.Launcher.ProcessHost
 {
@@ -39,8 +40,8 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Package: {Package} {Version}", _packageConfiguration.Package, _packageConfiguration.Version);
-            _logger.LogInformation("Id:      {Id}", _packageConfiguration.Id);
+            _logger.PackageInfo(_packageConfiguration.Package, _packageConfiguration.Version);
+            _logger.PackageIdInfo(_packageConfiguration.Id.ToString());
 
             try
             {
@@ -48,7 +49,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
                 if (_plebeianConfiguration.PackageType == PackageType.Helper)
                 {
-                    _logger.LogDebug("Helper StartBegin() and StartEnd()");
+                    _logger.HelperStartBeginAndEnd();
                     var helper = _services.GetRequiredService<IHelper>();
                     helper.StartBegin();
                     helper.StartEnd();
@@ -56,7 +57,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             }
             catch
             {
-                _logger.LogError("Error Starting Hosting");
+                _logger.ErrorStartingHosting();
                 throw;
             }
 
@@ -65,7 +66,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             var promise = new TaskCompletionSource();
             cancellationToken.Register(() =>
             {
-                _logger.LogInformation("Stopping Package");
+                _logger.StoppingPackage();
 
                 try
                 {
@@ -87,7 +88,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Exception when calling StopBegin and StopEnd hooks");
+                    _logger.ExceptionCallingStopHooks(e);
                 }
 
                 promise.SetResult();
@@ -173,7 +174,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Could not start {url} hosting.", url);
+                    _logger.CouldNotStartUrlHosting(e, url.ToString());
                 }
             }
 

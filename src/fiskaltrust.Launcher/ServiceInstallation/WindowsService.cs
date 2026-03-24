@@ -1,6 +1,7 @@
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Helpers;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
 {
@@ -8,7 +9,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
     {
         private readonly string _serviceName;
 
-        public WindowsService(string serviceName, LauncherExecutablePath launcherExecutablePath) : base(launcherExecutablePath)
+        public WindowsService(string serviceName, LauncherExecutablePath launcherExecutablePath, ILogger logger) : base(launcherExecutablePath, logger)
         {
             _serviceName = serviceName;
         }
@@ -19,13 +20,13 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
                 if (!Runtime.IsAdministrator!.Value)
                 {
-                    Log.Error("Run as admin to install service {link}", ""); // TODO
+                    _logger.RunAsAdminToInstallService();
                     return 1;
                 }
             }
             else
             {
-                Log.Error("Wrong Operating system.");
+                _logger.WrongOperatingSystem();
                 return 1;
             }
 
@@ -44,21 +45,21 @@ namespace fiskaltrust.Launcher.ServiceInstallation
                 arguments.AddRange(new string[] { "DisplayName=", $"\"{displayName}\"" });
             }
 
-            Log.Information("Installing service.");
+            _logger.InstallingService();
             if ((await ProcessHelper.RunProcess(@"C:\WINDOWS\system32\sc.exe", arguments)).exitCode != 0)
             {
-                Log.Information($"Could not install service \"{_serviceName}\".");
+                _logger.CouldNotInstallService(_serviceName);
                 return 1;
             }
 
-            Log.Information("Starting service.");
+            _logger.StartingService();
             if ((await ProcessHelper.RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "start", $"\"{_serviceName}\"" })).exitCode != 0)
             {
-                Log.Warning($"Could not start service \"{_serviceName}\".");
+                _logger.CouldNotStartService(_serviceName);
             }
             else
             {
-                Log.Information($"successfully installed service \"{_serviceName}\".");
+                _logger.SuccessfullyInstalledService(_serviceName);
             }
 
             return 0;
@@ -69,29 +70,29 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             {
                 if (!Runtime.IsAdministrator!.Value)
                 {
-                    Log.Error("Run as admin to uninstall service {link}", ""); // TODO
+                    _logger.RunAsAdminToUninstallService();
                     return 1;
                 }
             }
             else
             {
-                Log.Error("Wrong Operating system.");
+                _logger.WrongOperatingSystem();
                 return 1;
             }
 
-            Log.Information("Stopping service.");
+            _logger.StoppingService();
             if ((await ProcessHelper.RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "stop", $"\"{_serviceName}\"" })).exitCode != 0)
             {
-                Log.Warning($"Could not stop service \"{_serviceName}\".");
+                _logger.CouldNotStopService(_serviceName);
             }
 
-            Log.Information("Uninstalling service.");
+            _logger.UninstallingService();
             if ((await ProcessHelper.RunProcess(@"C:\WINDOWS\system32\sc.exe", new[] { "delete", $"\"{_serviceName}\"" })).exitCode != 0)
             {
-                Log.Warning($"Could not uninstall service \"{_serviceName}\".");
+                _logger.CouldNotUninstallService(_serviceName);
                 return 1;
             }
-            Log.Information($"successfully uninstalled service \"{_serviceName}\".");
+            _logger.SuccessfullyUninstalledService(_serviceName);
             return 0;
         }
     }

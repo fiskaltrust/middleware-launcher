@@ -83,22 +83,22 @@ namespace fiskaltrust.Launcher.Services
                 const string message = $"The configuration parameter {{parametername}} will be ignored because {nameof(_launcherConfiguration.UseHttpSysBinding)} is enabled.";
                 if (_launcherConfiguration.TlsCertificateBase64 is not null)
                 {
-                    _logger.LogWarning(message, nameof(_launcherConfiguration.TlsCertificateBase64));
+                    _logger.TlsCertificateWarning(nameof(_launcherConfiguration.TlsCertificateBase64));
                 }
 
                 if (_launcherConfiguration.TlsCertificatePath is not null)
                 {
-                    _logger.LogWarning(message, nameof(_launcherConfiguration.TlsCertificatePath));
+                    _logger.TlsCertificateWarning(nameof(_launcherConfiguration.TlsCertificatePath));
                 }
 
                 if (OperatingSystem.IsWindows() && !Runtime.IsAdministrator!.Value)
                 {
-                    _logger.LogWarning($"{nameof(_launcherConfiguration.UseHttpSysBinding)} is enabled but the fiskaltrust.Launcher was not started as an Administrator. Url binding may fail.");
+                    _logger.UseHttpSysBindingNotAdmin();
                 }
 
                 if (!OperatingSystem.IsWindows())
                 {
-                    _logger.LogWarning($"{nameof(_launcherConfiguration.UseHttpSysBinding)} is only supported on Windows.");
+                    _logger.UseHttpSysBindingOnlyWindows();
                 }
             }
 
@@ -130,7 +130,7 @@ namespace fiskaltrust.Launcher.Services
 
             await app.StartAsync();
 
-            _logger.LogInformation("Started {hostingType} hosting on {url}", hostingType.ToString(), GetRestUri(uri));
+            _logger.StartedHosting(hostingType.ToString(), GetRestUri(uri));
             return app;
         }
 
@@ -195,7 +195,7 @@ namespace fiskaltrust.Launcher.Services
                         builder.AddServiceEndpoint(instance.GetType(), typeof(T), CreateNetTcpBinding(), uri, null);
                         break;
                     case "net.pipe":
-                        _logger.LogWarning("net.pipe url support will be added in an upcomming version of the launcher 2.0.");
+                        _logger.NetPipeUrlSupportComingSoon();
                         break;
                     default:
                         throw new Exception();
@@ -247,7 +247,7 @@ namespace fiskaltrust.Launcher.Services
         {
             if (OperatingSystem.IsWindows() && _launcherConfiguration.UseHttpSysBinding!.Value)
             {
-                _logger.LogWarning($"{nameof(_launcherConfiguration.UseHttpSysBinding)} is not supported for grpc.");
+                _logger.UseHttpSysBindingNotSupportedForGrpc();
             }
 
             ProtoBuf.Meta.RuntimeTypeModel.Default.Add(typeof(IAsyncResult), true);
@@ -284,7 +284,7 @@ namespace fiskaltrust.Launcher.Services
                 }
                 else
                 {
-                    _logger.LogError("A TLS certificate path was defined, but the file '{PfxPath}' does not exist or is not a valid PFX file.", _launcherConfiguration?.TlsCertificatePath);
+                    _logger.TlsCertificatePathNotExist(_launcherConfiguration?.TlsCertificatePath ?? string.Empty);
                 }
             }
 
@@ -297,7 +297,7 @@ namespace fiskaltrust.Launcher.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("A TLS certificate was defined via base64 input, but could not be parsed. Error message: {TlsParsingError}", ex.Message);
+                    _logger.TlsCertificateBase64ParseError(ex.Message);
                 }
             }
         }

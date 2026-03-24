@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using fiskaltrust.Launcher.Common.Constants;
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Helpers.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.DataProtection;
@@ -312,6 +313,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
         }
         public void Encrypt(IDataProtector dataProtector)
         {
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
             MapFieldsWithAttribute<EncryptAttribute>((value, name) =>
             {
                 if (value is null) return null;
@@ -322,13 +324,14 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 }
                 catch
                 {
-                    Log.Warning($"Failed to encrypt value of configuration field {name}. Consider using the 'config set' command to set the field's value.", name);
+                    logger.FailedToEncryptConfigField(name);
                     return null;
                 }
             });
         }
         public void Decrypt(IDataProtector dataProtector)
         {
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
             MapFieldsWithAttribute<EncryptAttribute>((value, name) =>
             {
                 try
@@ -336,9 +339,9 @@ namespace fiskaltrust.Launcher.Common.Configuration
                     if (value is null) return null;
                     return dataProtector.Unprotect((string)value);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Log.Warning("Failed to decrypt value of configuration field {name}. Consider using the 'config set' command to set the fields value.", name);
+                    logger.FailedToDecryptConfigField(name);
                     return null;
                 }
             });
@@ -356,6 +359,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
 
         public static async Task<LauncherConfiguration> ReadFromFilesAsync(string launcherConfigurationFile, string legacyConfigurationFile)
         {
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
             var launcherConfiguration = new LauncherConfiguration();
 
             Log.Verbose("Reading legacy config file.");
@@ -369,7 +373,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 }
                 catch (Exception e)
                 {
-                    Log.Warning(e, "Could not parse legacy configuration file \"{LegacyConfigurationFile}\".", legacyConfigurationFile);
+                    logger.CouldNotParseLegacyConfig(e, legacyConfigurationFile);
                 }
             }
             else
@@ -389,7 +393,7 @@ namespace fiskaltrust.Launcher.Common.Configuration
                 }
                 catch (Exception e)
                 {
-                    Log.Warning(e, "Could not parse launcher configuration file \"{LauncherConfigurationFile}\".", launcherConfigurationFile);
+                    logger.CouldNotParseLauncherConfigFile(e, launcherConfigurationFile);
                 }
             }
             else

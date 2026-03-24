@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Helpers;
 using fiskaltrust.storage.serialization.V0;
 using Polly;
@@ -69,7 +70,7 @@ namespace fiskaltrust.Launcher.Download
 
             if (_configuration.UseOffline!.Value)
             {
-                _logger?.LogWarning("Cannot get latest {package} version from SemVer Range in offline mode.", name);
+                _logger?.CannotGetLatestVersionOfflineMode(name);
                 return null;
             }
 
@@ -100,7 +101,7 @@ namespace fiskaltrust.Launcher.Download
             }
             catch (Exception e)
             {
-                _logger?.LogWarning(e, "Could not get latest {package} version from SemVer Range {range}", name, range);
+                _logger?.CouldNotGetLatestVersion(e, name, range.ToString());
                 return null;
             }
         }
@@ -129,11 +130,11 @@ namespace fiskaltrust.Launcher.Download
                 {
                     if (_configuration.UseOffline!.Value)
                     {
-                        _logger?.LogWarning("Package {name} not found in download cache.", combinedName);
+                        _logger?.PackageNotFoundInCache(combinedName);
                         break;
                     }
 
-                    _logger?.LogInformation("Downloading package {name}.", combinedName);
+                    _logger?.DownloadingPackage(combinedName);
                     Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
 
                     {
@@ -171,12 +172,12 @@ namespace fiskaltrust.Launcher.Download
                 }
                 else
                 {
-                    _logger?.LogDebug("Found package in download cache.");
+                    _logger?.FoundPackageInCache();
                 }
 
                 if (!await CheckHashAsync(sourcePath))
                 {
-                    _logger?.LogWarning("File hash for {name} incorrect.", combinedName);
+                    _logger?.FileHashIncorrect(combinedName);
                     if (!_configuration.UseOffline!.Value)
                     {
                         File.Delete(sourcePath);
@@ -188,7 +189,7 @@ namespace fiskaltrust.Launcher.Download
 
                 if (targetNames.Any(t => !File.Exists(Path.Combine(targetPath, t))))
                 {
-                    _logger?.LogWarning("Package {name} did not contain the needed files.", combinedName);
+                    _logger?.PackageMissingNeededFiles(combinedName);
                     if (_configuration.UseOffline!.Value)
                     {
                         break;
@@ -214,7 +215,7 @@ namespace fiskaltrust.Launcher.Download
 
             if (!Directory.Exists(sourcePath))
             {
-                _logger?.LogDebug("No offline packages found");
+                _logger?.NoOfflinePackagesFound();
                 return;
             }
 
@@ -229,13 +230,13 @@ namespace fiskaltrust.Launcher.Download
 
                 if (File.Exists(destinationFilePath))
                 {
-                    _logger?.LogDebug("Package {fileName} already exists in cache.", fileName);
+                    _logger?.PackageAlreadyExistsInCache(fileName);
                     continue;
                 }
                 File.Copy(filePath, destinationFilePath, true);
 
 
-                _logger?.LogInformation("Copied package {fileName} to cache", fileName);
+                _logger?.CopiedPackageToCache(fileName);
             }
 
         }
@@ -244,7 +245,7 @@ namespace fiskaltrust.Launcher.Download
         {
             if (!File.Exists($"{sourcePath}.hash"))
             {
-                _logger?.LogWarning("Hash file not found.");
+                _logger?.HashFileNotFound();
                 return false;
             }
 
@@ -255,7 +256,7 @@ namespace fiskaltrust.Launcher.Download
 
             if (!computedHash.SequenceEqual(hash))
             {
-                _logger?.LogWarning("Incorrect Hash.");
+                _logger?.IncorrectHash();
                 return false;
             }
 

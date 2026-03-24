@@ -2,11 +2,13 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Common.Helpers;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.DataProtection.XmlEncryption;
 using Serilog;
+using LoggerExtensions = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions;
 
 namespace fiskaltrust.Launcher.Extensions
 {
@@ -188,6 +190,8 @@ namespace fiskaltrust.Launcher.Extensions
                 .SetDefaultKeyLifetime(DateTime.MaxValue - DateTime.Now - TimeSpan.FromDays(1)) // Encryption fails if we use TimeStamp.MaxValue because that results in a DateTime exceeding its MaxValue ¯\_(ツ)_/¯
                 .SetApplicationName(DATA_PROTECTION_APPLICATION_NAME);
 
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
+
             if (!useFallback)
             {
                 if (OperatingSystem.IsWindows())
@@ -201,15 +205,15 @@ namespace fiskaltrust.Launcher.Extensions
                 }
                 else if (OperatingSystem.IsLinux())
                 {
-                    Log.Warning("Fallback config encryption mechanism is used on linux.");
+                    logger.FallbackConfigEncryptionLinux();
                 }
                 else if (OperatingSystem.IsMacOS())
                 {
-                    Log.Warning("Fallback config encryption mechanism is used on macos.");
+                    logger.FallbackConfigEncryptionMacos();
                 }
             }
 
-            Log.Debug("Fallback config encryption mechanism used.");
+            logger.FallbackConfigEncryptionUsed();
             builder.Services.Configure<KeyManagementOptions>(options => options.XmlEncryptor = new LegacyXmlEncryptor(builder.Services));
             return builder;
         }

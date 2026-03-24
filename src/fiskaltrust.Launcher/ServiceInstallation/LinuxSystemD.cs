@@ -1,5 +1,6 @@
-﻿using fiskaltrust.Launcher.Helpers;
-using Serilog;
+using fiskaltrust.Launcher.Common.Extensions;
+using fiskaltrust.Launcher.Helpers;
+using Microsoft.Extensions.Logging;
 
 namespace fiskaltrust.Launcher.ServiceInstallation
 {
@@ -9,7 +10,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
         private readonly string _serviceName = "fiskaltrustLauncher";
         private readonly string? _serviceFolder;
 
-        public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath, string? serviceFolder) : base(launcherExecutablePath)
+        public LinuxSystemD(string? serviceName, LauncherExecutablePath launcherExecutablePath, string? serviceFolder, ILogger logger) : base(launcherExecutablePath, logger)
         {
             _serviceName = serviceName ?? _serviceName;
             _serviceFolder = serviceFolder;
@@ -17,52 +18,52 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
         public override async Task<int> InstallService(string commandArgs, string? displayName, bool delayedStart = false)
         {
-            if (!await IdSystemdAvailable())
+            if (!await IsSystemdAvailable())
             {
-                Log.Error("Systemd is not running on this machine. No service installation is possible.");
+                _logger.SystemdNotRunning();
                 return -1;
             }
 
             if (await IsSystemdServiceInstalled(_serviceName))
             {
-                Log.Error("Service is already installed and cannot be installed twice for one cashbox.");
+                _logger.ServiceAlreadyInstalled();
                 return -1;
             }
-            Log.Information("Installing service via systemd.");
+            _logger.InstallingServiceViaSystemd();
             var serviceFileContent = GetServiceFileContent(displayName ?? "Service installation of fiskaltrust launcher.", commandArgs);
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
             await File.AppendAllLinesAsync(serviceFilePath, serviceFileContent).ConfigureAwait(false);
             await ProcessHelper.RunProcess("systemctl", ["daemon-reload"]);
-            Log.Information("Starting systemd service.");
+            _logger.StartingSystemdService();
             await ProcessHelper.RunProcess("systemctl", ["start", _serviceName]);
-            Log.Information("Enabling systemd service.");
+            _logger.EnablingSystemdService();
             return (await ProcessHelper.RunProcess("systemctl", ["enable", _serviceName, "-q"])).exitCode;
         }
 
         public override async Task<int> UninstallService()
         {
-            if (!await IdSystemdAvailable())
+            if (!await IsSystemdAvailable())
             {
-                Log.Error("Systemd is not running on this machine. No service uninstallation is possible.");
+                _logger.SystemdNotRunningUninstall();
                 return -1;
             }
 
             if (!await IsSystemdServiceInstalled(_serviceName))
             {
-                Log.Error("Service is not installed!");
+                _logger.ServiceNotInstalled();
                 return -1;
             }
 
-            Log.Information("Stoppig systemd service.");
+            _logger.StoppingSystemdService();
             await ProcessHelper.RunProcess("systemctl", ["stop ", _serviceName]);
-            Log.Information("Disabling systemd service.");
+            _logger.DisablingSystemdService();
             await ProcessHelper.RunProcess("systemctl", ["disable ", _serviceName, "-q"]);
-            Log.Information("Removing systemd service.");
+            _logger.RemovingSystemdService();
             var serviceFilePath = Path.Combine(_servicePath, $"{_serviceName}.service");
             await ProcessHelper.RunProcess("rm", [serviceFilePath]);
-            Log.Information("Reloading systemd daemon.");
+            _logger.ReloadingSystemdDaemon();
             await ProcessHelper.RunProcess("systemctl", ["daemon-reload"]);
-            Log.Information("Reseting state for failed systemd units.");
+            _logger.ResettingSystemdFailedUnits();
             return (await ProcessHelper.RunProcess("systemctl", ["reset-failed"])).exitCode;
         }
 
@@ -89,13 +90,13 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             ];
         }
 
-        private static async Task<bool> IdSystemdAvailable()
+        private async Task<bool> IsSystemdAvailable()
         {
             var (exitCode, output) = await ProcessHelper.RunProcess("ps", ["--no-headers", "-o", "comm", "1"], logLevel: null);
 
             if (exitCode != 0 && output.Contains("systemd"))
             {
-                Log.Error("Service installation works only for systemd setup.");
+                _logger.ServiceInstallationOnlyForSystemd();
                 return false;
             }
             return true;
