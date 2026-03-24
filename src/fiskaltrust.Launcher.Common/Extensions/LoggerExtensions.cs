@@ -210,7 +210,7 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Error, Message = "The launcher can only install itself as a service on windows and linux(systemd). On other OSs it has to be done manually.")]
     public static partial void ServiceInstallationManualRequired(this ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Only windows or linux(systemd) service can be installed automatically.")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "Only windows or linux(systemd) service can be uninstalled automatically.")]
     public static partial void ServiceUninstallationManualRequired(this ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Could not install service \"{serviceName}\".")]
