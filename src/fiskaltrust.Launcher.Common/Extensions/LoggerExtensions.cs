@@ -32,7 +32,7 @@ public static partial class LoggerExtensions
     public static partial void CouldNotWriteLauncherConfig(this ILogger logger, Exception? exception);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Error decrypting launcher configuration file {file}.")]
-    public static partial void ErrorDecryptingLauncherConfig(this ILogger logger, Exception? exception, string file);
+    public static partial void ErrorDecryptingLauncherConfig(this ILogger logger, Exception? exception, string file = "");
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Error encrypting launcher configuration file.")]
     public static partial void ErrorEncryptingLauncherConfig(this ILogger logger, Exception? exception);

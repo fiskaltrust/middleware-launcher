@@ -120,7 +120,7 @@ namespace fiskaltrust.Launcher.Commands
                 }
                 catch (Exception e)
                 {
-                    logger.ErrorDecryptingLauncherConfigFile(e);
+                    logger.ErrorDecryptingLauncherConfig(e);
                 }
 
                 try
