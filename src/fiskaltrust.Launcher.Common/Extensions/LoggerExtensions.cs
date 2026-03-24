@@ -107,16 +107,15 @@ public static partial class LoggerExtensions
 
     public static void CouldNotDownloadCashboxConfig(this ILogger logger, Exception? exception, bool sandbox)
     {
-        var detail = $"(Launcher is running in {(sandbox ? "sandbox" : "production")} mode.";
+        var detail = $"Launcher is running in {(sandbox ? "sandbox" : "production")} mode.";
         if (!sandbox)
         {
             detail += " Did you forget the --sandbox flag?";
         }
-        detail += ")";
         CouldNotDownloadCashboxConfigMessage(logger, exception, detail);
     }
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Could not download Cashbox configuration. {detail}")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "Could not download Cashbox configuration. ({detail})")]
     private static partial void CouldNotDownloadCashboxConfigMessage(ILogger logger, Exception? exception, string detail);
 
     [LoggerMessage(Level = LogLevel.Critical, Message = "Could not read Cashbox configuration file.")]
