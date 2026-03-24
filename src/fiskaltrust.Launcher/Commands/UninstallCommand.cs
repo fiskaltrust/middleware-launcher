@@ -58,7 +58,7 @@ namespace fiskaltrust.Launcher.Commands
                 return await installer.UninstallService().ConfigureAwait(false);
             }
 
-            logger.ServiceUninstallationManualRequired(""); // TODO
+            logger.ServiceUninstallationManualRequired();
             return 1;
         }
     }

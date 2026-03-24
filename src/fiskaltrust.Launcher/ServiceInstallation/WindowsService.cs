@@ -20,7 +20,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
 
                 if (!Runtime.IsAdministrator!.Value)
                 {
-                    _logger.RunAsAdminToInstallService(""); // TODO
+                    _logger.RunAsAdminToInstallService();
                     return 1;
                 }
             }
@@ -70,7 +70,7 @@ namespace fiskaltrust.Launcher.ServiceInstallation
             {
                 if (!Runtime.IsAdministrator!.Value)
                 {
-                    _logger.RunAsAdminToUninstallService(""); // TODO
+                    _logger.RunAsAdminToUninstallService();
                     return 1;
                 }
             }

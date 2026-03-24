@@ -80,7 +80,7 @@ namespace fiskaltrust.Launcher.Commands
                 return await installer.InstallService(commandArgs, installOptions.ServiceDisplayName, installOptions.DelayedStart).ConfigureAwait(false);
             }
 
-            logger.ServiceInstallationManualRequired(""); // TODO
+            logger.ServiceInstallationManualRequired();
             return 1;
         }
     }

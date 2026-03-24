@@ -145,16 +145,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                var message = "Could not download Cashbox configuration. ";
-                message +=
-                    $"(Launcher is running in {(launcherConfiguration.Sandbox!.Value ? "sandbox" : "production")} mode.";
-                if (!launcherConfiguration.Sandbox!.Value)
-                {
-                    message += " Did you forget the --sandbox flag?";
-                }
-
-                message += ")";
-                logger.CouldNotDownloadCashboxConfig(e, message);
+                logger.CouldNotDownloadCashboxConfig(e, launcherConfiguration.Sandbox!.Value);
             }
 
             try
@@ -277,7 +268,7 @@ namespace fiskaltrust.Launcher.Commands
             catch (UnauthorizedAccessException e)
             {
                 // will exit with non-zero exit code later.
-                logger.CouldNotCreateServiceDirectory(e, $"Access to the path '{serviceDirectory}' is denied. Please run the application with sufficient permissions.");
+                logger.CouldNotCreateServiceDirectory(e, serviceDirectory);
             }
         }
 
