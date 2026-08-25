@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using fiskaltrust.Launcher.Common.Configuration;
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.Configuration;
 using fiskaltrust.Launcher.Constants;
 using fiskaltrust.Launcher.Extensions;
@@ -87,13 +88,13 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private void HandleCancellation()
         {
-            _logger.LogDebug("Handeling cancellation {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
+            _logger.HandlingCancellation(_packageConfiguration.Package, _packageConfiguration.Id.ToString());
 
             try
             {
                 if (_process is not null && !_process.HasExited)
                 {
-                    _logger.LogInformation("Killing {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
+                    _logger.KillingPackage(_packageConfiguration.Package, _packageConfiguration.Id.ToString());
                     _process.Kill();
                 }
             }
@@ -105,7 +106,7 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             if (cancellationToken.IsCancellationRequested /* || (_process is not null && _process.ExitCode == 0) */) // Until https://github.com/dotnet/runtime/issues/67146 is addressed we cannot check the exit code.
             {
-                _logger.LogInformation("Host {package} {id} has shutdown.", _packageConfiguration.Package, _packageConfiguration.Id);
+                _logger.HostHasShutdown(_packageConfiguration.Package, _packageConfiguration.Id.ToString());
                 // Cancellation was requested, and the process has exited.
                 // Or the process has exited gracefully.
                 _started.TrySetResult();
@@ -115,14 +116,14 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             // if (_process is not null && _process.ExitCode != 0)
             {
-                _logger.LogWarning("Host {package} {id} has crashed.", _packageConfiguration.Package, _packageConfiguration.Id);
+                _logger.HostHasCrashed(_packageConfiguration.Package, _packageConfiguration.Id.ToString());
             }
 
             // Cancellation was not requested, and the process has exited erroniously.
             if (!_started.Task.IsCompleted)
             {
                 // If the process hat not signaled startup, we print the log buffer.
-                _logger.LogError($"Error while starting {{package}} {{id}}.{Environment.NewLine}{{error}}", _packageConfiguration.Package, _packageConfiguration.Id, string.Join(Environment.NewLine, _plebeianLogBuffer));
+                _logger.ErrorWhileStartingPackage(_packageConfiguration.Package, _packageConfiguration.Id.ToString(), string.Join(Environment.NewLine, _plebeianLogBuffer));
                 _plebeianLogBuffer.Clear();
             }
 
@@ -134,7 +135,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 return;
             }
 
-            _logger.LogInformation("Backing off restart {delay} for {package} {id}.", _restartDelay, _packageConfiguration.Package, _packageConfiguration.Id);
+            _logger.BackingOffRestart(_restartDelay.ToString(), _packageConfiguration.Package, _packageConfiguration.Id.ToString());
 
             _restartDelay *= 2;
             try
@@ -146,7 +147,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                 return;
             }
 
-            _logger.LogInformation("Restarting {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
+            _logger.RestartingPackage(_packageConfiguration.Package, _packageConfiguration.Id.ToString());
 
             try
             {
@@ -154,7 +155,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Could not start ProcessHost process for {package} {id}.", _packageConfiguration.Package, _packageConfiguration.Id);
+                _logger.CouldNotStartProcessHost(ex, _packageConfiguration.Package, _packageConfiguration.Id.ToString());
                 _started.TrySetResult();
                 _stopped.TrySetCanceled();
             }
@@ -190,12 +191,12 @@ namespace fiskaltrust.Launcher.ProcessHost
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Could not start ProcessHost process.");
+                _logger.CouldNotStartProcessHostGeneral(e);
                 _stopped!.TrySetCanceled(cancellationToken);
                 return Task.CompletedTask;
             }
 
-            _logger.LogDebug("ProcessId {id}", _process?.Id);
+            _logger.ProcessIdDebug(_process?.Id ?? 0);
             if (Debugger.IsAttached)
             {
                 Debug.WriteLine($"ProcessId {_process?.Id}");

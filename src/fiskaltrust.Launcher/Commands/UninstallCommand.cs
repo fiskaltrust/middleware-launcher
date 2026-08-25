@@ -1,8 +1,10 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
-using Serilog;
+using fiskaltrust.Launcher.Common.Extensions;
 using fiskaltrust.Launcher.ServiceInstallation;
 using fiskaltrust.Launcher.Helpers;
+using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using LoggerExtensions = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -38,15 +40,17 @@ namespace fiskaltrust.Launcher.Commands
     {
         public static async Task<int> HandleAsync(CommonOptions _, CommonProperties commonProperties, UninstallOptions uninstallOptions, UninstallServices uninstallServices)
         {
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
+
             ServiceInstaller? installer = null;
             if (OperatingSystem.IsLinux())
             {
-                installer = new LinuxSystemD(uninstallOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}", 
-                    uninstallServices.LauncherExecutablePath, commonProperties.LauncherConfiguration.ServiceFolder);
+                installer = new LinuxSystemD(uninstallOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}",
+                    uninstallServices.LauncherExecutablePath, commonProperties.LauncherConfiguration.ServiceFolder, logger);
             }
             if (OperatingSystem.IsWindows())
             {
-                installer = new WindowsService(uninstallOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}", uninstallServices.LauncherExecutablePath);
+                installer = new WindowsService(uninstallOptions.ServiceName ?? $"fiskaltrust-{commonProperties.LauncherConfiguration.CashboxId}", uninstallServices.LauncherExecutablePath, logger);
             }
 
             if (installer is not null)
@@ -54,7 +58,7 @@ namespace fiskaltrust.Launcher.Commands
                 return await installer.UninstallService().ConfigureAwait(false);
             }
 
-            Log.Error("For non windows or linux(systemd) service uninstallation see: {link}", ""); // TODO
+            logger.ServiceUninstallationManualRequired();
             return 1;
         }
     }

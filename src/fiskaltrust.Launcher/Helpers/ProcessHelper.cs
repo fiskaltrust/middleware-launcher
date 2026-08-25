@@ -1,6 +1,9 @@
 ﻿using System.Diagnostics;
+using fiskaltrust.Launcher.Common.Extensions;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
+using LoggerExtensions = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions;
 
 namespace fiskaltrust.Launcher.Helpers;
 
@@ -30,18 +33,19 @@ public static class ProcessHelper
         var stdOut = await process.StandardOutput.ReadToEndAsync();
         if (!string.IsNullOrEmpty(stdOut))
         {
-            if (logLevel is not null) { Log.Write(logLevel.Value, stdOut); }
+            if (logLevel is not null) { Log.Write(logLevel.Value, "{StdOut}", stdOut); }
         }
 
         var stdErr = await process.StandardError.ReadToEndAsync();
         if (!string.IsNullOrEmpty(stdErr))
         {
-            Log.Write(LogEventLevel.Warning, stdErr);
+            Log.Write(LogEventLevel.Warning, "{StdErr}", stdErr);
         }
 
         if (process.ExitCode != 0)
         {
-            Log.Warning($"Process {fileName} exited with code {process.ExitCode}");
+            var logger = Serilog.Log.Logger.ToDotnetLogger();
+            logger.ProcessExitedWithCode(fileName, process.ExitCode);
         }
 
         return (process.ExitCode, stdOut);

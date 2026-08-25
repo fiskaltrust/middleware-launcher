@@ -275,6 +275,9 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebeian
 
             var loggerHostingService = Mock.Of<ILogger<HostingService>>(MockBehavior.Strict);
             Mock.Get(loggerHostingService)
+                .Setup(x => x.IsEnabled(It.IsAny<LogLevel>()))
+                .Returns(true);
+            Mock.Get(loggerHostingService)
                 .Setup(x => x.Log(
                     It.IsNotIn(new[] { LogLevel.Error, LogLevel.Critical }),
                     It.IsAny<EventId>(),
@@ -285,6 +288,9 @@ namespace fiskaltrust.Launcher.IntegrationTest.Plebeian
                 .Verifiable();
 
             var loggerProcessHostPlebeian = Mock.Of<ILogger<ProcessHostPlebeian>>(MockBehavior.Strict);
+            Mock.Get(loggerProcessHostPlebeian)
+                .Setup(x => x.IsEnabled(It.IsAny<LogLevel>()))
+                .Returns(true);
             Mock.Get(loggerProcessHostPlebeian)
                 .Setup(x => x.Log(
                     It.IsNotIn(new[] { LogLevel.Error, LogLevel.Critical }),

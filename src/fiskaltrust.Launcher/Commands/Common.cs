@@ -1,8 +1,6 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Text.Json;
 using fiskaltrust.Launcher.Common.Configuration;
 using fiskaltrust.Launcher.Common.Constants;
 using fiskaltrust.Launcher.Common.Extensions;
@@ -14,8 +12,11 @@ using fiskaltrust.Launcher.Logging;
 using fiskaltrust.Launcher.ServiceInstallation;
 using fiskaltrust.storage.serialization.V0;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using LoggerExtensions = fiskaltrust.Launcher.Common.Extensions.LoggerExtensions;
 
 namespace fiskaltrust.Launcher.Commands
 {
@@ -86,23 +87,25 @@ namespace fiskaltrust.Launcher.Commands
             IHost host,
             Func<CommonOptions, CommonProperties, O, S, Task<int>> handler) where S : notnull
         {
-            // Log messages will be save here and logged later when we have the configuration options to create the logger.
+            // Log messages will be saved here and logged later when we have the configuration options to create the logger.
             var collectionSink = new CollectionSink();
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(collectionSink)
                 .CreateLogger();
+
+            var logger = Log.Logger.ToDotnetLogger();
 
             var launcherConfiguration = await LauncherConfiguration.ReadFromFilesAsync(options.LauncherConfigurationFile, options.LegacyConfigurationFile);
 
             Log.Verbose("Merging launcher cli args.");
             launcherConfiguration.OverwriteWith(options.ArgsLauncherConfiguration);
 
-            await EnsureServiceDirectoryExists(launcherConfiguration);
+            await EnsureServiceDirectoryExists(launcherConfiguration, logger);
 
             if (!launcherConfiguration.UseOffline!.Value &&
                 (launcherConfiguration.CashboxId is null || launcherConfiguration.AccessToken is null))
             {
-                Log.Error("CashBoxId and AccessToken are not provided.");
+                logger.CashboxIdAndAccessTokenNotProvided();
             }
 
             try
@@ -115,17 +118,17 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e, "Could not create cashbox-configuration-file folder.");
+                logger.CouldNotCreateCashboxConfigFolder(e);
             }
 
             ECDiffieHellman? clientEcdh = null;
             try
             {
-                clientEcdh = await LoadCurve(launcherConfiguration);
+                clientEcdh = await LoadCurve(launcherConfiguration, logger);
             }
             catch (Exception e)
             {
-                Log.Fatal(e, "Could not load client curve.");
+                logger.CouldNotLoadClientCurve(e);
             }
 
             try
@@ -136,22 +139,13 @@ namespace fiskaltrust.Launcher.Commands
                     var exists = await downloader.DownloadConfigurationAsync(clientEcdh);
                     if (launcherConfiguration.UseOffline!.Value && !exists)
                     {
-                        Log.Warning("Cashbox configuration was not downloaded because UseOffline is set.");
+                        logger.CashboxConfigNotDownloadedOfflineMode();
                     }
                 }
             }
             catch (Exception e)
             {
-                var message = "Could not download Cashbox configuration. ";
-                message +=
-                    $"(Launcher is running in {(launcherConfiguration.Sandbox!.Value ? "sandbox" : "production")} mode.";
-                if (!launcherConfiguration.Sandbox!.Value)
-                {
-                    message += " Did you forget the --sandbox flag?";
-                }
-
-                message += ")";
-                Log.Error(e, message);
+                logger.CouldNotDownloadCashboxConfig(e, launcherConfiguration.Sandbox!.Value);
             }
 
             try
@@ -164,9 +158,9 @@ namespace fiskaltrust.Launcher.Commands
             catch (Exception e)
             {
                 // will exit with non-zero exit code later.
-                Log.Fatal(e, "Could not read Cashbox configuration file.");
+                logger.CouldNotReadCashboxConfig(e);
             }
-            launcherConfiguration.LogConfigurationWarnings(Log.Logger);
+            launcherConfiguration.LogConfigurationWarnings(logger);
             var cashboxConfiguration = new ftCashBoxConfiguration();
             try
             {
@@ -181,7 +175,7 @@ namespace fiskaltrust.Launcher.Commands
             catch (Exception e)
             {
                 // will exit with non-zero exit code later.
-                Log.Fatal(e, "Could not parse Cashbox configuration.");
+                logger.CouldNotParseCashboxConfig(e);
             }
 
             // Previous log messages will be logged here using this logger.
@@ -192,12 +186,14 @@ namespace fiskaltrust.Launcher.Commands
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
+            logger = Log.Logger.ToDotnetLogger();
+
             foreach (var logEvent in collectionSink.Events)
             {
                 Log.Write(logEvent);
             }
 
-            // If any critical errors occured, we exit with a non-zero exit code.
+            // If any critical errors occurred, we exit with a non-zero exit code.
             // In many cases we don't want to immediately exit the application,
             // but we want to log the error and continue and see what else is going on before we exit.
             if (collectionSink.Events.Where(e => e.Level == LogEventLevel.Fatal).Any())
@@ -205,13 +201,12 @@ namespace fiskaltrust.Launcher.Commands
                 return 1;
             }
 
-            Log.Debug("Launcher Configuration File: {LauncherConfigurationFile}", options.LauncherConfigurationFile);
-            Log.Debug("Cashbox Configuration File: {CashboxConfigurationFile}",
-                launcherConfiguration.CashboxConfigurationFile);
+            logger.LauncherConfigFileDebug(options.LauncherConfigurationFile);
+            logger.CashboxConfigFileDebug(launcherConfiguration.CashboxConfigurationFile!);
             Log.Debug("Launcher Configuration: {@LauncherConfiguration}", launcherConfiguration.Redacted());
 
-            Log.Debug("Launcher running as {ServiceType}",
-                Enum.GetName(typeof(ServiceTypes), host.Services.GetRequiredService<ServiceType>().Type));
+            logger.LauncherRunningAsServiceType(
+                Enum.GetName(typeof(ServiceTypes), host.Services.GetRequiredService<ServiceType>().Type)!);
 
             var dataProtectionProvider = DataProtectionExtensions.Create(launcherConfiguration);
 
@@ -222,7 +217,7 @@ namespace fiskaltrust.Launcher.Commands
             }
             catch (Exception e)
             {
-                Log.Warning(e, "Error decrypring launcher configuration file.");
+                logger.ErrorDecryptingLauncherConfig(e, options.LauncherConfigurationFile);
             }
 
             return await handler(options,
@@ -230,7 +225,7 @@ namespace fiskaltrust.Launcher.Commands
                 specificOptions, host.Services.GetRequiredService<S>());
         }
 
-        private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config)
+        private static async Task EnsureServiceDirectoryExists(LauncherConfiguration config, ILogger logger)
         {
             var serviceDirectory = config.ServiceFolder!;
             try
@@ -249,39 +244,38 @@ namespace fiskaltrust.Launcher.Commands
                                 LogEventLevel.Debug);
                             if (chownResult.exitCode != 0)
                             {
-                                Log.Warning("Failed to change owner of the service directory.");
+                                logger.FailedToChangeOwnerOfServiceDirectory();
                             }
 
                             var chmodResult = await ProcessHelper.RunProcess("chmod", ["774", $"\"{serviceDirectory}\""],
                                 LogEventLevel.Debug);
                             if (chmodResult.exitCode != 0)
                             {
-                                Log.Warning("Failed to change permissions of the service directory.");
+                                logger.FailedToChangePermissionsOfServiceDirectory();
                             }
                         }
                         else
                         {
-                            Log.Warning(
-                                "Service user name is not set. Owner of the service directory will not be changed.");
+                            logger.ServiceUserNameNotSet();
                         }
                     }
                     else
                     {
-                        Log.Debug("Changing owner and permissions is skipped on non-Unix operating systems.");
+                        logger.ChangingOwnerAndPermissionsSkipped();
                     }
                 }
             }
             catch (UnauthorizedAccessException e)
             {
                 // will exit with non-zero exit code later.
-                Log.Fatal(e,
-                    "Access to the path '{ServiceDirectory}' is denied. Please run the application with sufficient permissions.",
-                    serviceDirectory);
+                logger.CouldNotCreateServiceDirectory(e, serviceDirectory);
             }
         }
 
-        public static async Task<ECDiffieHellman> LoadCurve(LauncherConfiguration launcherConfiguration, bool dryRun = false)
+        public static async Task<ECDiffieHellman> LoadCurve(LauncherConfiguration launcherConfiguration, ILogger? logger = null, bool dryRun = false)
         {
+            logger ??= Serilog.Log.Logger.ToDotnetLogger();
+
             Log.Verbose("Loading Curve.");
             var dataProtector = DataProtectionExtensions.Create(launcherConfiguration)
                 .CreateProtector(CashBoxConfigurationExt.DATA_PROTECTION_DATA_PURPOSE);
@@ -298,7 +292,7 @@ namespace fiskaltrust.Launcher.Commands
                 }
                 catch (Exception e)
                 {
-                    Log.Warning($"Error loading or decrypting ECDH curve: {e.Message}. Regenerating new curve.");
+                    logger.ErrorLoadingEcdhCurveRegenerating(e.Message);
                 }
             }
 
@@ -313,7 +307,7 @@ namespace fiskaltrust.Launcher.Commands
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "Error occurred while loading or decrypting ECDH curve from file: {ClientEcdhPath}", clientEcdhPath);
+                    logger.ErrorLoadingEcdhCurve(e, clientEcdhPath);
                     throw;
                 }
             }
