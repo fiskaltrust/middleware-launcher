@@ -17,28 +17,22 @@ jobs:
     strategy:
       matrix:
         include:
-          - vmImage: windows-latest
-            target: win-x64
+          - target: win-x64
             scriptFolder: "windows"
 
-          # - vmImage: windows-latest
-          #   target: win-x86
+          # - target: win-x86
           #   scriptFolder: "windows"
 
-          # - vmImage: ubuntu-latest
-          #   target: linux-x64
+          # - target: linux-x64
           #   scriptFolder: "linux"
 
-          # - vmImage: ubuntu-latest
-          #   target: linux-arm
+          # - target: linux-arm
           #   scriptFolder: "linux"
 
-          # - vmImage: ubuntu-latest
-          #   target: linux-arm64
+          # - target: linux-arm64
           #   scriptFolder: "linux"
 
-          # - vmImage: macos-latest
-          #   target: osx-x64
+          # - target: osx-x64
           #   scriptFolder: "macos"
     runs-on: ubuntu-latest
     needs: []
@@ -74,7 +68,7 @@ jobs:
           tenantId: ${{ secrets.AZURE_TENANT_ID }}
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         env:
-          TARGET: ${{ matrix.target }}
+          TARGET: ${{ matrix.target }}/fiskaltrust.Launcher/
 
       - name: Deploy Script Packages
         uses: ./.github/actions/deploy-packages
@@ -86,6 +80,6 @@ jobs:
           tenantId: ${{ secrets.AZURE_TENANT_ID }}
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         env:
-          TARGET: ${{ matrix.target }}
+          TARGET: ${{ matrix.target }}/fiskaltrust.Launcher.Scripts/
          
          

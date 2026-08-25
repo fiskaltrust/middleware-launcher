@@ -40,5 +40,5 @@ runs:
       with:
         azcliversion: latest
         inlineScript: |
-          az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" --auth-mode login -d "packages" --destination-path "$TARGET/fiskaltrust.Launcher/" -s "$DIRECTORY" --pattern "*.zip*"
+          az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" --auth-mode login -d "packages" --destination-path "$TARGET" -s "$DIRECTORY" --pattern "*.zip*"
         
