@@ -55,8 +55,8 @@ jobs:
       - name: Rename Package Artifacts
         shell: pwsh
         run: |
-            Get-ChildItem "artifacts/package-${{ matrix.target }}/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
-            Get-ChildItem "artifacts/scripts-${{ matrix.target }}/scripts-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher.Scripts-", "") }
+            Get-ChildItem "artifacts/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
+            Get-ChildItem "artifacts/scripts-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher.Scripts-", "") }
       
       - name: Deploy zip Packages
         uses: ./.github/actions/deploy-packages
