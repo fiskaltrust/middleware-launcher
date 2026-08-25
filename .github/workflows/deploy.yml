@@ -40,7 +40,7 @@ jobs:
           # - vmImage: macos-latest
           #   target: osx-x64
           #   scriptFolder: "macos"
-    runs-on: ${{ matrix.vmImage }}
+    runs-on: ubuntu-latest
     needs: []
     environment: ${{ inputs.environment }}
     steps:
