@@ -87,6 +87,10 @@ namespace fiskaltrust.Launcher.IntegrationTest.Download
 
                 var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"https://packages-2-0-sandbox.fiskaltrust.cloud/api/packages/{PackageDownloader.LAUNCHER_NAME}?platform={platform}"));
                 var response = await httpClient!.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                {
+                    continue;
+                }
                 var versions = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
                 if (versions == null || !versions.Any())
                 {
