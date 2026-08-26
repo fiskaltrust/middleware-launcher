@@ -8,8 +8,10 @@ permissions:
   id-token: write
 
 env:
-  STORAGE_ACCOUNT: ${{ secrets.STORAGE_ACCOUNT }}
-  SERVICE_CONNECTION: ${{ secrets.AZURE_CREDENTIALS }} # federated identity (OIDC)
+  STORAGE_ACCOUNT: stdevwesteuropepackages 
+  SERVICE_CONNECTION: ft-msft-mca-consulting-development-common
+   #STORAGE_ACCOUNT: fta102downloads
+   #SERVICE_CONNECTION: ft-acp-csp-austria-production # federated identity (OIDC)
   TARGETS: |
     linux-x64
     linux-arm
@@ -88,12 +90,7 @@ jobs:
           cp -r "artifacts/deb-$target/." "apt-repo/pool/main/"
 
           # Download existing Packages from Azure
-          az storage blob download \
-            --account-name "$STORAGE_ACCOUNT" \
-            -c apt-repo \
-            -n "dists/stable/main/binary-$arch/Packages" \
-            -f "apt-repo/dists/stable/main/binary-$arch/Packages" \
-            --auth-mode login || true
+          az storage blob download --account-name "$STORAGE_ACCOUNT" -c apt-repo -n "dists/stable/main/binary-$arch/Packages" -f "apt-repo/dists/stable/main/binary-$arch/Packages" --auth-mode login || true
 
           # Remove already released files
           if [[ -f apt-repo/dists/stable/main/binary-$arch/Packages ]]; then
@@ -140,21 +137,7 @@ jobs:
         gpg --batch --yes --default-key fiskaltrust -abs --clearsign Release > InRelease
 
     - name: Upload pool/
-      run: |
-        az storage blob upload-batch \
-          --account-name "$STORAGE_ACCOUNT" \
-          -d apt-repo \
-          --destination-path "pool" \
-          -s "apt-repo/pool" \
-          --overwrite \
-          --auth-mode login
+      run: az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" -d apt-repo --destination-path "pool" -s "apt-repo/pool" --overwrite --auth-mode login
 
     - name: Upload dists/
-      run: |
-        az storage blob upload-batch \
-          --account-name "$STORAGE_ACCOUNT" \
-          -d apt-repo \
-          --destination-path "dists" \
-          -s "apt-repo/dists" \
-          --overwrite \
-          --auth-mode login
+      run: az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" -d apt-repo --destination-path "dists" -s "apt-repo/dists" --overwrite --auth-mode login
