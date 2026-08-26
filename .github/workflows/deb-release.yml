@@ -1,9 +1,7 @@
 name: Release Debian Packages
 
-#on:
-  # push:
-  #   tags:
-  #     - "v*"
+on:
+  workflow_call:
 
 permissions:
   contents: read

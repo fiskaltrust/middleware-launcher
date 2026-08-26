@@ -92,6 +92,7 @@ jobs:
           $rawPath = "./publish/raw-$target"
 
           echo "path=$rawPath" >> $env:GITHUB_OUTPUT
+          echo "dropPath=$dropPath" >> $env:GITHUB_OUTPUT
           New-Item -ItemType Directory -Force -Path $rawPath
           foreach ($project in $projects) 
           {
@@ -99,6 +100,11 @@ jobs:
             dotnet publish $projPath --configuration  $config -f net8.0 --output $dropPath -r $target --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
           }
           Get-ChildItem -Path "$dropPath/${projects[0]}*" -File | Where-Object { $_.Extension -ne ".json" } | copy-Item -Destination $rawPath
+      - name: Upload drop artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: drop-${{ matrix.target }}
+          path: ${{ steps.copy-executables.outputs.dropPath }}
 
       - name: Run Sign Action on Windows only
         if: runner.os == 'Windows'

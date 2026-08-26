@@ -23,9 +23,13 @@ jobs:
     with:
         environment: Sandbox       
     secrets: inherit
-  github-release:
+  # github-release:
+  #   needs: [release]
+  #   uses: ./.github/workflows/github-release.yml
+  #   secrets: inherit
+  deb-release:
     needs: [release]
-    uses: ./.github/workflows/github-release.yml
+    uses: ./.github/workflows/deb-release.yml
     secrets: inherit
      
 
