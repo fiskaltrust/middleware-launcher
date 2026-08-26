@@ -21,8 +21,8 @@ jobs:
     needs: [package] 
     uses: ./.github/workflows/deploy.yml
     with:
-        environment: Sandbox       
-     secrets: inherit
+      environment: Sandbox
+    secrets: inherit
   # release-production:
   #   needs: [package] 
   #   uses: ./.github/workflows/deploy.yml
