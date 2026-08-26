@@ -130,7 +130,7 @@ jobs:
         uses: ./.github/actions/zip-package
         with:
           path: ./scripts/${{ matrix.scriptFolder }}/
-          zipFileName: "fiskaltrust.Launcher-${{ needs.version.outputs.version }}"
+          zipFileName: "fiskaltrust.Launcher.Scripts-${{ needs.version.outputs.version }}"
           artifactName: "scripts-${{ matrix.target }}"
 
   deb-package:
