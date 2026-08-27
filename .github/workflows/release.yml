@@ -25,21 +25,22 @@ jobs:
       environment: Sandbox
     secrets: inherit
 
-  # release-production:
-  #   needs: [release-sandbox] 
-  #   uses: ./.github/workflows/deploy.yml
-  #   with:
-  #     environment: Production       
-  #   secrets: inherit
+  release-production:
+    needs: [release-sandbox] 
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: Production       
+    secrets: inherit
 
   github-release:
     needs: [release-sandbox]
     uses: ./.github/workflows/github-release.yml
     secrets: inherit
 
-  deb-release:
-    needs: [release-sandbox]
-    uses: ./.github/workflows/deb-release.yml
-    secrets: inherit
+  # ignore deb-release
+  # deb-release:
+  #   needs: [release-sandbox]
+  #   uses: ./.github/workflows/deb-release.yml
+  #   secrets: inherit
      
 
