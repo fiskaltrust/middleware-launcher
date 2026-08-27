@@ -25,6 +25,8 @@ jobs:
           - target: linux-arm64
 
           - target: osx-x64
+          
+          - target: osx-arm64
     steps:
       - name: Download drop artifact
         uses: actions/download-artifact@v4

@@ -34,6 +34,9 @@ jobs:
 
           - target: osx-x64
             scriptFolder: "macos"
+
+          - target: osx-arm64
+            scriptFolder: "macos"
     runs-on: ubuntu-latest
     needs: []
     environment: ${{ inputs.environment }}
