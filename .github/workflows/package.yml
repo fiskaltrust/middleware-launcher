@@ -65,6 +65,10 @@ jobs:
             target: osx-x64
             scriptFolder: "macos"
 
+          - vmImage: macos-latest
+            target: osx-arm64
+            scriptFolder: "macos"
+
     runs-on: ${{ matrix.vmImage }}
 
     steps:
@@ -119,11 +123,12 @@ jobs:
           azureKeyVaultClientSecret: "${{ secrets.CODESIGNING_AZURE_KEY_VAULT_SECRET }}"
 
       - name: Upload zip and hash of output package
-        uses: ./.github/actions/zip-hash-package
+        uses: fiskaltrust/middleware/.github/actions/package-v2@split-actions
         with:
           path: ${{ steps.copy-executables.outputs.path }}
           zipFileName: "fiskaltrust.Launcher-${{ needs.version.outputs.version }}"
           artifactName: "package-${{ matrix.target }}"
+          includeHash: true
 
       - name: Copy README.md to scripts artifacts
         shell: pwsh
@@ -133,11 +138,12 @@ jobs:
           (Get-Content $readmePath -Raw) -replace '(?s)<!-- BEGIN (CONTRIBUTING|LICENSE) -->.*?<!-- END (CONTRIBUTING|LICENSE) -->\s*', '' | Set-Content $readmePath
 
       - name: Upload zip of scripts
-        uses: ./.github/actions/zip-package
+        uses: fiskaltrust/middleware/.github/actions/package-v2@split-actions
         with:
           path: ./scripts/${{ matrix.scriptFolder }}/
           zipFileName: "fiskaltrust.Launcher.Scripts-${{ needs.version.outputs.version }}"
           artifactName: "scripts-${{ matrix.target }}"
+          includeHash: false
 
   deb-package:
     needs: [version]
