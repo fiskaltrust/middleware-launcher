@@ -62,27 +62,23 @@ jobs:
             Get-ChildItem "artifacts/scripts-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher.Scripts-", "") }
       
       - name: Deploy zip Packages
-        uses: ./.github/actions/deploy-packages
-        #fiskaltrust/middleware/.github/actions/deploy-v2-packages@main
+        uses: fiskaltrust/middleware/.github/actions/deploy-v2-packages@split-actions
         with:
           directory: artifacts/package-${{ matrix.target }}
+          destinationPath: ${{ matrix.target }}/fiskaltrust.Launcher/
           storageAccountName: stdevwesteuropepackages
           clientId: ${{ secrets.AZURE_CLIENT_ID }}
           tenantId: ${{ secrets.AZURE_TENANT_ID }}
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        env:
-          TARGET: ${{ matrix.target }}/fiskaltrust.Launcher/
 
       - name: Deploy Script Packages
-        uses: ./.github/actions/deploy-packages
-        #fiskaltrust/middleware/.github/actions/deploy-v2-packages@main
+        uses: fiskaltrust/middleware/.github/actions/deploy-v2-packages@split-actions
         with:
           directory: artifacts/scripts-${{ matrix.target }}
+          destinationPath: ${{ matrix.target }}/fiskaltrust.Launcher.Scripts/
           storageAccountName: stdevwesteuropepackages
           clientId: ${{ secrets.AZURE_CLIENT_ID }}
           tenantId: ${{ secrets.AZURE_TENANT_ID }}
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        env:
-          TARGET: ${{ matrix.target }}/fiskaltrust.Launcher.Scripts/
          
          
