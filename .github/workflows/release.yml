@@ -1,0 +1,46 @@
+name: Release Launcher
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - refs/tags/v*
+      - Release-pipeline   
+
+permissions:
+  checks: write
+  pull-requests: write
+  id-token: write
+  contents: write
+
+jobs:
+  package:
+    uses: ./.github/workflows/package.yml
+    secrets: inherit
+
+  release-sandbox:
+    needs: [package] 
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: Sandbox
+    secrets: inherit
+
+  release-production:
+    needs: [release-sandbox] 
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: Production       
+    secrets: inherit
+
+  github-release:
+    needs: [release-sandbox]
+    uses: ./.github/workflows/github-release.yml
+    secrets: inherit
+
+  # ignore deb-release
+  # deb-release:
+  #   needs: [release-sandbox]
+  #   uses: ./.github/workflows/deb-release.yml
+  #   secrets: inherit
+     
+

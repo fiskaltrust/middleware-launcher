@@ -1,0 +1,84 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true      
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  packages:
+    name: Deploy Packages
+    strategy:
+      matrix:
+        include:
+          - target: win-x64
+            scriptFolder: "windows"
+
+          - target: win-x86
+            scriptFolder: "windows"
+
+          - target: linux-x64
+            scriptFolder: "linux"
+
+          - target: linux-arm
+            scriptFolder: "linux"
+
+          - target: linux-arm64
+            scriptFolder: "linux"
+
+          - target: osx-x64
+            scriptFolder: "macos"
+
+          - target: osx-arm64
+            scriptFolder: "macos"
+    runs-on: ubuntu-latest
+    needs: []
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download zip Package
+        uses: actions/download-artifact@v4
+        with:
+          name: package-${{ matrix.target }}
+          path: artifacts/package-${{ matrix.target }}
+
+      - name: Download scripts Package
+        uses: actions/download-artifact@v4
+        with:
+          name: scripts-${{ matrix.target }}
+          path: artifacts/scripts-${{ matrix.target }}
+
+      - name: Rename Package Artifacts
+        shell: pwsh
+        run: |
+            Get-ChildItem "artifacts/package-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher-", "") }
+            Get-ChildItem "artifacts/scripts-*/*" | ForEach-Object { Rename-Item $_ $_.Name.Replace("fiskaltrust.Launcher.Scripts-", "") }
+      
+      - name: Deploy zip Packages
+        uses: fiskaltrust/middleware/.github/actions/deploy-v2-packages@split-actions
+        with:
+          directory: artifacts/package-${{ matrix.target }}
+          destinationPath: ${{ matrix.target }}/fiskaltrust.Launcher/
+          storageAccountName: stdevwesteuropepackages
+          clientId: ${{ secrets.AZURE_CLIENT_ID }}
+          tenantId: ${{ secrets.AZURE_TENANT_ID }}
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Script Packages
+        uses: fiskaltrust/middleware/.github/actions/deploy-v2-packages@split-actions
+        with:
+          directory: artifacts/scripts-${{ matrix.target }}
+          destinationPath: ${{ matrix.target }}/fiskaltrust.Launcher.Scripts/
+          storageAccountName: stdevwesteuropepackages
+          clientId: ${{ secrets.AZURE_CLIENT_ID }}
+          tenantId: ${{ secrets.AZURE_TENANT_ID }}
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+         
+         

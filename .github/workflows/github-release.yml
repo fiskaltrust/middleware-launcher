@@ -1,0 +1,81 @@
+name: Github Release
+
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  github-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        include:
+          - target: win-x64
+
+          - target: win-x86
+
+          - target: linux-x64
+
+          - target: linux-arm
+
+          - target: linux-arm64
+
+          - target: osx-x64
+          
+          - target: osx-arm64
+    steps:
+      - name: Download drop artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: drop-${{ matrix.target }}
+          path: artifacts/drop-${{ matrix.target }}
+
+      - name: Download scripts artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: scripts-${{ matrix.target }}
+          path: artifacts/scripts-${{ matrix.target }}
+
+      - name: Prepare artifacts
+        shell: bash
+        run: |
+          mkdir -p "release/${{ matrix.target }}"
+          find "artifacts/drop-${{ matrix.target }}" -type f ! -regex ".*fiskaltrust\.Launcher\(\.exe\)?" -delete
+          cp -r "artifacts/drop-${{ matrix.target }}"/. "release/${{ matrix.target }}"/
+          unzip -o "artifacts/scripts-${{ matrix.target }}"/*.zip -d "release/${{ matrix.target }}"
+
+      - name: Zip artifact
+        shell: bash
+        run: |
+          mkdir -p zipped
+          cd "release/${{ matrix.target }}"
+          zip -r "../../zipped/${{ matrix.target }}.zip" ./
+
+      - name: Upload zipped artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zipped-${{ matrix.target }}
+          path: zipped/${{ matrix.target }}.zip
+
+  edit-release:
+    needs: [github-release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download zipped artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: zipped-*
+          path: zipped
+          merge-multiple: true
+
+      - name: Edit GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: zipped/*.zip
