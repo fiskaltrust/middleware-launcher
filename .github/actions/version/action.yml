@@ -16,32 +16,50 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Install MinVer
-      run: dotnet tool install --global minver-cli --version 6.0.0
+    - name: Install Nerdbank.GitVersioning
       shell: pwsh
+      run: |
+        $version = "3.10.94"
+        $installed = dotnet tool list --global | Select-String -Pattern '^\s*nbgv\s'
+
+        if ($installed) {
+          dotnet tool update --global nbgv --version $version
+        } else {
+          dotnet tool install --global nbgv --version $version
+        }
 
     - name: set version
       id: set-version
       shell: pwsh
       run: |
-        $version = ""
-        $csprojFile = "${{ inputs.path }}/${{ inputs.project }}/${{ inputs.project }}.csproj"
-
-        [xml]$csprojContent = Get-Content -Path $csprojFile
-        foreach ($propertyGroup in $csprojContent.Project.PropertyGroup) {
-            if ($propertyGroup.MinVerTagPrefix) {
-            $version = minver --verbosity error -t $($propertyGroup.MinVerTagPrefix) -p ci
-            break
-            }
-        }
+        $projectDirectory = "${{ inputs.path }}/${{ inputs.project }}"
+        $version = nbgv get-version --variable NuGetPackageVersion --project $projectDirectory
 
         Write-Host "Version: $version"
         if($version -eq "") {
             Write-Error "Version not found"
             exit 1
         }
-        echo "version=${version}" >> $env:GITHUB_OUTPUT   
-       
+        echo "version=${version}" >> $env:GITHUB_OUTPUT
 
-       
-   
+    - name: validate version matches git tag
+      shell: pwsh
+      run: |
+        if (-not "${{ github.ref }}".StartsWith("refs/tags/")) {
+          Write-Host "Not a tag build, skipping tag/version validation."
+          exit 0
+        }
+
+        $projectDirectory = "${{ inputs.path }}/${{ inputs.project }}"
+        $simpleVersion = nbgv get-version --variable SimpleVersion --project $projectDirectory
+        $prereleaseVersion = nbgv get-version --variable PrereleaseVersion --project $projectDirectory
+        $tag = "${{ github.ref_name }}"
+        $expectedTag = "v$simpleVersion$prereleaseVersion"
+
+        Write-Host "Tag: $tag"
+        Write-Host "Expected tag from version.json: $expectedTag"
+
+        if ($tag -ne $expectedTag) {
+          Write-Error "Git tag '$tag' does not match the version resolved from version.json ('$expectedTag')."
+          exit 1
+        }

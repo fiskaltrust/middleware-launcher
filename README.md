@@ -53,6 +53,7 @@ To stop the Launcher press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 
 > See [CLI](#cli) for more information.
 
+<!--
 ### Installation
 
 On Debian based Linux systems the Launcher can also be installed via `apt-get` . The executable will be installed at `/usr/bin/fiskaltrust.Launcher` and can be run like that `fiskaltrust.Launcher --help` .
@@ -69,6 +70,7 @@ sudo apt install fiskaltrust-middleware-launcher
 >  ```bash
 > sudo apt update && sudo apt install --only-upgrade fiskaltrust-middleware-launcher
 > ```
+-->
 
 ### Supported Platforms
 
