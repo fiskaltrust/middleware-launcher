@@ -17,8 +17,16 @@ runs:
   using: "composite"
   steps:
     - name: Install Nerdbank.GitVersioning
-      run: dotnet tool install --global nbgv --version 3.9.50
       shell: pwsh
+      run: |
+        $version = "3.10.94"
+        $installed = dotnet tool list --global | Select-String -Pattern '^\s*nbgv\s'
+
+        if ($installed) {
+          dotnet tool update --global nbgv --version $version
+        } else {
+          dotnet tool install --global nbgv --version $version
+        }
 
     - name: set version
       id: set-version
