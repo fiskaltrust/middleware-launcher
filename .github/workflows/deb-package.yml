@@ -18,9 +18,12 @@ jobs:
          target: [linux-x64, linux-arm, linux-arm64]
     runs-on: ubuntu-latest
     
-    steps:        
+    steps:
     - uses: actions/checkout@v4
-      
+      with:
+        fetch-depth: 0
+        filter: tree:0
+
     - name: Publish fiskaltrust.Launcher app
       shell: pwsh
       id: publish-deb
