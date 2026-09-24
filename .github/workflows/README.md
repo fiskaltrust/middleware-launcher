@@ -33,7 +33,7 @@ github-release
 1. **Package** calls [`package.yml`](package.yml).
    - Runs unit and integration tests on Windows, Ubuntu, and macOS.
    - Runs the `version` job after `test-launcher` succeeds.
-   - Calculates the package version with the shared middleware version action and passes it to the packaging jobs.
+   - Calculates the package version with NerdBank.GitVersioning through the shared middleware version action and passes it to the packaging jobs.
    - validates that the Git tag matches the version resolved from `version.json` in the format `v<version>`.
    - Builds self-contained packages for `win-x64`, `win-x86`, `linux-x64`, `linux-arm`, `linux-arm64`, `osx-x64`, and `osx-arm64`.
    - Signs Windows Launcher binaries with the configured Azure Key Vault certificate.
