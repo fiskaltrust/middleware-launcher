@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace fiskaltrust.Launcher.Common.Constants
 {
     public static class Version
@@ -8,7 +6,7 @@ namespace fiskaltrust.Launcher.Common.Constants
         {
             get
             {
-                var version = Assembly.GetExecutingAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+                var version = ThisAssembly.AssemblyInformationalVersion;
                 return version is not null ? new SemanticVersioning.Version(version) : null;
             }
         }

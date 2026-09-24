@@ -1,0 +1,41 @@
+name: Tag Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: Release-pipeline
+          fetch-depth: 0
+
+      - name: Install Nerdbank.GitVersioning
+        shell: pwsh
+        run: |
+          $version = "3.10.94"
+          $installed = dotnet tool list --global | Select-String -Pattern '^\s*nbgv\s'
+          if ($installed) {
+            dotnet tool update --global nbgv --version $version
+          } else {
+            dotnet tool install --global nbgv --version $version
+          }
+
+      - name: Create and push tag
+        shell: pwsh
+        run: |
+          $tag = nbgv tag --project src/fiskaltrust.Launcher --what-if
+          Write-Host "Creating tag: $tag"
+
+          git config user.name "ReleaseBot"
+          git config user.email "dev-portal-poscreator@fiskaltrust.de"
+          nbgv tag --project src/fiskaltrust.Launcher
+          git push origin $tag
+
+      - name: Next step
+        run: |
+          echo "::notice title=Manual step required::Tag pushed. Go run the 'Release Launcher' workflow manually to build, deploy and create the GitHub Release for this tag."
