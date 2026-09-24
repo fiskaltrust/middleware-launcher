@@ -27,13 +27,33 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          filter: tree:0
 
-      - uses: ./.github/actions/version
+      - uses: fiskaltrust/middleware/.github/actions/version@split-actions
         id: set-version
         with:
           project: fiskaltrust.Launcher
           path: src
+
+      - name: validate version matches git tag
+        shell: pwsh
+        run: |
+          if (-not "${{ github.ref }}".StartsWith("refs/tags/")) {
+            Write-Host "Not a tag build, skipping tag/version validation."
+            exit 0
+          }
+
+          $simpleVersion = nbgv get-version --variable SimpleVersion --project src/fiskaltrust.Launcher
+          $prereleaseVersion = nbgv get-version --variable PrereleaseVersion --project src/fiskaltrust.Launcher
+          $tag = "${{ github.ref_name }}"
+          $expectedTag = "v$simpleVersion$prereleaseVersion"
+
+          Write-Host "Tag: $tag"
+          Write-Host "Expected tag from version.json: $expectedTag"
+
+          if ($tag -ne $expectedTag) {
+            Write-Error "Git tag '$tag' does not match the version resolved from version.json ('$expectedTag')."
+            exit 1
+          }
 
   package:
     needs: [version]
@@ -73,6 +93,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set build configuration
         id: set-config

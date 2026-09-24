@@ -42,5 +42,43 @@ jobs:
   #   needs: [release-sandbox]
   #   uses: ./.github/workflows/deb-release.yml
   #   secrets: inherit
-     
 
+  bump-version:
+    needs: [release-production, github-release]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: Release-pipeline
+          fetch-depth: 0
+
+      - name: Bump version.json to next rc
+        id: bump
+        shell: pwsh
+        run: |
+          $versionJsonPath = "version.json"
+          $content = Get-Content $versionJsonPath -Raw
+
+          if ($content -notmatch '"version":\s*"(.*rc\.)(\d+)"') {
+            Write-Error "Could not parse an 'rc.N' version from version.json - expected a format like '2.0.0-rc.26'."
+            exit 1
+          }
+
+          $prefix = $matches[1]
+          $currentNumber = $matches[2]
+          $nextNumber = [int]$currentNumber + 1
+          $oldValue = $matches[0]
+          $newValue = "`"version`": `"$prefix$nextNumber`""
+
+          Write-Host "Bumping version.json: $prefix$currentNumber -> $prefix$nextNumber"
+          $newContent = $content -replace [regex]::Escape($oldValue), $newValue
+          Set-Content -Path $versionJsonPath -Value $newContent -NoNewline
+
+      - name: Commit and push
+        run: |
+          git config user.name "ReleaseBot"
+          git config user.email "dev-portal-poscreator@fiskaltrust.de"
+          git add version.json
+          git commit -m "Bump version to next release"
+          git push origin HEAD:Release-pipeline
