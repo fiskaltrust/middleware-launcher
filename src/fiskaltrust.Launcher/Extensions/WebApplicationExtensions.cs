@@ -33,7 +33,10 @@ namespace fiskaltrust.Launcher.Extensions
                 await journal.FirstOrDefaultAsync();
                 var _ = Task.Run(async () =>
                 {
-                    await journal.ForEachAwaitAsync(async b => await pipe.Writer.WriteAsync(new ReadOnlyMemory<byte>(b.Chunk.ToArray())));
+                    await foreach (var j in journal)
+                    {
+                        await pipe.Writer.WriteAsync(new ReadOnlyMemory<byte>(j.Chunk.ToArray()));
+                    }
                     await pipe.Writer.CompleteAsync();
                 });
                 return Results.Stream(pipe.Reader.AsStream());
