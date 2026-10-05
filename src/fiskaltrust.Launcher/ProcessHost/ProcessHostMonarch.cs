@@ -50,6 +50,12 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private void Setup()
         {
+            // When running framework-dependent (e.g. via `dotnet run`), Environment.ProcessPath points to the
+            // dotnet host instead of the launcher, so the entry assembly dll needs to be passed as the first argument.
+            var isDotnetHost = Path.GetFileNameWithoutExtension(_launcherExecutablePath.Path).Equals("dotnet", StringComparison.OrdinalIgnoreCase);
+            var entryAssemblyName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name;
+            var entryAssemblyLocation = entryAssemblyName is null ? null : Path.Combine(AppContext.BaseDirectory, $"{entryAssemblyName}.dll");
+
             _process = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -58,6 +64,7 @@ namespace fiskaltrust.Launcher.ProcessHost
                     FileName = _launcherExecutablePath.Path,
                     CreateNoWindow = false,
                     Arguments = string.Join(" ", [
+                        .. isDotnetHost && !string.IsNullOrEmpty(entryAssemblyLocation) ? new[] { $"\"{entryAssemblyLocation}\"" } : [],
                         "host",
                         "--plebeian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(new PlebeianConfiguration { PackageType = _packageType, PackageId = _packageConfiguration.Id }.Serialize()))}\"",
                         "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(_launcherConfiguration.Serialize()))}\"",
