@@ -22,7 +22,7 @@ jobs:
     needs: [test-launcher]
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.set-version.outputs.version }}
+      version: ${{ steps.normalize-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,6 +33,14 @@ jobs:
         with:
           project: fiskaltrust.Launcher
           path: src
+
+      - name: normalize version for artifact naming
+        id: normalize-version
+        shell: pwsh
+        run: |
+          $version = nbgv get-version --variable SemVer2 --project src/fiskaltrust.Launcher
+          Write-Host "Artifact version: $version"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: validate version matches git tag
         shell: pwsh
