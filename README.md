@@ -274,6 +274,50 @@ Clone this GitHub repository and build the project with Visual Studio.
 
 When using VS Code, please ensure that the following command line parameters are passed to `dotnet build` to enable seamless debugging: `-p:PublishSingleFile=true -p:PublishReadyToRun=true` .
 
+### Debugging with VS Code
+
+
+1. Install the [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) and [C#](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) extensions.
+2. Create a `.vscode/launch.json` file and set the `--cashbox-id` and `--access-token` args to the credentials of your (sandbox) cashbox:
+
+   ```json
+   {
+     "version": "0.2.0",
+     "configurations": [
+       {
+         "name": "Launch",
+         "type": "coreclr",
+         "request": "launch",
+         "preLaunchTask": "dotnet: build",
+         "program": "${workspaceFolder}/src/fiskaltrust.Launcher/bin/Debug/net8.0/fiskaltrust.Launcher.dll",
+         "args": [
+           "run",
+           "--cashbox-id", "<cashbox-id>",
+           "--access-token", "<access-token>",
+           "--sandbox"
+         ],
+         "cwd": "${workspaceFolder}",
+         "env": {
+           "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "console": "integratedTerminal"
+       },
+       {
+         "name": "Attach",
+         "type": "coreclr",
+         "request": "attach"
+       }
+     ]
+   }
+   ```
+
+3. Start the **Launch** configuration from the *Run and Debug* panel.
+
+The **Launch** configuration first builds `src/fiskaltrust.Launcher` via the pre-launch build task and then runs the Launcher's `run` command with `ASPNETCORE_ENVIRONMENT=Development`.
+
+To debug an already running Launcher process instead, use the **Attach** configuration and select the process to attach to.
+
+
 ## FAQ
 
 **Q:** Are additional components required to be installed to be able to run the Launcher 2.0?

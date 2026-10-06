@@ -81,10 +81,10 @@ namespace fiskaltrust.Launcher.ProcessHost
             _process.OutputDataReceived += ReceiveStdOut;
             _process.ErrorDataReceived += ReceiveStdOut;
 #if DEBUG
-            if (Debugger.IsAttached)
-            {
-                _process.StartInfo.Arguments += " --debugging";
-            }
+            // if (Debugger.IsAttached)
+            // {
+            //     _process.StartInfo.Arguments += " --debugging";
+            // }
 #endif
         }
 
