@@ -321,7 +321,9 @@ To debug an already running Launcher process instead, use the **Attach** configu
 
 The Launcher starts the Queue and SCU packages in separate child processes (the *plebeian* processes), so breakpoints in package-hosting code are not hit by debugging the Launcher process itself.
 
-In DEBUG builds, the `run` command supports an additional `--debug-plebeians` flag. When it is set, every plebeian process is started with `--debugging` and waits for a debugger to attach before starting up. Add the flag to the `args` of the **Launch** configuration:
+In DEBUG builds, the `run` command supports an additional `--debug-plebeians` option. Plebeian processes selected by it are started with `--debugging` and wait for a debugger to attach before starting up.
+
+The option takes a comma-separated list of package names and/or package ids, and only the matching plebeians are debugged. Pass `"*"` to debug all plebeians. Add it to the `args` of the **Launch** configuration:
 
 ```json
 "args": [
@@ -329,11 +331,17 @@ In DEBUG builds, the `run` command supports an additional `--debug-plebeians` fl
   "--cashbox-id", "<cashbox-id>",
   "--access-token", "<access-token>",
   "--sandbox",
-  "--debug-plebeians"
+  "--debug-plebeians", "*"
 ],
 ```
 
-For each started plebeian process the Launcher logs its process id together with an attach url, e.g.:
+Or, to debug only specific plebeians:
+
+```json
+"--debug-plebeians", "fiskaltrust.Middleware.Queue.SQLite,<package-id>"
+```
+
+For each plebeian process started with debugging the Launcher logs its process id together with an attach url, e.g.:
 
 ```
 Attach debugger to fiskaltrust.Middleware.Queue.SQLite (ProcessId 12345): vscode://fabiospampinato.vscode-debug-launcher/launch?args=...
@@ -344,7 +352,7 @@ There are two ways to attach:
 - **Via the attach url**: Install the [Debug Launcher](https://marketplace.visualstudio.com/items?itemName=fabiospampinato.vscode-debug-launcher) extension and <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+click the `vscode://` url in the integrated terminal. This immediately starts a `coreclr` attach session for that process. (The first time, VS Code asks for confirmation to open the URI.)
 - **Manually**: Use the **Attach** configuration from the *Run and Debug* panel and select the process with the logged process id.
 
-Once a debugger is attached, the plebeian process continues its startup. Note that the plebeian processes wait indefinitely, so the Launcher will not finish starting up until a debugger is attached to each of them (or the flag is removed again).
+Once a debugger is attached, the plebeian process continues its startup. Note that the selected plebeian processes wait indefinitely, so the Launcher will not finish starting up until a debugger is attached to each of them (or the option is removed again).
 
 
 ## FAQ

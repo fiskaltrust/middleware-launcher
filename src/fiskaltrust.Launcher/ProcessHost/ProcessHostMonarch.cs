@@ -21,9 +21,23 @@ namespace fiskaltrust.Launcher.ProcessHost
     public class ProcessHostMonarch : IProcessHostMonarch
     {
 #if DEBUG
-        // Set from the `run` command's --debug-plebeians option. When enabled, plebeian processes
-        // are started with --debugging and wait for a debugger to attach before starting up.
-        public static bool DebugPlebeians { get; set; }
+        // Set from the `run` command's --debug-plebeians option. When null, debugging is disabled.
+        // Otherwise only plebeians matching an entry (package name, package id, or the "*" wildcard
+        // matching all) are started with --debugging and wait for a debugger to attach before
+        // starting up.
+        public static string[]? DebugPlebeians { get; set; }
+
+        public static string[]? ParseDebugPlebeians(string? value) =>
+            value?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        public static bool MatchesDebugPlebeians(string[]? debugPlebeians, string package, Guid packageId) =>
+            debugPlebeians is not null &&
+            debugPlebeians.Any(entry =>
+                entry == "*" ||
+                entry.Equals(package, StringComparison.OrdinalIgnoreCase) ||
+                (Guid.TryParse(entry, out var id) && id == packageId));
+
+        private bool ShouldDebugPlebeian => MatchesDebugPlebeians(DebugPlebeians, _packageConfiguration.Package, _packageConfiguration.Id);
 #endif
 
         private Process? _process;
@@ -87,7 +101,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             _process.OutputDataReceived += ReceiveStdOut;
             _process.ErrorDataReceived += ReceiveStdOut;
 #if DEBUG
-            if (DebugPlebeians)
+            if (ShouldDebugPlebeian)
             {
                 _process.StartInfo.Arguments += " --debugging";
             }
@@ -189,7 +203,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             if (!_process!.Start()) { throw new Exception($"Process.Start() was false for {_packageConfiguration.Package} {_packageConfiguration.Id}"); }
 
 #if DEBUG
-            if (DebugPlebeians)
+            if (ShouldDebugPlebeian)
             {
                 LogDebuggerAttachUrl();
             }
