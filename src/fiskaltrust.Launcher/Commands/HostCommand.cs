@@ -33,7 +33,9 @@ namespace fiskaltrust.Launcher.Commands
         public HostCommand() : base("host")
         {
             AddOption(new Option<string>("--plebeian-configuration"));
+#if DEBUG
             AddOption(new Option<bool>("--debugging"));
+#endif
             AddOption(new Option<string>("--launcher-configuration"));
             AddOption(new Option<bool>("--no-process-host-service", getDefaultValue: () => false));
         }
@@ -41,18 +43,29 @@ namespace fiskaltrust.Launcher.Commands
 
     public class HostOptions
     {
-        public HostOptions(string launcherConfiguration, string plebeianConfiguration, bool noProcessHostService, bool debugging)
+        public HostOptions(
+            string launcherConfiguration,
+            string plebeianConfiguration,
+            bool noProcessHostService
+#if DEBUG
+            , bool debugging
+#endif
+        )
         {
             LauncherConfiguration = launcherConfiguration;
             PlebeianConfiguration = plebeianConfiguration;
             NoProcessHostService = noProcessHostService;
+#if DEBUG
             Debugging = debugging;
+#endif
         }
 
         public readonly string LauncherConfiguration;
         public readonly string PlebeianConfiguration;
         public readonly bool NoProcessHostService;
+#if DEBUG
         public readonly bool Debugging;
+#endif
     }
 
     public class HostServices
@@ -71,6 +84,7 @@ namespace fiskaltrust.Launcher.Commands
     {
         public static async Task<int> HandleAsync(HostOptions hostOptions, HostServices hostServices)
         {
+#if DEBUG
             if (hostOptions.Debugging)
             {
                 while (!Debugger.IsAttached)
@@ -78,6 +92,7 @@ namespace fiskaltrust.Launcher.Commands
                     Thread.Sleep(100);
                 }
             }
+#endif
 
             var launcherConfiguration = LauncherConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.LauncherConfiguration)));
             var plebeianConfiguration = PlebeianConfiguration.Deserialize(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(hostOptions.PlebeianConfiguration)));

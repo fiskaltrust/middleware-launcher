@@ -54,8 +54,7 @@ namespace fiskaltrust.Launcher.ProcessHost
             // When running framework-dependent (e.g. via `dotnet run`), Environment.ProcessPath points to the
             // dotnet host instead of the launcher, so the entry assembly dll needs to be passed as the first argument.
             var isDotnetHost = Path.GetFileNameWithoutExtension(_launcherExecutablePath.Path).Equals("dotnet", StringComparison.OrdinalIgnoreCase);
-            var entryAssemblyName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name;
-            var entryAssemblyLocation = entryAssemblyName is null ? null : Path.Combine(AppContext.BaseDirectory, $"{entryAssemblyName}.dll");
+            var entryAssemblyLocation = System.Reflection.Assembly.GetEntryAssembly()?.Location;
 #endif
             _process = new Process
             {
@@ -81,11 +80,12 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _process.OutputDataReceived += ReceiveStdOut;
             _process.ErrorDataReceived += ReceiveStdOut;
-
-            //if (Debugger.IsAttached && _packageType == PackageType.Queue)
-            //{
-            //    _process.StartInfo.Arguments += " --debugging";
-            //}
+#if DEBUG
+            if (Debugger.IsAttached)
+            {
+                _process.StartInfo.Arguments += " --debugging";
+            }
+#endif
         }
 
         private void ReceiveStdOut(object sender, DataReceivedEventArgs e)
