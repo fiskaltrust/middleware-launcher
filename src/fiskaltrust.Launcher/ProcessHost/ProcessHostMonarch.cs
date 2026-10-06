@@ -20,6 +20,12 @@ namespace fiskaltrust.Launcher.ProcessHost
 
     public class ProcessHostMonarch : IProcessHostMonarch
     {
+#if DEBUG
+        // Set from the `run` command's --debug-plebeians option. When enabled, plebeian processes
+        // are started with --debugging and wait for a debugger to attach before starting up.
+        public static bool DebugPlebeians { get; set; }
+#endif
+
         private Process? _process;
         private TaskCompletionSource _started;
         private bool _monarchStartupCompleted;
@@ -81,10 +87,10 @@ namespace fiskaltrust.Launcher.ProcessHost
             _process.OutputDataReceived += ReceiveStdOut;
             _process.ErrorDataReceived += ReceiveStdOut;
 #if DEBUG
-            // if (Debugger.IsAttached)
-            // {
-            //     _process.StartInfo.Arguments += " --debugging";
-            // }
+            if (DebugPlebeians)
+            {
+                _process.StartInfo.Arguments += " --debugging";
+            }
 #endif
         }
 
@@ -182,6 +188,13 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             if (!_process!.Start()) { throw new Exception($"Process.Start() was false for {_packageConfiguration.Package} {_packageConfiguration.Id}"); }
 
+#if DEBUG
+            if (DebugPlebeians)
+            {
+                LogDebuggerAttachUrl();
+            }
+#endif
+
             try
             {
                 _process.BeginOutputReadLine();
@@ -189,6 +202,24 @@ namespace fiskaltrust.Launcher.ProcessHost
             }
             catch { }
         }
+
+#if DEBUG
+        // Requires the "Debug Launcher" VS Code extension (fabiospampinato.vscode-debug-launcher).
+        // Opening the logged vscode:// url (e.g. via cmd/ctrl+click in the integrated terminal)
+        // starts a coreclr attach debug session for the plebeian process, which is waiting
+        // for a debugger because it was started with --debugging.
+        private void LogDebuggerAttachUrl()
+        {
+            var debugConfiguration = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                type = "coreclr",
+                request = "attach",
+                name = $"Attach {_packageConfiguration.Package} ({_packageConfiguration.Id})",
+                processId = _process!.Id.ToString()
+            });
+            _logger.PlebeianDebuggerAttachUrl(_packageConfiguration.Package, _process!.Id, $"vscode://fabiospampinato.vscode-debug-launcher/launch?args={Uri.EscapeDataString(debugConfiguration)}");
+        }
+#endif
 
 
         public Task Start(CancellationToken cancellationToken)

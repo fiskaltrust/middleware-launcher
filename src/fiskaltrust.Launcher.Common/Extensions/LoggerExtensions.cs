@@ -350,6 +350,9 @@ public static partial class LoggerExtensions
     [LoggerMessage(Level = LogLevel.Debug, Message = "ProcessId {id}")]
     public static partial void ProcessIdDebug(this ILogger logger, int id);
 
+    [LoggerMessage(Level = LogLevel.Information, Message = "Attach debugger to {package} (ProcessId {processId}): {url}")]
+    public static partial void PlebeianDebuggerAttachUrl(this ILogger logger, string package, int processId, string url);
+
     #endregion
 
     #region Hosting
