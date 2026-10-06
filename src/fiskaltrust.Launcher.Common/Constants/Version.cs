@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace fiskaltrust.Launcher.Common.Constants
 {
     public static class Version
@@ -9,15 +7,7 @@ namespace fiskaltrust.Launcher.Common.Constants
             get
             {
                 var version = ThisAssembly.AssemblyInformationalVersion;
-
-                if (version is null)
-                {
-                    return null;
-                }
-
-                var semVerCompatible = Regex.Replace(version, @"^(\d+\.\d+\.\d+)\.\d+", "$1");
-
-                return new SemanticVersioning.Version(semVerCompatible);
+                return version is not null ? new SemanticVersioning.Version(version) : null;
             }
         }
     }
