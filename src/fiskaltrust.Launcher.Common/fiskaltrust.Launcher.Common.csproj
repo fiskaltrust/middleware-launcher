@@ -18,4 +18,11 @@
     </PackageReference>
   </ItemGroup>
 
+  <Target Name="OverrideAssemblyInformationalVersion" BeforeTargets="GenerateAssemblyNBGVVersionInfo" DependsOnTargets="GetBuildVersion">
+    <PropertyGroup>
+      <AssemblyInformationalVersion>$(BuildVersion3Components)$(PrereleaseVersion)$(SemVerBuildSuffix)</AssemblyInformationalVersion>
+      <AssemblyInformationalVersion Condition="'$(PublicRelease)' == 'true'">$(BuildVersion3Components)$(PrereleaseVersion)</AssemblyInformationalVersion>
+    </PropertyGroup>
+  </Target>
+
 </Project>
