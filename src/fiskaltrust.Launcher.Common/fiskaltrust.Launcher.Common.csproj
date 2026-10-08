@@ -18,10 +18,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <Target Name="OverrideAssemblyInformationalVersion" BeforeTargets="GenerateAssemblyNBGVVersionInfo" DependsOnTargets="GetBuildVersion">
-    <PropertyGroup>
-      <AssemblyInformationalVersion>$(NPMPackageVersion)</AssemblyInformationalVersion>
-    </PropertyGroup>
-  </Target>
-
 </Project>

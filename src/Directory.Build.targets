@@ -1,0 +1,10 @@
+<Project>
+
+  <Target Name="OverrideAssemblyInformationalVersion" BeforeTargets="GenerateAssemblyNBGVVersionInfo" DependsOnTargets="GetBuildVersion">
+    <PropertyGroup>
+      <AssemblyInformationalVersion Condition="'$(BuildSemanticVersion)' != ''">$(BuildSemanticVersion)</AssemblyInformationalVersion>
+      <AssemblyInformationalVersion Condition="'$(BuildSemanticVersion)' == ''">$(NPMPackageVersion)</AssemblyInformationalVersion>
+    </PropertyGroup>
+  </Target>
+
+</Project>
