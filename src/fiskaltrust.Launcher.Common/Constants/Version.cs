@@ -6,7 +6,7 @@ namespace fiskaltrust.Launcher.Common.Constants
         {
             get
             {
-                var version = ThisAssembly.AssemblyInformationalVersion;
+                var version = ThisAssembly.NuGetPackageVersion;
 
                 return version is not null ? new SemanticVersioning.Version(version) : null;
             }

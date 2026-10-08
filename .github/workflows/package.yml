@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - refs/tags/*
   pull_request:
     branches:
       - main
@@ -22,25 +21,18 @@ jobs:
     needs: [test-launcher]
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.normalize-version.outputs.version }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: fiskaltrust/middleware/.github/actions/version@split-actions
-        id: set-version
+      - uses: fiskaltrust/middleware/.github/actions/version@main
+        id: version
         with:
           project: fiskaltrust.Launcher
           path: src
-
-      - name: normalize version for artifact naming
-        id: normalize-version
-        shell: pwsh
-        run: |
-          $version = nbgv get-version --variable SemVer2 --project src/fiskaltrust.Launcher
-          Write-Host "Artifact version: $version"
-          echo "version=$version" >> $env:GITHUB_OUTPUT
+          versionVariable: NugetPackageVersion
 
       - name: validate version matches git tag
         shell: pwsh
@@ -50,10 +42,8 @@ jobs:
             exit 0
           }
 
-          $simpleVersion = nbgv get-version --variable SimpleVersion --project src/fiskaltrust.Launcher
-          $prereleaseVersion = nbgv get-version --variable PrereleaseVersion --project src/fiskaltrust.Launcher
           $tag = "${{ github.ref_name }}"
-          $expectedTag = "v$simpleVersion$prereleaseVersion"
+          $expectedTag = "v${{ steps.version.outputs.version }}"
 
           Write-Host "Tag: $tag"
           Write-Host "Expected tag from version.json: $expectedTag"
@@ -104,25 +94,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set build configuration
-        id: set-config
-        shell: bash
-        run: |
-          echo "GITHUB_REF=${GITHUB_REF}"
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-           echo "config=Release" >> $GITHUB_OUTPUT
-          else
-           echo "config=Debug" >> $GITHUB_OUTPUT
-          fi
-
       - name: Copy executables
         shell: pwsh
         id: copy-executables
         run: |
           $projects = @("fiskaltrust.Launcher", "fiskaltrust.LauncherUpdater")
           $target = "${{ matrix.target }}"
-          $config = "${{ steps.set-config.outputs.config }}"
-          $version = "${{ needs.version.outputs.version }}"
+          $config = "Release"
           $dropPath = "./publish/drop-$target"
           $rawPath = "./publish/raw-$target"
 
@@ -132,9 +110,12 @@ jobs:
           foreach ($project in $projects)
           {
             $projPath = "src/$project/$project.csproj"
-            dotnet publish $projPath --configuration  $config -f net8.0 --output $dropPath -r $target --self-contained true -p:BuildSemanticVersion="$version" -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
+            dotnet publish $projPath --configuration  $config -f net8.0 --output $dropPath -r $target --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:GenerateRuntimeConfigurationFiles=false -p:PublishSingleFile=true
           }
-          Get-ChildItem -Path "$dropPath/${projects[0]}*" -File | Where-Object { $_.Extension -ne ".json" } | copy-Item -Destination $rawPath
+          foreach ($project in $projects)
+          {
+            Get-ChildItem -Path "$dropPath/$project*" -File | Where-Object { $_.Extension -ne ".json" } | Copy-Item -Destination $rawPath
+          }
       - name: Upload drop artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -154,7 +135,7 @@ jobs:
           azureKeyVaultClientSecret: "${{ secrets.CODESIGNING_AZURE_KEY_VAULT_SECRET }}"
 
       - name: Upload zip and hash of output package
-        uses: fiskaltrust/middleware/.github/actions/package-v2@split-actions
+        uses: fiskaltrust/middleware/.github/actions/package-v2@main
         with:
           path: ${{ steps.copy-executables.outputs.path }}
           zipFileName: "fiskaltrust.Launcher-${{ needs.version.outputs.version }}"
@@ -169,15 +150,9 @@ jobs:
           (Get-Content $readmePath -Raw) -replace '(?s)<!-- BEGIN (CONTRIBUTING|LICENSE) -->.*?<!-- END (CONTRIBUTING|LICENSE) -->\s*', '' | Set-Content $readmePath
 
       - name: Upload zip of scripts
-        uses: fiskaltrust/middleware/.github/actions/package-v2@split-actions
+        uses: fiskaltrust/middleware/.github/actions/package-v2@main
         with:
           path: ./scripts/${{ matrix.scriptFolder }}/
           zipFileName: "fiskaltrust.Launcher.Scripts-${{ needs.version.outputs.version }}"
           artifactName: "scripts-${{ matrix.target }}"
           includeHash: false
-
-  deb-package:
-    needs: [version]
-    uses: ./.github/workflows/deb-package.yml
-    with:
-      version: ${{ needs.version.outputs.version }}

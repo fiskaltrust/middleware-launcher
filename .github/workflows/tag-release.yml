@@ -11,8 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: Release-pipeline
           fetch-depth: 0
+          # A PAT is required (instead of the default GITHUB_TOKEN) so that
+          # pushing the tag triggers the Release Launcher workflow.
+          token: ${{ secrets.REPOSITORY_WRITE_PAT }}
 
       - name: Install Nerdbank.GitVersioning
         shell: pwsh
@@ -35,7 +37,3 @@ jobs:
           git config user.email "dev-portal-poscreator@fiskaltrust.de"
           nbgv tag --project src/fiskaltrust.Launcher
           git push origin $tag
-
-      - name: Next step
-        run: |
-          echo "::notice title=Manual step required::Tag pushed. Go run the 'Release Launcher' workflow manually to build, deploy and create the GitHub Release for this tag."

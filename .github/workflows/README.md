@@ -11,9 +11,9 @@ The entrypoint for the release process is [`release.yml`](release.yml). It is an
 `Release Launcher` can be started by:
 
 - Manually from the **Actions** tab with **Run workflow**.
-- A version tag matching `v*`.
+- Pushing a version tag matching `v*` (created via [`tag-release.yml`](tag-release.yml)).
 
-The reusable [`package.yml`](package.yml) workflow can also be run independently. It supports manual dispatch, workflow calls, pushes to `main` or its declared tag-like branch filter, and pull requests targeting `main`.
+The reusable [`package.yml`](package.yml) workflow can also be run independently. It supports manual dispatch, workflow calls, pushes to `main`, and pull requests targeting `main`.
 
 ### Release flow
 
