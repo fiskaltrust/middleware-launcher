@@ -1,0 +1,38 @@
+name: Release Launcher
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  checks: write
+  pull-requests: write
+  id-token: write
+  contents: write
+
+jobs:
+  package:
+    uses: ./.github/workflows/package.yml
+    secrets: inherit
+
+  release-sandbox:
+    needs: [package]
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: Sandbox
+    secrets: inherit
+
+  release-production:
+    needs: [release-sandbox]
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: Production
+    secrets: inherit
+
+  github-release:
+    needs: [release-sandbox]
+    if: startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/github-release.yml
+    secrets: inherit

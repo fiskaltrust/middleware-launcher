@@ -1,0 +1,11 @@
+<Project>
+    <ItemGroup>
+        <PackageReference Include="Nerdbank.GitVersioning">
+            <PrivateAssets>all</PrivateAssets>
+            <Version>3.10.94</Version>
+        </PackageReference>
+    </ItemGroup>
+    <PropertyGroup>
+		<NBGV_ThisAssemblyIncludesPackageVersion>true</NBGV_ThisAssemblyIncludesPackageVersion>
+	</PropertyGroup>
+</Project>
