@@ -13,7 +13,9 @@ The entrypoint for the release process is [`release.yml`](release.yml). It is an
 - Manually from the **Actions** tab with **Run workflow**.
 - Pushing a version tag matching `v*` (created via [`tag-release.yml`](tag-release.yml)).
 
-The reusable [`package.yml`](package.yml) workflow can also be run independently. It supports manual dispatch, workflow calls, pushes to `main`, and pull requests targeting `main`.
+The reusable [`package.yml`](package.yml) workflow can also be run independently. It supports manual dispatch and workflow calls only; it does not run automatically on pushes or pull requests.
+
+Build and tests run on every push to `main` and every pull request through the [`ci.yml`](ci.yml) workflow, which calls the reusable [`test.yml`](test.yml) workflow.
 
 ### Release flow
 
@@ -55,6 +57,7 @@ The GitHub release is therefore blocked until both Sandbox and Production deploy
 
 ## Related workflows
 
+- [`ci.yml`](ci.yml): always-on CI; runs build and tests on pushes to `main` and pull requests.
 - [`test.yml`](test.yml): cross-platform build and test workflow.
 - [`package.yml`](package.yml): versioning and platform packaging.
 - [`deploy.yml`](deploy.yml): package storage deployment.
