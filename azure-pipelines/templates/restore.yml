@@ -7,7 +7,9 @@ steps:
 
 - task: UseDotNet@2
   inputs:
-    version: 8.0.x
+    packageType: sdk
+    useGlobalJson: true
+    workingDirectory: '$(Build.SourcesDirectory)'
 
 - task: NuGetAuthenticate@0
 
