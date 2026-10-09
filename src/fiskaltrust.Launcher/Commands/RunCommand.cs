@@ -38,12 +38,17 @@ namespace fiskaltrust.Launcher.Commands
             AddOption(new Option<string?>("--tls-certificate-password"));
             AddOption(new Option<bool>("--use-http-sys-binding"));
             AddOption(new Option<bool>("--use-legacy-data-protection"));
+#if DEBUG
+            AddOption(new Option<string?>("--debug-plebeians", getDefaultValue: () => null, "Comma-separated list of package names and/or package ids of plebeians to start with --debugging so they wait for a debugger to attach. Pass \"*\" to debug all plebeians. (DEBUG builds only)"));
+#endif
         }
     }
 
     public class RunOptions
     {
-
+#if DEBUG
+        public string? DebugPlebeians { get; set; }
+#endif
     }
 
     public class RunServices
@@ -62,9 +67,13 @@ namespace fiskaltrust.Launcher.Commands
 
     public static class RunHandler
     {
-        public static async Task<int> HandleAsync(CommonOptions commonOptions, CommonProperties commonProperties, RunOptions _, RunServices runServices)
+        public static async Task<int> HandleAsync(CommonOptions commonOptions, CommonProperties commonProperties, RunOptions runOptions, RunServices runServices)
         {
             var logger = Serilog.Log.Logger.ToDotnetLogger();
+
+#if DEBUG
+            ProcessHostMonarch.DebugPlebeians = ProcessHostMonarch.ParseDebugPlebeians(runOptions.DebugPlebeians);
+#endif
 
             var builder = WebApplication.CreateBuilder();
 

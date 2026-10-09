@@ -15,7 +15,7 @@ jobs:
         vmImage: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.vmImage }}
     name: test-${{ matrix.vmImage }}
-    
+
     steps:
       - name: Set build configuration
         id: set-config
@@ -29,6 +29,8 @@ jobs:
           fi
 
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: build
         uses: fiskaltrust/middleware/.github/actions/build@main
@@ -70,7 +72,7 @@ jobs:
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          check_name: Queue Test Results
+          check_name: Launcher Test Results
           comment_mode: always
           files: "artifacts/**/*.trx"
           commit: ${{ inputs.commit }}

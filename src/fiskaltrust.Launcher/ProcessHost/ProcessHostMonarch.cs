@@ -20,6 +20,26 @@ namespace fiskaltrust.Launcher.ProcessHost
 
     public class ProcessHostMonarch : IProcessHostMonarch
     {
+#if DEBUG
+        // Set from the `run` command's --debug-plebeians option. When null, debugging is disabled.
+        // Otherwise only plebeians matching an entry (package name, package id, or the "*" wildcard
+        // matching all) are started with --debugging and wait for a debugger to attach before
+        // starting up.
+        public static string[]? DebugPlebeians { get; set; }
+
+        public static string[]? ParseDebugPlebeians(string? value) =>
+            value?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        public static bool MatchesDebugPlebeians(string[]? debugPlebeians, string package, Guid packageId) =>
+            debugPlebeians is not null &&
+            debugPlebeians.Any(entry =>
+                entry == "*" ||
+                entry.Equals(package, StringComparison.OrdinalIgnoreCase) ||
+                (Guid.TryParse(entry, out var id) && id == packageId));
+
+        private bool ShouldDebugPlebeian => MatchesDebugPlebeians(DebugPlebeians, _packageConfiguration.Package, _packageConfiguration.Id);
+#endif
+
         private Process? _process;
         private TaskCompletionSource _started;
         private bool _monarchStartupCompleted;
@@ -50,6 +70,12 @@ namespace fiskaltrust.Launcher.ProcessHost
 
         private void Setup()
         {
+#if DEBUG
+            // When running framework-dependent (e.g. via `dotnet run`), Environment.ProcessPath points to the
+            // dotnet host instead of the launcher, so the entry assembly dll needs to be passed as the first argument.
+            var isDotnetHost = Path.GetFileNameWithoutExtension(_launcherExecutablePath.Path).Equals("dotnet", StringComparison.OrdinalIgnoreCase);
+            var entryAssemblyLocation = System.Reflection.Assembly.GetEntryAssembly()?.Location;
+#endif
             _process = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -58,6 +84,9 @@ namespace fiskaltrust.Launcher.ProcessHost
                     FileName = _launcherExecutablePath.Path,
                     CreateNoWindow = false,
                     Arguments = string.Join(" ", [
+#if DEBUG
+                        .. isDotnetHost && !string.IsNullOrEmpty(entryAssemblyLocation) ? new[] { $"\"{entryAssemblyLocation}\"" } : [],
+#endif
                         "host",
                         "--plebeian-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(new PlebeianConfiguration { PackageType = _packageType, PackageId = _packageConfiguration.Id }.Serialize()))}\"",
                         "--launcher-configuration", $"\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(_launcherConfiguration.Serialize()))}\"",
@@ -71,11 +100,12 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             _process.OutputDataReceived += ReceiveStdOut;
             _process.ErrorDataReceived += ReceiveStdOut;
-
-            //if (Debugger.IsAttached && _packageType == PackageType.Queue)
-            //{
-            //    _process.StartInfo.Arguments += " --debugging";
-            //}
+#if DEBUG
+            if (ShouldDebugPlebeian)
+            {
+                _process.StartInfo.Arguments += " --debugging";
+            }
+#endif
         }
 
         private void ReceiveStdOut(object sender, DataReceivedEventArgs e)
@@ -172,6 +202,13 @@ namespace fiskaltrust.Launcher.ProcessHost
 
             if (!_process!.Start()) { throw new Exception($"Process.Start() was false for {_packageConfiguration.Package} {_packageConfiguration.Id}"); }
 
+#if DEBUG
+            if (ShouldDebugPlebeian)
+            {
+                LogDebuggerAttachUrl();
+            }
+#endif
+
             try
             {
                 _process.BeginOutputReadLine();
@@ -179,6 +216,24 @@ namespace fiskaltrust.Launcher.ProcessHost
             }
             catch { }
         }
+
+#if DEBUG
+        // Requires the "Debug Launcher" VS Code extension (fabiospampinato.vscode-debug-launcher).
+        // Opening the logged vscode:// url (e.g. via cmd/ctrl+click in the integrated terminal)
+        // starts a coreclr attach debug session for the plebeian process, which is waiting
+        // for a debugger because it was started with --debugging.
+        private void LogDebuggerAttachUrl()
+        {
+            var debugConfiguration = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                type = "coreclr",
+                request = "attach",
+                name = $"Attach {_packageConfiguration.Package} ({_packageConfiguration.Id})",
+                processId = _process!.Id.ToString()
+            });
+            _logger.PlebeianDebuggerAttachUrl(_packageConfiguration.Package, _process!.Id, $"vscode://fabiospampinato.vscode-debug-launcher/launch?args={Uri.EscapeDataString(debugConfiguration)}");
+        }
+#endif
 
 
         public Task Start(CancellationToken cancellationToken)

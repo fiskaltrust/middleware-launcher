@@ -274,6 +274,87 @@ Clone this GitHub repository and build the project with Visual Studio.
 
 When using VS Code, please ensure that the following command line parameters are passed to `dotnet build` to enable seamless debugging: `-p:PublishSingleFile=true -p:PublishReadyToRun=true` .
 
+### Debugging with VS Code
+
+
+1. Install the [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) and [C#](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) extensions.
+2. Create a `.vscode/launch.json` file and set the `--cashbox-id` and `--access-token` args to the credentials of your (sandbox) cashbox:
+
+   ```json
+   {
+     "version": "0.2.0",
+     "configurations": [
+       {
+         "name": "Launch",
+         "type": "coreclr",
+         "request": "launch",
+         "preLaunchTask": "dotnet: build",
+         "program": "${workspaceFolder}/src/fiskaltrust.Launcher/bin/Debug/net8.0/fiskaltrust.Launcher.dll",
+         "args": [
+           "run",
+           "--cashbox-id", "<cashbox-id>",
+           "--access-token", "<access-token>",
+           "--sandbox"
+         ],
+         "cwd": "${workspaceFolder}",
+         "env": {
+           "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "console": "integratedTerminal"
+       },
+       {
+         "name": "Attach",
+         "type": "coreclr",
+         "request": "attach"
+       }
+     ]
+   }
+   ```
+
+3. Start the **Launch** configuration from the *Run and Debug* panel.
+
+The **Launch** configuration first builds `src/fiskaltrust.Launcher` via the pre-launch build task and then runs the Launcher's `run` command with `ASPNETCORE_ENVIRONMENT=Development`.
+
+To debug an already running Launcher process instead, use the **Attach** configuration and select the process to attach to.
+
+#### Debugging plebeian processes
+
+The Launcher starts the Queue and SCU packages in separate child processes (the *plebeian* processes), so breakpoints in package-hosting code are not hit by debugging the Launcher process itself.
+
+In DEBUG builds, the `run` command supports an additional `--debug-plebeians` option. Plebeian processes selected by it are started with `--debugging` and wait for a debugger to attach before starting up.
+
+The option takes a comma-separated list of package names and/or package ids, and only the matching plebeians are debugged. Pass `"*"` to debug all plebeians. Add it to the `args` of the **Launch** configuration:
+
+```json
+"args": [
+  "run",
+  "--cashbox-id", "<cashbox-id>",
+  "--access-token", "<access-token>",
+  "--sandbox",
+  "--debug-plebeians", "*"
+],
+```
+
+Or, to debug only specific plebeians:
+
+```json
+"--debug-plebeians", "fiskaltrust.Middleware.Queue.SQLite,<package-id>"
+```
+
+For each plebeian process started with debugging the Launcher logs its process id together with an attach url, e.g.:
+
+```
+Attach debugger to fiskaltrust.Middleware.Queue.SQLite (ProcessId 12345): vscode://fabiospampinato.vscode-debug-launcher/launch?args=...
+```
+
+There are two ways to attach:
+
+- **Via the attach url**: Install the [Debug Launcher](https://marketplace.visualstudio.com/items?itemName=fabiospampinato.vscode-debug-launcher) extension and <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+click the `vscode://` url in the integrated terminal. This immediately starts a `coreclr` attach session for that process. (The first time, VS Code asks for confirmation to open the URI.)
+- **Manually**: Use the **Attach** configuration from the *Run and Debug* panel and select the process with the logged process id.
+
+Once a debugger is attached, the plebeian process continues its startup. Note that the selected plebeian processes wait indefinitely, so the Launcher will not finish starting up until a debugger is attached to each of them (or the option is removed again).
+
+
 ## FAQ
 
 **Q:** Are additional components required to be installed to be able to run the Launcher 2.0?
