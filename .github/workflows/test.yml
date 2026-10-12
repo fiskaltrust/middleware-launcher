@@ -41,7 +41,7 @@ jobs:
         with:
           directory: test
           pattern: "UnitTest"
-          args: '--no-build'
+          args: '--no-build --configuration ${{ steps.set-config.outputs.config }}'
           artifactName: "UnitTest-${{ matrix.vmImage }}.test-results"
 
       - name: Integration Tests
@@ -49,7 +49,7 @@ jobs:
         with:
           directory: test
           pattern: "IntegrationTest"
-          args: '--no-build'
+          args: '--no-build --configuration ${{ steps.set-config.outputs.config }}'
           artifactName: "IntegrationTest-${{ matrix.vmImage }}.test-results"
 
   publish-test-results:
