@@ -17,17 +17,6 @@ jobs:
     name: test-${{ matrix.vmImage }}
 
     steps:
-      - name: Set build configuration
-        id: set-config
-        shell: bash
-        run: |
-          echo "GITHUB_REF=${GITHUB_REF}"
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-           echo "config=Release" >> $GITHUB_OUTPUT
-          else
-           echo "config=Debug" >> $GITHUB_OUTPUT
-          fi
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -36,7 +25,7 @@ jobs:
         uses: fiskaltrust/middleware/.github/actions/build@main
         with:
           pattern: fiskaltrust.Launcher.sln
-          configuration: ${{ steps.set-config.outputs.config }}
+          configuration: Debug
 
       - name: Unit Tests
         uses: fiskaltrust/middleware/.github/actions/test@main
