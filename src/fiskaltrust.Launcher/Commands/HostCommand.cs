@@ -223,6 +223,7 @@ namespace fiskaltrust.Launcher.Commands
                 { "sandbox", launcherConfiguration.Sandbox! },
                 { "configuration", cashboxConfiguration.Serialize() },
                 { "servicefolder", Path.Combine(launcherConfiguration.ServiceFolder!, "service") },
+                { "launcherversion", ThisAssembly.AssemblyInformationalVersion},
             };
 
             if (launcherConfiguration.Proxy is not null)
